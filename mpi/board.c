@@ -7,7 +7,7 @@
  *	Modified by Phillip LeBlanc
  */
 
-
+#include <stdio.h>
 #include <stdlib.h>
 #include "defs.h"
 #include "data.h"

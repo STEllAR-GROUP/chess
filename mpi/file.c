@@ -18,12 +18,12 @@
 #include "data.h"
 #include "protos.h"
 
-#define LOOP_FILE "loop.txt"
+#define LOOP_FILE "loop"
 
 FILE *loop;  //What file number we are on.
 
 
-FILE* set_output(FILE *out)  //Defines the logfile and sets it to the correct log number i.e. chess1245.txt
+FILE* set_output(FILE *out, int sside)  //Defines the logfile and sets it to the correct log number i.e. chess1245.txt
 {
 	char lp[5];
 	char logfile[15];
@@ -34,7 +34,7 @@ FILE* set_output(FILE *out)  //Defines the logfile and sets it to the correct lo
 			fclose(loop);
 		loop = NULL;
 		printf("Loop control file missing. May overwrite existing log files.\n");
-		sprintf(logfile, "chess0.log");
+		sprintf(logfile, "chess0.%d.log", sside);
 		out = fopen(logfile, "w");
 		loop = fopen(LOOP_FILE, "w");
 		fprintf(loop, "1");
@@ -43,7 +43,7 @@ FILE* set_output(FILE *out)  //Defines the logfile and sets it to the correct lo
 	}
 	else {
 		fgets(lp, sizeof(lp), loop);
-		sprintf(logfile, "chess%s.log" , lp);
+		sprintf(logfile, "chess%s.%d.log" , lp, sside);
 		out = fopen(logfile, "w");
 		sscanf(lp, "%d", &lpcnt);
 		lpcnt++;

@@ -17,6 +17,9 @@ int gen_caps(board_t board, gen_t *g, int side, int history[64][64]);
 void gen_push(int from, int to, int bits, gen_t *g, int index, board_t board, int side, int history[64][64]);
 void gen_promote(int from, int to, int bits, gen_t *g, int index);
 BOOL makeourmove(board_t board, move_bytes m, board_t *newboard, int side);
+void init_hash();
+int hash_rand();
+int set_hash(board_t board, int side);
 
 /* book.c */
 void open_book();
@@ -45,5 +48,22 @@ int eval_dkp(int f);
 int main();
 
 /* file.c */
-
+FILE* set_output(FILE *out, int sside);
+int close_output(FILE *out);
 void seed_rand();
+
+/* mpi.c */
+int mpi();
+int get_ms();
+void selectOptions();
+void parseArgs(int argc, char **argv);
+int parse_move(char *s);
+char *move_str(move_bytes m);
+void print_board(board_t board);
+void print_result(board_t board, int side, int xside);
+void initialize(int sside);
+void ending();
+int start_network(int role, char *host, int portno);
+void close_network();
+int send_move(char *move);
+int get_move(char *buff, int len);
