@@ -67,3 +67,9 @@ int start_network(int role, char *host, int portno);
 void close_network();
 int send_move(char *move);
 int get_move(char *buff, int len);
+
+/* mpimanager.c */
+int mpimanager(int size);
+
+/* mpihelper.c */
+int mpihelper(int rank);

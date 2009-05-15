@@ -1,6 +1,6 @@
 CC=mpicc
 CFLAGS=-Wall
-OBJECTS=main.o board.o book.o data.o eval.o file.o search2.o mpi.o
+OBJECTS=main.o board.o book.o data.o eval.o file.o search2.o mpi.o mpihelper.o mpimanager.o
 mpichess: $(OBJECTS)
 	$(CC) -g -o mpichess $(CFLAGS) $(OBJECTS)
 clean:

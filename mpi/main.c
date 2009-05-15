@@ -24,9 +24,9 @@ int main(int argc, char *argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 	
-	if (num_procs < 2)
+	if (num_procs < 4)
 	{
-		printf("This program needs at least 2 processors to run");
+		printf("This program needs at least 4 processors to run");
 		MPI_Finalize();
 		return -1;
 	}
@@ -35,8 +35,10 @@ int main(int argc, char *argv[])
     	mpi(LIGHT, argc, &argv);
     else if (myrank == 1)
     	mpi(DARK, argc, &argv);
-    //else
-    //	mpiworker();
+    else if (myrank == 2)
+    	mpimanager(num_procs);
+    else
+    	mpihelper(myrank);
 
     MPI_Finalize();
     
