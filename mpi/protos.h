@@ -67,6 +67,8 @@ int start_network(int role, char *host, int portno);
 void close_network();
 int send_move(char *move);
 int get_move(char *buff, int len);
+int assign_work(int worker, int alpha, int beta, int depth, board_t board, int side, int ply, int follow_pv);
+int request_worker();
 
 /* mpimanager.c */
 int mpimanager(int size);

@@ -23,12 +23,12 @@ int pickbestmove(board_t board, int max_depth, int side, int mov, hist_t *hist)
 
 	move m;
 	if (usebookmove) {
-            m.u = book_move(hist);
+        m.u = book_move(hist);
 	    if (m.u != -1)
-		return m.u;
-            else
-                usebookmove = 0;
-        } //end if(usebookmove)
+			return m.u;
+        else
+            usebookmove = 0;
+    } //end if(usebookmove)
 	
 	tot_nodes += nodes;
 	nodes = 0;
@@ -38,7 +38,7 @@ int pickbestmove(board_t board, int max_depth, int side, int mov, hist_t *hist)
 	memset(pv, 0, sizeof(pv));
 	memset(pv_length, 0, sizeof(pv_length));
 
-        check_repeating_moves(hist, history, board, side);
+    check_repeating_moves(hist, history, board, side);
 	
 	printf("ply      nodes  score  pv\n");
 	for (i = 1; i <= max_depth; ++i) {	//This is known as iterative deepening

@@ -255,3 +255,22 @@ void parseArgs(int argc, char **argv)
       break;
    }
 }
+
+int request_worker()
+{
+	int worker;
+	MPI_Send(0, 1, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
+	MPI_Recv(&worker, 1, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
+	return worker;
+}
+
+int assign_work(int worker, int alpha, int beta, int depth, board_t board, int side, int ply, int follow_pv)
+{
+	int errorcode;
+	int data[] = {alpha, beta, depth, side, ply, follow_pv};
+	errorcode = MPI_Send(data, 6, MPI_INT, worker, 3, MPI_COMM_WORLD);
+	errorcode += MPI_Send(board.color, 64, MPI_INT, worker, 4, MPI_COMM_WORLD);
+	errorcode += MPI_Send(board.piece, 64, MPI_INT, worker, 5, MPI_COMM_WORLD);
+	
+	return errorcode;
+}

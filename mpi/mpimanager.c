@@ -13,35 +13,71 @@
 #include "data.h"
 
 #define FIRST 3
+#define STACK_MAX 1000
 
-int *avail_ranks;
-int ptr;	//Pointer to the last spot in the array with an available node
+typedef struct {
+    int     data[STACK_MAX];
+    int     size;
+} Stack;
 
 int mpimanager(int size)
 {
-	setup_rank(size);
+	Stack ranks;
+	MPI_Status status;
+	int msg;
+	setup_rank(size, *ranks);
 	while (TRUE)
 	{
-		//TODO: add manager code here
+		MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		
+		switch (status.MPI_TAG)
+		{
+			case 0:
+				msg = Stack_Top(*ranks);
+				Stack_Pop(*ranks);
+				MPI_Send(msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				break;
+			case 1:
+				Stack_Push(*ranks, status.MPI_SOURCE);
+				break;
+			case 2:
+				return 1;
+		}
 	}
 	return 1;
 }
 
-void setup_rank(int size)
+void setup_rank(int size, Stack *ranks)
 {
 	int i;
-	avail_ranks = malloc((size-FIRST)*sizeof(int));
+	Stack_Init(ranks);
 	for (i = FIRST; i < size; i++)
-		avail_ranks[i-FIRST] = i;
-	ptr = size-FIRST;
+		Stack_Push(ranks,i);
 }
 
-int get_next_rank()	//aka pop(), using LIFO
+void Stack_Init(Stack *S)
 {
-	if (ptr == -1)
-		return -1;
-	int to_return = avail_ranks[ptr];
-	avail_ranks[ptr] = NULL;
-	ptr--;
-	return to_return;
+    S->size = 0;
 }
+
+int Stack_Top(Stack *S)
+{
+    if (S->size == 0)
+        return -1;
+    return S->data[S->size-1];
+}
+
+void Stack_Push(Stack *S, int d)
+{
+    if (S->size < STACK_MAX)
+        S->data[S->size++] = d;
+    else
+        fprintf(stderr, "Error: stack full\n");
+}
+
+void Stack_Pop(Stack *S)
+{
+	if (S->size > 0)
+    	S->size--;
+}
+

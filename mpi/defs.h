@@ -14,6 +14,8 @@
 #define MAX_PLY			32
 #define HIST_STACK		400
 
+#define MANAGER			2
+
 #define LIGHT			0
 #define DARK			1
 
@@ -95,3 +97,4 @@ typedef struct {
 	int color[64];
 	int piece[64];
 } board_t;
+

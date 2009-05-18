@@ -30,12 +30,18 @@ int main(int argc, char *argv[])
 		MPI_Finalize();
 		return -1;
 	}
+	if (num_procs > 1000)
+	{
+		printf("This program cannot run with over 1000 processors");
+		MPI_Finalize();
+		return -1;
+	}
 
-	if (myrank == 0)
+	if (myrank == LIGHT)
     	mpi(LIGHT, argc, &argv);
-    else if (myrank == 1)
+    else if (myrank == DARK)
     	mpi(DARK, argc, &argv);
-    else if (myrank == 2)
+    else if (myrank == MANAGER)
     	mpimanager(num_procs);
     else
     	mpihelper(myrank);
