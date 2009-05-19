@@ -3,6 +3,20 @@
  * The code that manages the available resources
  * Uses the concept of a stack to manage next available nodes
  * Created by Phillip LeBlanc
+ * 
+ * MPI Tags:
+ * 0 == assign me an available process
+ * 1 == I am finished working, available for more work
+ * 2 == terminate immediately
+ * 3 == search data part 1
+ * 4 == search data part 2 (board.color)
+ * 5 == search data part 3 (board.piece)
+ * 6 == search data part 4 (history)
+ * 8 == send search score
+ * 10 == request pv & pv_length arrays
+ * 11 == send updated pv array
+ * 12 == send updated pv_length array
+ * 13 == send best move
  */
  
 #include <stdio.h>
@@ -44,7 +58,7 @@ int mpimanager(int size)
 				return 1;
 		}
 	}
-	return 1;
+	return 1;	//Shouldn't get here
 }
 
 void setup_rank(int size, Stack *ranks)

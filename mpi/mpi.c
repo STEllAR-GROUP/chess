@@ -1,6 +1,19 @@
 /*
  * mpi.c
  * Created by Phillip LeBlanc
+ * MPI Tags:
+ * 0 == assign me an available process
+ * 1 == I am finished working, available for more work
+ * 2 == terminate immediately
+ * 3 == search data part 1
+ * 4 == search data part 2 (board.color)
+ * 5 == search data part 3 (board.piece)
+ * 6 == search data part 4 (history)
+ * 8 == send search score
+ * 10 == request pv & pv_length arrays
+ * 11 == send updated pv array
+ * 12 == send updated pv_length array
+ * 13 == send best move
  */
  
 #include <stdio.h>
@@ -271,6 +284,7 @@ int assign_work(int worker, int alpha, int beta, int depth, board_t board, int s
 	errorcode = MPI_Send(data, 6, MPI_INT, worker, 3, MPI_COMM_WORLD);
 	errorcode += MPI_Send(board.color, 64, MPI_INT, worker, 4, MPI_COMM_WORLD);
 	errorcode += MPI_Send(board.piece, 64, MPI_INT, worker, 5, MPI_COMM_WORLD);
+	errorcode += MPI_Send(history, 4096, MPI_INT, worker, 6, MPI_COMM_WORLD);
 	
 	return errorcode;
 }
