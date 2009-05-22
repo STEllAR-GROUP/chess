@@ -1,6 +1,7 @@
 /*
  * mpi.c
  * Created by Phillip LeBlanc
+ *
  * MPI Tags:
  * 0 == assign me an available process
  * 1 == I am finished working, available for more work
@@ -272,8 +273,9 @@ void parseArgs(int argc, char **argv)
 int request_worker()
 {
 	int worker;
+        MPI_Status status;
 	MPI_Send(0, 1, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
-	MPI_Recv(&worker, 1, MPI_INT, MANAGER, 0, MPI_COMM_WORLD);
+	MPI_Recv(&worker, 1, MPI_INT, MANAGER, 0, MPI_COMM_WORLD, &status);
 	return worker;
 }
 

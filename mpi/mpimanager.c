@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
-#include "protos.h"
 #include "defs.h"
 #include "data.h"
+#include "protos.h"
 
 #define FIRST 3
 #define STACK_MAX 1000
@@ -34,12 +34,18 @@ typedef struct {
     int     size;
 } Stack;
 
+void setup_rank(int size, Stack *ranks);
+void Stack_Init(Stack *S);
+int Stack_Top(Stack *S);
+void Stack_Push(Stack *S, int d);
+void Stack_Pop(Stack *S);
+
 int mpimanager(int size)
 {
 	Stack ranks;
 	MPI_Status status;
 	int msg;
-	setup_rank(size, *ranks);
+	setup_rank(size, &ranks);
 	while (TRUE)
 	{
 		MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
@@ -47,12 +53,12 @@ int mpimanager(int size)
 		switch (status.MPI_TAG)
 		{
 			case 0:
-				msg = Stack_Top(*ranks);
-				Stack_Pop(*ranks);
-				MPI_Send(msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				msg = Stack_Top(&ranks);
+				Stack_Pop(&ranks);
+				MPI_Send(&msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 				break;
 			case 1:
-				Stack_Push(*ranks, status.MPI_SOURCE);
+				Stack_Push(&ranks, status.MPI_SOURCE);
 				break;
 			case 2:
 				return 1;

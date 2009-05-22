@@ -28,13 +28,13 @@ int main(int argc, char *argv[])
 	{
 		printf("This program needs at least 4 processors to run");
 		MPI_Finalize();
-		return -1;
+		return 1;
 	}
 	if (num_procs > 1000)
 	{
 		printf("This program cannot run with over 1000 processors");
 		MPI_Finalize();
-		return -1;
+		return 1;
 	}
 
 	if (myrank == LIGHT)

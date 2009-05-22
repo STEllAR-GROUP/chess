@@ -19,9 +19,9 @@
  
 #include <stdio.h>
 #include "mpi.h"
-#include "protos.h"
 #include "defs.h"
 #include "data.h"
+#include "protos.h"
 
 int mpihelper(int rank)
 {
