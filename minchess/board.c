@@ -49,7 +49,7 @@ BOOL attack(board_t board, int sq, int s)
 	for (i = 0; i < 64; ++i)
 		if (board.color[i] == s) {
 			if (board.piece[i] == PAWN) {
-				if (s == LIGHT) {
+				if (s == WHITE) {
 					if (COL(i) != 0 && i - 9 == sq)
 						return TRUE;
 					if (COL(i) != 7 && i - 7 == sq)
@@ -95,10 +95,10 @@ int genmoves(board_t board, movestack *g, int side)
 	for (i = 0; i < 64; ++i)
 		if (board.color[i] == side) {
 			if (board.piece[i] == PAWN) {
-				if (side == LIGHT) {
-					if (COL(i) != 0 && board.color[i - 9] == DARK)
+				if (side == WHITE) {
+					if (COL(i) != 0 && board.color[i - 9] == BLACK)
 						gen_push(i, i - 9, 17, g, totalmoves++, board, side);
-					if (COL(i) != 7 && board.color[i - 7] == DARK)
+					if (COL(i) != 7 && board.color[i - 7] == BLACK)
 						gen_push(i, i - 7, 17, g, totalmoves++, board, side);
 					if (board.color[i - 8] == EMPTY) {
 						gen_push(i, i - 8, 16, g, totalmoves++, board, side);
@@ -107,9 +107,9 @@ int genmoves(board_t board, movestack *g, int side)
 					}
 				}
 				else {
-					if (COL(i) != 0 && board.color[i + 7] == LIGHT)
+					if (COL(i) != 0 && board.color[i + 7] == WHITE)
 						gen_push(i, i + 7, 17, g, totalmoves++, board, side);
-					if (COL(i) != 7 && board.color[i + 9] == LIGHT)
+					if (COL(i) != 7 && board.color[i + 9] == WHITE)
 						gen_push(i, i + 9, 17, g, totalmoves++, board, side);
 					if (board.color[i + 8] == EMPTY) {
 						gen_push(i, i + 8, 16, g, totalmoves++, board, side);
@@ -153,18 +153,18 @@ int gen_caps(board_t board, movestack *g, int side)
 	for (i = 0; i < 64; ++i)
 		if (board.color[i] == side) {
 			if (board.piece[i]==PAWN) {
-				if (side == LIGHT) {
-					if (COL(i) != 0 && board.color[i - 9] == DARK)
+				if (side == WHITE) {
+					if (COL(i) != 0 && board.color[i - 9] == BLACK)
 						gen_push(i, i - 9, 17, g, totalmoves++, board, side);
-					if (COL(i) != 7 && board.color[i - 7] == DARK)
+					if (COL(i) != 7 && board.color[i - 7] == BLACK)
 						gen_push(i, i - 7, 17, g, totalmoves++, board, side);
 					if (i <= 15 && board.color[i - 8] == EMPTY)
 						gen_push(i, i - 8, 16, g, totalmoves++, board, side);
 				}
-				if (side == DARK) {
-					if (COL(i) != 0 && board.color[i + 7] == LIGHT)
+				if (side == BLACK) {
+					if (COL(i) != 0 && board.color[i + 7] == WHITE)
 						gen_push(i, i + 7, 17, g, totalmoves++, board, side);
-					if (COL(i) != 7 && board.color[i + 9] == LIGHT)
+					if (COL(i) != 7 && board.color[i + 9] == WHITE)
 						gen_push(i, i + 9, 17, g, totalmoves++, board, side);
 					if (i >= 48 && board.color[i + 8] == EMPTY)
 						gen_push(i, i + 8, 16, g, totalmoves++, board, side);
@@ -202,7 +202,7 @@ int gen_caps(board_t board, movestack *g, int side)
 void gen_push(int from, int to, int bits, movestack *g, int index, board_t board, int side)
 {
 	if (bits & 16) {
-		if (side == LIGHT) {
+		if (side == WHITE) {
 			if (to <= H8) {
 				gen_promote(from, to, bits, g, index);
 				return;

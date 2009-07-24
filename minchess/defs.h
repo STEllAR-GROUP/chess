@@ -12,8 +12,8 @@
 
 #define MAX_MOVES		100
 
-#define LIGHT			0
-#define DARK			1
+#define WHITE			0
+#define BLACK			1
 
 #define PAWN			0
 #define KNIGHT			1

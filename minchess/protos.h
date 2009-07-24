@@ -21,7 +21,7 @@ void gen_promote(int from, int to, int bits, movestack *g, int index);
 BOOL makeourmove(board_t board, move_bytes m, board_t *newboard, int side);
 
 /* search2.c */
-int pickbestmove(board_t board, int max_depth, int side);
+int pickbestmove(board_t board, int side);
 int search(int alpha, int beta, int depth, board_t board, int side);
 
 /* eval.c */
@@ -35,7 +35,7 @@ int eval_dkp(int f);
 
 /* main.c */
 int main();
-void parseArgs(int argc, char **argv, int *max_depth);
+void parseArgs(int argc, char **argv);
 void print_board(board_t board);
 
 #endif

@@ -11,7 +11,7 @@
  * to pick the best move. It calls the search function.
  */
 
-int pickbestmove(board_t board, int max_depth, int side)
+int pickbestmove(board_t board, int side)
 {
     int i, x, lastmove, best_score = -20000;
     move best_move;
@@ -25,7 +25,7 @@ int pickbestmove(board_t board, int max_depth, int side)
         if(!makeourmove(board, legal_moves[i].m.b, &newboard, side))	//Make the move, store it into newmove. Test for legality
 		continue;	//If this move isn't legal, move onto the next one
         
-        x = search(-10000, 10000, max_depth, newboard, side);
+        x = search(-10000, 10000, depth[side], newboard, side);
         
         if (x > best_score) {
             best_score = x;

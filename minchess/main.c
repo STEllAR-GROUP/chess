@@ -21,21 +21,20 @@
 int main(int argc, char *argv[])
 {
     int mov;    //Total number of moves made
-    int max_depth;  //Maximum depth the search function can go
     int side;       //Current side
     board_t board;  //Local board representation
     move m; //Temporary variable for holding the current move
     
-    parseArgs(argc, argv, &max_depth);
+    parseArgs(argc, argv);
 
-    side = LIGHT;
+    side = WHITE;
     init_board(&board); //Initialize the board to initial game state
     srand(time(0));    //Seed the random number generator
     mov = 0;  //Total moves made is 0
 
     for (;;)
     {
-       m.u = pickbestmove(board, max_depth, side);  //Store the move in m
+       m.u = pickbestmove(board,side);  //Store the move in m
        if (m.u == -1) {
            print_board(board);
            printf("The game has ended\n");
@@ -68,10 +67,10 @@ void print_board(board_t board)
         case EMPTY:
             printf(" .");
             break;
-        case LIGHT:
+        case WHITE:
             printf(" %c", piece_char[board.piece[i]]);
             break;
-        case DARK:
+        case BLACK:
             printf(" %c", piece_char[board.piece[i]] + ('a' - 'A'));
             break;
         }
@@ -83,19 +82,21 @@ void print_board(board_t board)
 
 /* parseArgs() parses the arguments and loads them into local variables */
 
-void parseArgs(int argc, char **argv, int *max_depth)
+void parseArgs(int argc, char **argv)
 {
  int c;
- *max_depth = 3;
- while ((c = getopt(argc, argv, "d:")) != -1)  //Loop for parsing arguments
+ while ((c = getopt(argc, argv, "w:b:")) != -1)  //Loop for parsing arguments
    switch (c)
    {
-     case 'd':
-      *max_depth = atoi(optarg);
+     case 'w':
+      depth[WHITE] = atoi(optarg);
+      break;
+     case 'b':
+      depth[BLACK] = atoi(optarg);
       break;
      case '?':
      default:
-      fprintf(stderr, "usage: pxchess -d <max depth>\n");
+      fprintf(stderr, "usage: %s -w <white max depth> -b <black max depth>\n", argv[0]);
       exit(1);
       break;
    }

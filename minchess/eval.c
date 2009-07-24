@@ -115,26 +115,26 @@ int eval(board_t board, int side)
 
 	/* this is the first pass: set up pawn_rank, piece_mat, and pawn_mat. */
 	for (i = 0; i < 10; ++i) {
-		pawn_rank[LIGHT][i] = 0;
-		pawn_rank[DARK][i] = 7;
+		pawn_rank[WHITE][i] = 0;
+		pawn_rank[BLACK][i] = 7;
 	}
-	piece_mat[LIGHT] = 0;
-	piece_mat[DARK] = 0;
-	pawn_mat[LIGHT] = 0;
-	pawn_mat[DARK] = 0;
+	piece_mat[WHITE] = 0;
+	piece_mat[BLACK] = 0;
+	pawn_mat[WHITE] = 0;
+	pawn_mat[BLACK] = 0;
 	for (i = 0; i < 64; ++i) {
 		if (board.color[i] == EMPTY)
 			continue;
 		if (board.piece[i] == PAWN) {
 			pawn_mat[board.color[i]] += piece_value[PAWN];
 			f = COL(i) + 1;  /* add 1 because of the extra file in the array */
-			if (board.color[i] == LIGHT) {
-				if (pawn_rank[LIGHT][f] < ROW(i))
-					pawn_rank[LIGHT][f] = ROW(i);
+			if (board.color[i] == WHITE) {
+				if (pawn_rank[WHITE][f] < ROW(i))
+					pawn_rank[WHITE][f] = ROW(i);
 			}
 			else {
-				if (pawn_rank[DARK][f] > ROW(i))
-					pawn_rank[DARK][f] = ROW(i);
+				if (pawn_rank[BLACK][f] > ROW(i))
+					pawn_rank[BLACK][f] = ROW(i);
 			}
 		}
 		else
@@ -142,66 +142,66 @@ int eval(board_t board, int side)
 	}
 
 	/* this is the second pass: evaluate each piece */
-	score[LIGHT] = piece_mat[LIGHT] + pawn_mat[LIGHT];
-	score[DARK] = piece_mat[DARK] + pawn_mat[DARK];
+	score[WHITE] = piece_mat[WHITE] + pawn_mat[WHITE];
+	score[BLACK] = piece_mat[BLACK] + pawn_mat[BLACK];
 	for (i = 0; i < 64; ++i) {
 		if (board.color[i] == EMPTY)
 			continue;
-		if (board.color[i] == LIGHT) {
+		if (board.color[i] == WHITE) {
 			switch (board.piece[i]) {
 				case PAWN:
-					score[LIGHT] += eval_light_pawn(i);
+					score[WHITE] += eval_light_pawn(i);
 					break;
 				case KNIGHT:
-					score[LIGHT] += knight_pcsq[i];
+					score[WHITE] += knight_pcsq[i];
 					break;
 				case BISHOP:
-					score[LIGHT] += bishop_pcsq[i];
+					score[WHITE] += bishop_pcsq[i];
 					break;
 				case ROOK:
-					if (pawn_rank[LIGHT][COL(i) + 1] == 0) {
-						if (pawn_rank[DARK][COL(i) + 1] == 7)
-							score[LIGHT] += ROOK_OPEN_FILE_BONUS;
+					if (pawn_rank[WHITE][COL(i) + 1] == 0) {
+						if (pawn_rank[BLACK][COL(i) + 1] == 7)
+							score[WHITE] += ROOK_OPEN_FILE_BONUS;
 						else
-							score[LIGHT] += ROOK_SEMI_OPEN_FILE_BONUS;
+							score[WHITE] += ROOK_SEMI_OPEN_FILE_BONUS;
 					}
 					if (ROW(i) == 1)
-						score[LIGHT] += ROOK_ON_SEVENTH_BONUS;
+						score[WHITE] += ROOK_ON_SEVENTH_BONUS;
 					break;
 				case KING:
-					if (piece_mat[DARK] <= 1200)
-						score[LIGHT] += king_endgame_pcsq[i];
+					if (piece_mat[BLACK] <= 1200)
+						score[WHITE] += king_endgame_pcsq[i];
 					else
-						score[LIGHT] += eval_light_king(i);
+						score[WHITE] += eval_light_king(i);
 					break;
 			}
 		}
 		else {
 			switch (board.piece[i]) {
 				case PAWN:
-					score[DARK] += eval_dark_pawn(i);
+					score[BLACK] += eval_dark_pawn(i);
 					break;
 				case KNIGHT:
-					score[DARK] += knight_pcsq[flip[i]];
+					score[BLACK] += knight_pcsq[flip[i]];
 					break;
 				case BISHOP:
-					score[DARK] += bishop_pcsq[flip[i]];
+					score[BLACK] += bishop_pcsq[flip[i]];
 					break;
 				case ROOK:
-					if (pawn_rank[DARK][COL(i) + 1] == 7) {
-						if (pawn_rank[LIGHT][COL(i) + 1] == 0)
-							score[DARK] += ROOK_OPEN_FILE_BONUS;
+					if (pawn_rank[BLACK][COL(i) + 1] == 7) {
+						if (pawn_rank[WHITE][COL(i) + 1] == 0)
+							score[BLACK] += ROOK_OPEN_FILE_BONUS;
 						else
-							score[DARK] += ROOK_SEMI_OPEN_FILE_BONUS;
+							score[BLACK] += ROOK_SEMI_OPEN_FILE_BONUS;
 					}
 					if (ROW(i) == 6)
-						score[DARK] += ROOK_ON_SEVENTH_BONUS;
+						score[BLACK] += ROOK_ON_SEVENTH_BONUS;
 					break;
 				case KING:
-					if (piece_mat[LIGHT] <= 1200)
-						score[DARK] += king_endgame_pcsq[flip[i]];
+					if (piece_mat[WHITE] <= 1200)
+						score[BLACK] += king_endgame_pcsq[flip[i]];
 					else
-						score[DARK] += eval_dark_king(i);
+						score[BLACK] += eval_dark_king(i);
 					break;
 			}
 		}
@@ -209,9 +209,9 @@ int eval(board_t board, int side)
 
 	/* the score[] array is set, now return the score relative
 	   to the side to move */
-	if (side == LIGHT)
-		return score[LIGHT] - score[DARK];
-	return score[DARK] - score[LIGHT];
+	if (side == WHITE)
+		return score[WHITE] - score[BLACK];
+	return score[BLACK] - score[WHITE];
 }
 
 int eval_light_pawn(int sq)
@@ -225,24 +225,24 @@ int eval_light_pawn(int sq)
 	r += pawn_pcsq[sq];
 
 	/* if there's a pawn behind this one, it's doubled */
-	if (pawn_rank[LIGHT][f] > ROW(sq))
+	if (pawn_rank[WHITE][f] > ROW(sq))
 		r -= DOUBLED_PAWN_PENALTY;
 
 	/* if there aren't any friendly pawns on either side of
 	   this one, it's isolated */
-	if ((pawn_rank[LIGHT][f - 1] == 0) &&
-			(pawn_rank[LIGHT][f + 1] == 0))
+	if ((pawn_rank[WHITE][f - 1] == 0) &&
+			(pawn_rank[WHITE][f + 1] == 0))
 		r -= ISOLATED_PAWN_PENALTY;
 
 	/* if it's not isolated, it might be backwards */
-	else if ((pawn_rank[LIGHT][f - 1] < ROW(sq)) &&
-			(pawn_rank[LIGHT][f + 1] < ROW(sq)))
+	else if ((pawn_rank[WHITE][f - 1] < ROW(sq)) &&
+			(pawn_rank[WHITE][f + 1] < ROW(sq)))
 		r -= BACKWARDS_PAWN_PENALTY;
 
 	/* add a bonus if the pawn is passed */
-	if ((pawn_rank[DARK][f - 1] >= ROW(sq)) &&
-			(pawn_rank[DARK][f] >= ROW(sq)) &&
-			(pawn_rank[DARK][f + 1] >= ROW(sq)))
+	if ((pawn_rank[BLACK][f - 1] >= ROW(sq)) &&
+			(pawn_rank[BLACK][f] >= ROW(sq)) &&
+			(pawn_rank[BLACK][f + 1] >= ROW(sq)))
 		r += (7 - ROW(sq)) * PASSED_PAWN_BONUS;
 
 	return r;
@@ -259,24 +259,24 @@ int eval_dark_pawn(int sq)
 	r += pawn_pcsq[flip[sq]];
 
 	/* if there's a pawn behind this one, it's doubled */
-	if (pawn_rank[DARK][f] < ROW(sq))
+	if (pawn_rank[BLACK][f] < ROW(sq))
 		r -= DOUBLED_PAWN_PENALTY;
 
 	/* if there aren't any friendly pawns on either side of
 	   this one, it's isolated */
-	if ((pawn_rank[DARK][f - 1] == 7) &&
-			(pawn_rank[DARK][f + 1] == 7))
+	if ((pawn_rank[BLACK][f - 1] == 7) &&
+			(pawn_rank[BLACK][f + 1] == 7))
 		r -= ISOLATED_PAWN_PENALTY;
 
 	/* if it's not isolated, it might be backwards */
-	else if ((pawn_rank[DARK][f - 1] > ROW(sq)) &&
-			(pawn_rank[DARK][f + 1] > ROW(sq)))
+	else if ((pawn_rank[BLACK][f - 1] > ROW(sq)) &&
+			(pawn_rank[BLACK][f + 1] > ROW(sq)))
 		r -= BACKWARDS_PAWN_PENALTY;
 
 	/* add a bonus if the pawn is passed */
-	if ((pawn_rank[LIGHT][f - 1] <= ROW(sq)) &&
-			(pawn_rank[LIGHT][f] <= ROW(sq)) &&
-			(pawn_rank[LIGHT][f + 1] <= ROW(sq)))
+	if ((pawn_rank[WHITE][f - 1] <= ROW(sq)) &&
+			(pawn_rank[WHITE][f] <= ROW(sq)) &&
+			(pawn_rank[WHITE][f + 1] <= ROW(sq)))
 		r += ROW(sq) * PASSED_PAWN_BONUS;
 
 	return r;
@@ -307,15 +307,15 @@ int eval_light_king(int sq)
 	   the king */
 	else {
 		for (i = COL(sq); i <= COL(sq) + 2; ++i)
-			if ((pawn_rank[LIGHT][i] == 0) &&
-					(pawn_rank[DARK][i] == 7))
+			if ((pawn_rank[WHITE][i] == 0) &&
+					(pawn_rank[BLACK][i] == 7))
 				r -= 10;
 	}
 
 	/* scale the king safety value according to the opponent's material;
 	   the premise is that your king safety can only be bad if the
 	   opponent has enough pieces to attack you */
-	r *= piece_mat[DARK];
+	r *= piece_mat[BLACK];
 	r /= 3100;
 
 	return r;
@@ -327,19 +327,19 @@ int eval_lkp(int f)
 {
 	int r = 0;
 
-	if (pawn_rank[LIGHT][f] == 6);  /* pawn hasn't moved */
-	else if (pawn_rank[LIGHT][f] == 5)
+	if (pawn_rank[WHITE][f] == 6);  /* pawn hasn't moved */
+	else if (pawn_rank[WHITE][f] == 5)
 		r -= 10;  /* pawn moved one square */
-	else if (pawn_rank[LIGHT][f] != 0)
+	else if (pawn_rank[WHITE][f] != 0)
 		r -= 20;  /* pawn moved more than one square */
 	else
 		r -= 25;  /* no pawn on this file */
 
-	if (pawn_rank[DARK][f] == 7)
+	if (pawn_rank[BLACK][f] == 7)
 		r -= 15;  /* no enemy pawn */
-	else if (pawn_rank[DARK][f] == 5)
+	else if (pawn_rank[BLACK][f] == 5)
 		r -= 10;  /* enemy pawn on the 3rd rank */
-	else if (pawn_rank[DARK][f] == 4)
+	else if (pawn_rank[BLACK][f] == 4)
 		r -= 5;   /* enemy pawn on the 4th rank */
 
 	return r;
@@ -363,11 +363,11 @@ int eval_dark_king(int sq)
 	}
 	else {
 		for (i = COL(sq); i <= COL(sq) + 2; ++i)
-			if ((pawn_rank[LIGHT][i] == 0) &&
-					(pawn_rank[DARK][i] == 7))
+			if ((pawn_rank[WHITE][i] == 0) &&
+					(pawn_rank[BLACK][i] == 7))
 				r -= 10;
 	}
-	r *= piece_mat[LIGHT];
+	r *= piece_mat[WHITE];
 	r /= 3100;
 	return r;
 }
@@ -376,19 +376,19 @@ int eval_dkp(int f)
 {
 	int r = 0;
 
-	if (pawn_rank[DARK][f] == 1);
-	else if (pawn_rank[DARK][f] == 2)
+	if (pawn_rank[BLACK][f] == 1);
+	else if (pawn_rank[BLACK][f] == 2)
 		r -= 10;
-	else if (pawn_rank[DARK][f] != 7)
+	else if (pawn_rank[BLACK][f] != 7)
 		r -= 20;
 	else
 		r -= 25;
 
-	if (pawn_rank[LIGHT][f] == 0)
+	if (pawn_rank[WHITE][f] == 0)
 		r -= 15;
-	else if (pawn_rank[LIGHT][f] == 2)
+	else if (pawn_rank[WHITE][f] == 2)
 		r -= 10;
-	else if (pawn_rank[LIGHT][f] == 3)
+	else if (pawn_rank[WHITE][f] == 3)
 		r -= 5;
 
 	return r;
