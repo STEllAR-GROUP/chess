@@ -91,7 +91,7 @@ void parseArgs(int argc, char **argv, int *max_depth)
    switch (c)
    {
      case 'd':
-      max_depth = atoi(optarg);
+      *max_depth = atoi(optarg);
       break;
      case '?':
      default:

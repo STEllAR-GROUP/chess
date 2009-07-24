@@ -86,7 +86,7 @@ BOOL attack(board_t board, int sq, int s)
    combination, it calls gen_push to put the move on the "move
    stack." */
 
-int genmoves(board_t board, gen_t *g, int side)
+int genmoves(board_t board, movestack *g, int side)
 {
 	int i, j, n;
 
@@ -144,7 +144,7 @@ int genmoves(board_t board, gen_t *g, int side)
 
 int totalmoves;
 
-int gen_caps(board_t board, gen_t *g, int side)
+int gen_caps(board_t board, movestack *g, int side)
 {
 	int i, j, n;
 	
@@ -199,7 +199,7 @@ int gen_caps(board_t board, gen_t *g, int side)
    1,000,000 is added to a capture move's score, so it
    always gets ordered above a "normal" move. */
 
-void gen_push(int from, int to, int bits, gen_t *g, int index, board_t board, int side)
+void gen_push(int from, int to, int bits, movestack *g, int index, board_t board, int side)
 {
 	if (bits & 16) {
 		if (side == LIGHT) {
@@ -231,7 +231,7 @@ void gen_push(int from, int to, int bits, gen_t *g, int index, board_t board, in
 /* gen_promote() is just like gen_push(), only it puts 4 moves
    on the move stack, one for each possible promotion piece */
 
-void gen_promote(int from, int to, int bits, gen_t *g, int index)
+void gen_promote(int from, int to, int bits, movestack *g, int index)
 {
 	int i;
 	

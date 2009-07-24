@@ -6,15 +6,11 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define VERSION "1.551"
-
 #define BOOL			int
 #define TRUE			1
 #define FALSE			0
 
-#define GEN_STACK		100
-#define MAX_PLY			32
-#define HIST_STACK		400
+#define MAX_MOVES		100
 
 #define LIGHT			0
 #define DARK			1
@@ -82,14 +78,7 @@ typedef union {
 typedef struct {
 	move m;
 	int score;
-} gen_t;
-
-/* an element of the history stack, with the information
- necessary to take a move back. */
-typedef struct {
-	move m;
-	int hash;
-} hist_t;
+} movestack;
 
 /* the representation of the board */
 
