@@ -23,6 +23,7 @@ BOOL makeourmove(board_t board, move_bytes m, board_t *newboard, int side);
 /* search2.c */
 int pickbestmove(board_t board, int side);
 int search(int alpha, int beta, int depth, board_t board, int side);
+void sort(movestack *moves, int last_move);
 
 /* eval.c */
 int eval(board_t board, int side);
