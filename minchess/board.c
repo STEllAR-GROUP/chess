@@ -224,7 +224,7 @@ void gen_push(int from, int to, int bits, movestack *g, int index, board_t board
 	if (board.color[to] != EMPTY)
 		g[index].score = 1000000 + (board.piece[to] * 10) - board.piece[from];
 	else
-		g[index].score = (board.piece[to] * 10) - board.piece[from];
+		g[index].score = board.piece[from];
 }
 
 

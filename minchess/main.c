@@ -1,15 +1,10 @@
 /*
- * PXChess
+ * MINChess
  * 
  *	main.c
  *
- *  This program is an implementation of a chess engine, this engine supports
- *  the xboard protocol and searches using the alpha beta heuristic.
- *  This is a very basic implementation and does not support features
- *  such as transposition tables, interative deepening, or killer moves
- *  It does however have a quiescence search.
- *
- * Version 1.551
+ *  This program is a minimal implementation of a chess program
+ * using an alpha-beta search algorithm
  *  
  */
 

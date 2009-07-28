@@ -53,6 +53,7 @@ int search(int alpha, int beta, int depth, board_t board, int side)
 	lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
 
 	for (i = 0; i < lastmove; i++) {
+                sort(&legal_moves, lastmove);
 		if(!makeourmove(board, legal_moves[i].m.b, &newmove, side))	//Make the move, store it into newmove. Test for legality
 			continue;	//If this move isn't legal, move onto the next one
 
@@ -66,4 +67,30 @@ int search(int alpha, int beta, int depth, board_t board, int side)
 	} //end for()
 
 	return alpha;
+}
+
+/* sort() searches the current ply's move list
+ to the end to find the move with the highest score. Then it
+ swaps that move and the 'from' move so the move with the
+ highest score gets searched next, and hopefully produces
+ a cutoff. */
+
+void sort(movestack *moves, int last_move)
+{
+	int i;
+	int bs;  /* best score */
+	int bi;  /* best i */
+	movestack g;
+
+	bs = -1;
+	bi = 0;
+	for (i = 0; i < last_move; ++i)
+		if (moves[i].score > bs) {
+			bs = moves[i].score;
+			bi = i;
+		}
+	g = moves[0];
+	moves[0] = moves[bi];
+	moves[bi] = g;
+
 }
