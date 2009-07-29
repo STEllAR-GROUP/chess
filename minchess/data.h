@@ -17,5 +17,7 @@ extern int init_color[64];
 extern int init_piece[64];
 
 extern int depth[2];
+extern int alpha[2];
+extern int beta[2];
 
 #endif

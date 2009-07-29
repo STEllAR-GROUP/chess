@@ -79,20 +79,15 @@ void print_board(board_t board)
 
 void parseArgs(int argc, char **argv)
 {
- int c;
- while ((c = getopt(argc, argv, "w:b:")) != -1)  //Loop for parsing arguments
-   switch (c)
-   {
-     case 'w':
-      depth[WHITE] = atoi(optarg);
-      break;
-     case 'b':
-      depth[BLACK] = atoi(optarg);
-      break;
-     case '?':
-     default:
-      fprintf(stderr, "usage: %s -w <white max depth> -b <black max depth>\n", argv[0]);
-      exit(1);
-      break;
-   }
+    if (argc != 9)
+    {
+         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta>\n", argv[0]);
+         exit(2);
+    }
+      depth[WHITE] = atoi(argv[2]);
+      alpha[WHITE] = atoi(argv[3]);
+      beta[WHITE] = atoi(argv[4]);
+      depth[BLACK] = atoi(argv[6]);
+      alpha[BLACK] = atoi(argv[7]);
+      beta[BLACK] = atoi(argv[8]);
 }

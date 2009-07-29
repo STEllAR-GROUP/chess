@@ -25,7 +25,7 @@ int pickbestmove(board_t board, int side)
         if(!makeourmove(board, legal_moves[i].m.b, &newboard, side))	//Make the move, store it into newmove. Test for legality
 		continue;	//If this move isn't legal, move onto the next one
         
-        x = search(-10000, 10000, depth[side], newboard, side);
+        x = search(alpha[side], beta[side], depth[side], newboard, side);
         
         if (x > best_score) {
             best_score = x;

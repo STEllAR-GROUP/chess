@@ -6,6 +6,8 @@
 #include "defs.h"
 
 int depth[2] = {3,3};
+int alpha[2] = {-10000, -10000};
+int beta[2] = {10000, 10000};
 
 /* Now we have the mailbox array, so called because it looks like a
    mailbox, at least according to Bob Hyatt. This is useful when we
