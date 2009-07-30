@@ -19,5 +19,6 @@ extern int init_piece[64];
 extern int depth[2];
 extern int alpha[2];
 extern int beta[2];
+extern int endgame;
 
 #endif

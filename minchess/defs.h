@@ -12,6 +12,8 @@
 
 #define MAX_MOVES		100
 
+#define PC_ENDGAME              10
+
 #define WHITE			0
 #define BLACK			1
 

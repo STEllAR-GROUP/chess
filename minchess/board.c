@@ -88,6 +88,8 @@ BOOL attack(board_t board, int sq, int s)
 
 int genmoves(board_t board, movestack *g, int side)
 {
+    if (endgame)
+        return genendgame(board, g, side);
 	int i, j, n;
 
 	int totalmoves = 0;
@@ -138,36 +140,36 @@ int genmoves(board_t board, movestack *g, int side)
 	return totalmoves;
 }
 
-/* gen_caps() is basically a copy of genmoves() that's modified to
- only generate capture and promote moves. It's used by the
- quiescence search. */
-
-int totalmoves;
-
-int gen_caps(board_t board, movestack *g, int side)
+int genendgame(board_t board, movestack *g, int side)
 {
 	int i, j, n;
-	
-	totalmoves = 0;
-	
+
+	int totalmoves = 0;
+
 	for (i = 0; i < 64; ++i)
 		if (board.color[i] == side) {
-			if (board.piece[i]==PAWN) {
+			if (board.piece[i] == PAWN) {
 				if (side == WHITE) {
 					if (COL(i) != 0 && board.color[i - 9] == BLACK)
-						gen_push(i, i - 9, 17, g, totalmoves++, board, side);
+						gen_end_push(i, i - 9, 17, g, totalmoves++, board, side);
 					if (COL(i) != 7 && board.color[i - 7] == BLACK)
-						gen_push(i, i - 7, 17, g, totalmoves++, board, side);
-					if (i <= 15 && board.color[i - 8] == EMPTY)
-						gen_push(i, i - 8, 16, g, totalmoves++, board, side);
+						gen_end_push(i, i - 7, 17, g, totalmoves++, board, side);
+					if (board.color[i - 8] == EMPTY) {
+						gen_end_push(i, i - 8, 16, g, totalmoves++, board, side);
+						if (i >= 48 && board.color[i - 16] == EMPTY)
+							gen_end_push(i, i - 16, 24, g, totalmoves++, board, side);
+					}
 				}
-				if (side == BLACK) {
+				else {
 					if (COL(i) != 0 && board.color[i + 7] == WHITE)
-						gen_push(i, i + 7, 17, g, totalmoves++, board, side);
+						gen_end_push(i, i + 7, 17, g, totalmoves++, board, side);
 					if (COL(i) != 7 && board.color[i + 9] == WHITE)
-						gen_push(i, i + 9, 17, g, totalmoves++, board, side);
-					if (i >= 48 && board.color[i + 8] == EMPTY)
-						gen_push(i, i + 8, 16, g, totalmoves++, board, side);
+						gen_end_push(i, i + 9, 17, g, totalmoves++, board, side);
+					if (board.color[i + 8] == EMPTY) {
+						gen_end_push(i, i + 8, 16, g, totalmoves++, board, side);
+						if (i <= 15 && board.color[i + 16] == EMPTY)
+							gen_end_push(i, i + 16, 24, g, totalmoves++, board, side);
+					}
 				}
 			}
 			else
@@ -177,18 +179,18 @@ int gen_caps(board_t board, movestack *g, int side)
 						if (n == -1)
 							break;
 						if (board.color[n] != EMPTY) {
-							if (board.color[n] == (side ^ 1))
-								gen_push(i, n, 1, g, totalmoves++, board, side);
+							if (board.color[n] == (side^1))
+								gen_end_push(i, n, 1, g, totalmoves++, board, side);
 							break;
 						}
+						gen_end_push(i, n, 0, g, totalmoves++, board, side);
 						if (!slide[board.piece[i]])
 							break;
 					}
 		}
-	
+
 	return totalmoves;
 }
-
 
 /* gen_push() puts a move on the move stack, unless it's a
    pawn promotion that needs to be handled by gen_promote().
@@ -225,6 +227,43 @@ void gen_push(int from, int to, int bits, movestack *g, int index, board_t board
 		g[index].score = 1000000 + (board.piece[to] * 10) - board.piece[from];
 	else
 		g[index].score = board.piece[from];
+}
+
+void gen_end_push(int from, int to, int bits, movestack *g, int index, board_t board, int side)
+{
+	if (bits & 16) {
+		if (side == WHITE) {
+			if (to <= H8) {
+				gen_promote(from, to, bits, g, index);
+				return;
+			}
+		}
+		else {
+			if (to >= A1) {
+				gen_promote(from, to, bits, g, index);
+				return;
+			}
+		}
+	}
+
+
+	g[index].m.b.from = (char)from;
+	g[index].m.b.to = (char)to;
+	g[index].m.b.promote = 0;
+	g[index].m.b.bits = (char)bits;
+	if (board.color[to] != EMPTY)
+		g[index].score = 1000 + (board.piece[to] * 10) - board.piece[from];
+	else
+		g[index].score = board.piece[from];
+
+        if (board.piece[from] == KING)
+            g[index].score -= 1000;
+        if (board.piece[from] == ROOK)
+            g[index].score += 100;
+        if (board.piece[from] == QUEEN)
+            g[index].score += 1000;
+        if (board.piece[to] == QUEEN)
+            g[index].score += 100000;
 }
 
 

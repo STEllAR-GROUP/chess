@@ -17,6 +17,19 @@ int pickbestmove(board_t board, int side)
     move best_move;
     board_t newboard;
 
+    if (!endgame)
+    {
+        int piececount = 0;
+        for (i = 0; i < 64; i++)
+            if (board.piece[i] != EMPTY)
+                piececount++;
+        if (piececount < PC_ENDGAME)
+        {
+            endgame = 1;
+            printf("\n\nEnd Game has been reached.\n");
+        }
+    }
+
     movestack legal_moves[MAX_MOVES];	//data to hold all of the pseudo-legal moves for this board
 
     lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
