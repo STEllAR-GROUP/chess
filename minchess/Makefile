@@ -5,3 +5,5 @@ pxchess: $(OBJECTS)
 	$(CC) -g -o minchess $(CFLAGS) $(OBJECTS)
 clean:
 	rm -f minchess minchess.exe $(OBJECTS)
+openmp:
+	icc -Wall -openmp -o minchess main.c board.c data.c eval.c search2.c

@@ -41,6 +41,9 @@ int main(int argc, char *argv[])
       mov++;	//Update the move counter
       print_board(board);	//Print the board to screen
       side ^= 1;	//Switch sides
+	  
+	  if (mov > 200)	//Assume king vs king endgame
+		exit(0);
       continue;
     } //end for(;;)
 

@@ -37,7 +37,7 @@ int eval_dark_king(int sq);
 int eval_dkp(int f);
 
 /* main.c */
-int main();
+int main(int, char**);
 void parseArgs(int argc, char **argv);
 void print_board(board_t board);
 
