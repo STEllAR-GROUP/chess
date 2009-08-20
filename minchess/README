@@ -2,6 +2,8 @@ To compile the serial version type: make
 To compile the openmp version type: make openmp
 (Requres icc compiler and an SMP cluster)
 
+To clean up the code type: make clean
+
 This version of minchess requires that you specify the depth for each side
 and the initial alpha beta search parameters.
 To run type
