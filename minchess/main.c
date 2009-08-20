@@ -31,15 +31,15 @@ int main(int argc, char *argv[])
     {
        m.u = pickbestmove(board,side);  //Store the move in m
        if (m.u == -1) {
-           print_board(board);
-           printf("The game has ended\n");
+           //print_board(board);
+           //printf("The game has ended\n");
            break;
        }
 
        makeourmove(board, m.b, &board, side);
 		
       mov++;	//Update the move counter
-      print_board(board);	//Print the board to screen
+      //print_board(board);	//Print the board to screen
       side ^= 1;	//Switch sides
 	  
 	  if (mov > 200)	//Assume king vs king endgame
@@ -82,9 +82,9 @@ void print_board(board_t board)
 
 void parseArgs(int argc, char **argv)
 {
-    if (argc != 9)
+    if (argc < 9)
     {
-         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta>\n", argv[0]);
+         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
          exit(2);
     }
       depth[WHITE] = atoi(argv[2]);
@@ -93,4 +93,7 @@ void parseArgs(int argc, char **argv)
       depth[BLACK] = atoi(argv[6]);
       alpha[BLACK] = atoi(argv[7]);
       beta[BLACK] = atoi(argv[8]);
+#ifdef _OPENMP
+      omp_set_num_threads(atoi(argv[10]));
+#endif
 }
