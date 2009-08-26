@@ -104,40 +104,29 @@ int flip[64] = {
    test for pawns on a rank and it simplifies some pawn evaluation code. */
 int pawn_rank[2][10];
 
-int piece_mat_white;  /* the value of a side's pieces */
-int piece_mat_black;
-int pawn_mat_white;  /* the value of a side's pawns */
-int pawn_mat_black;
+int piece_mat[2];  /* the value of a side's pieces */
+int pawn_mat[2];  /* the value of a side's pawns */
 
 int eval(board_t board, int side)
 {
 	int i;
 	int f;  /* file */
-	int score_white;  /* each side's score */
-	int score_black;
+	int score[2];  /* each side's score */
 
 	/* this is the first pass: set up pawn_rank, piece_mat, and pawn_mat. */
 	for (i = 0; i < 10; ++i) {
 		pawn_rank[WHITE][i] = 0;
 		pawn_rank[BLACK][i] = 7;
 	}
-	piece_mat_white = 0;
-	piece_mat_black = 0;
-	pawn_mat_white = 0;
-	pawn_mat_black = 0;
-
-#ifdef _OPENMP
-	#pragma omp parallel for private(f) reduction(+:piece_mat_white) reduction(+:piece_mat_black) reduction(+:pawn_mat_white) reduction(+:pawn_mat_black)
-#endif
+	piece_mat[WHITE] = 0;
+	piece_mat[BLACK] = 0;
+	pawn_mat[WHITE] = 0;
+	pawn_mat[BLACK] = 0;
 	for (i = 0; i < 64; ++i) {
 		if (board.color[i] == EMPTY)
 			continue;
 		if (board.piece[i] == PAWN) {
-			if (board.color[i] == BLACK)
-				pawn_mat_black += piece_value[PAWN];
-			else
-				pawn_mat_white += piece_value[PAWN];
-			//pawn_mat[board.color[i]] += piece_value[PAWN];
+			pawn_mat[board.color[i]] += piece_value[PAWN];
 			f = COL(i) + 1;  /* add 1 because of the extra file in the array */
 			if (board.color[i] == WHITE) {
 				if (pawn_rank[WHITE][f] < ROW(i))
@@ -149,76 +138,70 @@ int eval(board_t board, int side)
 			}
 		}
 		else
-			if (board.color[i] == BLACK)
-				piece_mat_black += piece_value[board.piece[i]];
-			else
-				piece_mat_white += piece_value[board.piece[i]];
+			piece_mat[board.color[i]] += piece_value[board.piece[i]];
 	}
 
 	/* this is the second pass: evaluate each piece */
-	score_white = piece_mat_white + pawn_mat_white;
-	score_black = piece_mat_black + pawn_mat_black;
-#ifdef _OPENMP
-	#pragma omp parallel for reduction(+:score_white) reduction(+:score_black)
-#endif
+	score[WHITE] = piece_mat[WHITE] + pawn_mat[WHITE];
+	score[BLACK] = piece_mat[BLACK] + pawn_mat[BLACK];
 	for (i = 0; i < 64; ++i) {
 		if (board.color[i] == EMPTY)
 			continue;
 		if (board.color[i] == WHITE) {
 			switch (board.piece[i]) {
 				case PAWN:
-					score_white += eval_light_pawn(i);
+					score[WHITE] += eval_light_pawn(i);
 					break;
 				case KNIGHT:
-					score_white += knight_pcsq[i];
+					score[WHITE] += knight_pcsq[i];
 					break;
 				case BISHOP:
-					score_white += bishop_pcsq[i];
+					score[WHITE] += bishop_pcsq[i];
 					break;
 				case ROOK:
 					if (pawn_rank[WHITE][COL(i) + 1] == 0) {
 						if (pawn_rank[BLACK][COL(i) + 1] == 7)
-							score_white += ROOK_OPEN_FILE_BONUS;
+							score[WHITE] += ROOK_OPEN_FILE_BONUS;
 						else
-							score_white += ROOK_SEMI_OPEN_FILE_BONUS;
+							score[WHITE] += ROOK_SEMI_OPEN_FILE_BONUS;
 					}
 					if (ROW(i) == 1)
-						score_white += ROOK_ON_SEVENTH_BONUS;
+						score[WHITE] += ROOK_ON_SEVENTH_BONUS;
 					break;
 				case KING:
-					if (piece_mat_black <= 1200)
-						score_white += king_endgame_pcsq[i];
+					if (piece_mat[BLACK] <= 1200)
+						score[WHITE] += king_endgame_pcsq[i];
 					else
-						score_white += eval_light_king(i);
+						score[WHITE] += eval_light_king(i);
 					break;
 			}
 		}
 		else {
 			switch (board.piece[i]) {
 				case PAWN:
-					score_black += eval_dark_pawn(i);
+					score[BLACK] += eval_dark_pawn(i);
 					break;
 				case KNIGHT:
-					score_black += knight_pcsq[flip[i]];
+					score[BLACK] += knight_pcsq[flip[i]];
 					break;
 				case BISHOP:
-					score_black += bishop_pcsq[flip[i]];
+					score[BLACK] += bishop_pcsq[flip[i]];
 					break;
 				case ROOK:
 					if (pawn_rank[BLACK][COL(i) + 1] == 7) {
 						if (pawn_rank[WHITE][COL(i) + 1] == 0)
-							score_black += ROOK_OPEN_FILE_BONUS;
+							score[BLACK] += ROOK_OPEN_FILE_BONUS;
 						else
-							score_black += ROOK_SEMI_OPEN_FILE_BONUS;
+							score[BLACK] += ROOK_SEMI_OPEN_FILE_BONUS;
 					}
 					if (ROW(i) == 6)
-						score_black += ROOK_ON_SEVENTH_BONUS;
+						score[BLACK] += ROOK_ON_SEVENTH_BONUS;
 					break;
 				case KING:
-					if (piece_mat_white <= 1200)
-						score_black += king_endgame_pcsq[flip[i]];
+					if (piece_mat[WHITE] <= 1200)
+						score[BLACK] += king_endgame_pcsq[flip[i]];
 					else
-						score_black += eval_dark_king(i);
+						score[BLACK] += eval_dark_king(i);
 					break;
 			}
 		}
@@ -227,8 +210,8 @@ int eval(board_t board, int side)
 	/* the score[] array is set, now return the score relative
 	   to the side to move */
 	if (side == WHITE)
-		return score_white - score_black;
-	return score_black - score_white;
+		return score[WHITE] - score[BLACK];
+	return score[BLACK] - score[WHITE];
 }
 
 int eval_light_pawn(int sq)
@@ -332,7 +315,7 @@ int eval_light_king(int sq)
 	/* scale the king safety value according to the opponent's material;
 	   the premise is that your king safety can only be bad if the
 	   opponent has enough pieces to attack you */
-	r *= piece_mat_black;
+	r *= piece_mat[BLACK];
 	r /= 3100;
 
 	return r;
@@ -384,7 +367,7 @@ int eval_dark_king(int sq)
 					(pawn_rank[BLACK][i] == 7))
 				r -= 10;
 	}
-	r *= piece_mat_white;
+	r *= piece_mat[WHITE];
 	r /= 3100;
 	return r;
 }

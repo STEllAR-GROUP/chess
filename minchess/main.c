@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
       //print_board(board);	//Print the board to screen
       side ^= 1;	//Switch sides
 	  
-	  if (mov > 200)	//Assume king vs king endgame
+	  if (mov > 100)	//Assume king vs king endgame
 		exit(0);
       continue;
     } //end for(;;)
