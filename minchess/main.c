@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
        makeourmove(board, m.b, &board, side);
 		
       mov++;	//Update the move counter
+      printf("Move #: %d\n", mov); //So we know where the game is when testing
       //print_board(board);	//Print the board to screen
       side ^= 1;	//Switch sides
 	  
