@@ -1,18 +1,16 @@
 To compile the serial version type: make
-To compile the openmp version type: make openmp
-(Requres icc compiler and an SMP cluster)
+(In this version there is no openmp section)
 
 To clean up the code type: make clean
 
 This version of minchess requires that you specify the depth for each side
 and the initial alpha beta search parameters.
 To run type
-./minchess -w <white max_depth> <white alpha> <white beta> -b <black max_depth> <black alpha> <black beta> -nt <max number of threads to use (openmp version only)>
+./minchess -w <white max_depth> <white alpha> <white beta> -b <black max_depth> <black alpha> <black beta> 
 
-Example: Running with max depth both sides at 5, initial alpha beta of -10000 10000 and 32 threads
-./minchess -w 5 -10000 10000 -b 5 -10000 10000 -nt 32
+Example: Running with max depth both sides at 5, and initial alpha beta of -10000 10000 
+./minchess -w 5 -10000 10000 -b 5 -10000 10000
 
 Example: Running serial version with different depths for both sides
 ./minchess -w 4 -10000 10000 -b 6 -10000 10000
 
-This version is optimized for the openmp version and as such suppresses most stdout output, for easier time comparison using the time command (meaning, you don't see the board state)
