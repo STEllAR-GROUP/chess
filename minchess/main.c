@@ -90,7 +90,7 @@ void parseArgs(int argc, char **argv)
 {
     if (argc < 9)
     {
-         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta>\n", argv[0]);
+         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
          exit(2);
     }
       depth[WHITE] = atoi(argv[2]);
