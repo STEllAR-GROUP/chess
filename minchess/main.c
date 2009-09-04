@@ -27,6 +27,11 @@ int main(int argc, char *argv[])
     srand(time(0));    //Seed the random number generator
     mov = 0;  //Total moves made is 0
 
+
+    #ifdef _OPENMP
+    omp_set_nested(0);
+    #endif
+
     for (;;)
     {
        m.u = pickbestmove(board,side);  //Store the move in m

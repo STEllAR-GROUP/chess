@@ -9,7 +9,7 @@
 #include "protos.h"
 
 
-int set_hash(board_t board, int side);
+//int set_hash(board_t board, int side);
 
 /* init_board() sets the board to the initial game state. */
 
