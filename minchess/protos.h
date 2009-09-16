@@ -24,7 +24,7 @@ void gen_end_push(int from, int to, int bits, movestack *g, int index, board_t b
 
 /* search2.c */
 int pickbestmove(board_t board, int side);
-int search(int alpha, int beta, int depth, board_t board, int side);
+//int search(int alpha, int beta, int depth, board_t board, int side);
 int search_(int alpha, int beta, int depth, board_t board, int side);
 void sort(movestack *moves, int last_move);
 
