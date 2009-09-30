@@ -15,6 +15,7 @@
 
 int main(int argc, char *argv[])
 {
+    printf("Starting MinChess...\n");
     int mov;    //Total number of moves made
     int side;       //Current side
     board_t board;  //Local board representation
@@ -27,10 +28,6 @@ int main(int argc, char *argv[])
     srand(time(0));    //Seed the random number generator
     mov = 0;  //Total moves made is 0
 
-
-    #ifdef _OPENMP
-    omp_set_nested(0);
-    #endif
 
     for (;;)
     {
@@ -88,18 +85,21 @@ void print_board(board_t board)
 
 void parseArgs(int argc, char **argv)
 {
-    if (argc < 9)
+    /*if (argc < 9)
     {
          fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
          exit(2);
-    }
-      depth[WHITE] = atoi(argv[2]);
-      alpha[WHITE] = atoi(argv[3]);
-      beta[WHITE] = atoi(argv[4]);
-      depth[BLACK] = atoi(argv[6]);
-      alpha[BLACK] = atoi(argv[7]);
-      beta[BLACK] = atoi(argv[8]);
-#ifdef _OPENMP
-      omp_set_num_threads(atoi(argv[10]));
-#endif
+    }*/
+      depth[WHITE] = 5;
+      alpha[WHITE] = -10000;
+      beta[WHITE] = 10000;
+      depth[BLACK] = 4;
+      alpha[BLACK] = -10000;
+      beta[BLACK] = 10000;
+      //depth[WHITE] = atoi(argv[2]);
+      //alpha[WHITE] = atoi(argv[3]);
+      //beta[WHITE] = atoi(argv[4]);
+      //depth[BLACK] = atoi(argv[6]);
+      //alpha[BLACK] = atoi(argv[7]);
+      //beta[BLACK] = atoi(argv[8]);
 }

@@ -33,21 +33,19 @@ int pickbestmove(board_t board, int side)
     movestack legal_moves[MAX_MOVES];	//data to hold all of the pseudo-legal moves for this board
 
     lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
+
+int debug =1;
     
     
-#pragma omp parallel for private(x) shared(best_score,best_move)
     for (i = 0; i < lastmove; i++) {
 	    if(!makeourmove(board, legal_moves[i].m.b, &newboard, side))	//Make the move, store it into newmove. Test for legality
 		    continue;	//If this move isn't legal, move onto the next one
         
-	    x = search_(alpha[side], beta[side], depth[side], newboard, side);
+	    x = search(alpha[side], beta[side], depth[side], newboard, side);
 
 	    if (x > best_score) {
-#pragma omp critical
-		    {		
 		    best_score = x;
 		    best_move.u = legal_moves[i].m.u;
-		    } //end pragma omp critical
 	    }
     }
     
@@ -57,62 +55,9 @@ int pickbestmove(board_t board, int side)
 
     return best_move.u;
 }
-/*
+
+
 int search(int alpha, int beta, int depth, board_t board, int side)
-{
-	int lastmove, i, move_score;
-	board_t newmove;
-
-	if (!depth)
-            return eval(board, side);
-
-	movestack legal_moves[MAX_MOVES];	//data to hold all of the pseudo-legal moves for this board
-
-        // *******************************MOVE GENERATION******************************* /
-	lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
-
-	
-	for (i = 0; i < lastmove; i++) {
-		sort(legal_moves, lastmove);
-		if(!makeourmove(board, legal_moves[i].m.b, &newmove, side))	//Make the move, store it into newmove. Test for legality
-			continue;	//If this move isn't legal, move onto the next one
-
-		move_score = -search_(-beta, -alpha, depth - 1, newmove, side ^ 1);	//Search again with this move to see opponent's responses
-		
-
-                if (move_score >= beta)
-                    return beta;
-
-		if (move_score > alpha)
-			alpha = move_score;
-		break;
-	} //end for()
-
-	int max_move_score = 0;
-//#pragma omp parallel for private(move_score) shared(max_move_score)
-	for (i = 0; i < lastmove; i++) {
-		sort(legal_moves, lastmove);
-		if(!makeourmove(board, legal_moves[i].m.b, &newmove, side))	//Make the move, store it into newmove. Test for legality
-			continue;	//If this move isn't legal, move onto the next one
-
-		move_score = -search_(-beta, -alpha, depth - 1, newmove, side ^ 1);	//Search again with this move to see opponent's responses
-		
-//#pragma omp critical		
-	if (move_score > max_move_score)
-		max_move_score = move_score;
-                //if (move_score >= beta)
-                //    return beta;
-
-	if (move_score > alpha)
-		alpha = move_score;
-	} //end for()
-
-	//return max_move_score;
-
-}
-*/
-
-int search_(int alpha, int beta, int depth, board_t board, int side)
 {
 	int lastmove, i, move_score;
 	board_t newmove;
@@ -130,7 +75,7 @@ int search_(int alpha, int beta, int depth, board_t board, int side)
 		if(!makeourmove(board, legal_moves[i].m.b, &newmove, side))	//Make the move, store it into newmove. Test for legality
 			continue;	//If this move isn't legal, move onto the next one
 
-		move_score = -search_(-beta, -alpha, depth - 1, newmove, side ^ 1);	//Search again with this move to see opponent's responses
+		move_score = -search(-beta, -alpha, depth - 1, newmove, side ^ 1);	//Search again with this move to see opponent's responses
 		
 
                 if (move_score >= beta)
