@@ -1,0 +1,6 @@
+time ./microkernel 1
+time ./microkernel 2
+time ./microkernel 3
+time ./microkernel 4
+time ./microkernel 5
+time ./microkernel 6
