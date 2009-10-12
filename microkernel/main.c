@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	/*********GAME LOOP*********/
 	while (mov < 200)
 	{
-		printf("Move number: %d\n", mov);
+	//	printf("Move number: %d\n", mov);
 		//gen_random_board(&board, &side);
 		//Insert any timing functions here
 		alpha_beta(board, -10000, 10000, depth, side, side);
@@ -54,7 +54,10 @@ int alpha_beta(board_t board, int alpha, int beta, int depth, int side, int root
 	while ((i <= width)&&(cutoff==FALSE))
 	{
 		if (!makeourmove(board, legal_moves[i].m.b, &newboard, side))
+		{
+			i++;
 			continue;
+		}
 		val = alpha_beta(newboard, alpha, beta, depth - 1, side ^ 1, rootside);
 		if ((side==rootside)&&(val > alpha))
 			alpha = val;
