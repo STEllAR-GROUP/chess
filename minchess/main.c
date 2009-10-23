@@ -12,10 +12,14 @@
 
 #include "common.h"
 #include <time.h>
+#include <signal.h>
+
+void sig_int(int sig);
 
 int main(int argc, char *argv[])
 {
     printf("Starting MinChess...\n");
+    signal(SIGINT, sig_int);
     int mov;    //Total number of moves made
     int side;       //Current side
     board_t board;  //Local board representation
@@ -102,4 +106,10 @@ void parseArgs(int argc, char **argv)
       //depth[BLACK] = atoi(argv[6]);
       //alpha[BLACK] = atoi(argv[7]);
       //beta[BLACK] = atoi(argv[8]);
+}
+
+void sig_int(int sig)
+{
+	printf("\nUser Interrupt, Exiting...\n");
+	exit(0);
 }

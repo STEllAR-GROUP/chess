@@ -34,9 +34,6 @@ int pickbestmove(board_t board, int side)
 
     lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
 
-int debug =1;
-    
-    
     for (i = 0; i < lastmove; i++) {
 	    if(!makeourmove(board, legal_moves[i].m.b, &newboard, side))	//Make the move, store it into newmove. Test for legality
 		    continue;	//If this move isn't legal, move onto the next one
