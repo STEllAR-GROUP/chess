@@ -42,4 +42,10 @@ int main(int, char**);
 void parseArgs(int argc, char **argv);
 void print_board(board_t board);
 
+/* board_file.c */
+void board_file_print(board_t board);
+FILE* init_board_file();
+int get_starting_board();
+int close_board_file(void);
+
 #endif

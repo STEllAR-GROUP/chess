@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     init_board(&board); //Initialize the board to initial game state
     srand(time(0));    //Seed the random number generator
     mov = 0;  //Total moves made is 0
-
+    init_board_file();
 
     for (;;)
     {
@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
       mov++;	//Update the move counter
       printf("Move #: %d\n", mov); //So we know where the game is when testing
       print_board(board);	//Print the board to screen
+      board_file_print(board);
       side ^= 1;	//Switch sides
 	  
 	  if (mov > 100)	//Assume king vs king endgame
@@ -54,8 +55,8 @@ int main(int argc, char *argv[])
       continue;
     } //end for(;;)
 
-
-    return 0;
+    int return_val = close_board_file();
+    return return_val;
 }
 
 /* print_board() prints the board */
@@ -94,10 +95,10 @@ void parseArgs(int argc, char **argv)
          fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
          exit(2);
     }*/
-      depth[WHITE] = 5;
+      depth[WHITE] = atoi(argv[1]);
       alpha[WHITE] = -10000;
       beta[WHITE] = 10000;
-      depth[BLACK] = 4;
+      depth[BLACK] = atoi(argv[2]);
       alpha[BLACK] = -10000;
       beta[BLACK] = 10000;
       //depth[WHITE] = atoi(argv[2]);
@@ -111,5 +112,6 @@ void parseArgs(int argc, char **argv)
 void sig_int(int sig)
 {
 	printf("\nUser Interrupt, Exiting...\n");
-	exit(0);
+	int return_val = close_board_file();
+	exit(return_val);
 }
