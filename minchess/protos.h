@@ -27,6 +27,7 @@ int pickbestmove(board_t board, int side);
 //int search(int alpha, int beta, int depth, board_t board, int side);
 int search(int alpha, int beta, int depth, board_t board, int side);
 void sort(movestack *moves, int last_move);
+void sort_pv(movestack *moves, int depth, int lastmove);
 
 /* eval.c */
 int eval(board_t board, int side);

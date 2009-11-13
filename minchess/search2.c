@@ -13,10 +13,7 @@
 
 int pickbestmove(board_t board, int side)
 {
-    int i, x, lastmove, best_score = -20000;
-    move best_move;
-    board_t newboard;
-
+	int i;
     if (!endgame)
     {
 	int piececount = 0;
@@ -30,27 +27,16 @@ int pickbestmove(board_t board, int side)
         }
     }
 
-    movestack legal_moves[MAX_MOVES];	//data to hold all of the pseudo-legal moves for this board
+	memset(pv, 0, sizeof(pv));
 
-    lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
+	for (i = 0; i < depth[side]; i++)
+		search(alpha[side], beta[side], i, board, side);
 
-    for (i = 0; i < lastmove; i++) {
-	    if(!makeourmove(board, legal_moves[i].m.b, &newboard, side))	//Make the move, store it into newmove. Test for legality
-		    continue;	//If this move isn't legal, move onto the next one
-        
-	    x = search(alpha[side], beta[side], depth[side], newboard, side);
 
-	    if (x > best_score) {
-		    best_score = x;
-		    best_move.u = legal_moves[i].m.u;
-	    }
-    }
-    
-
-    if (best_score == -20000)   //No moves, game is over
+    if (pv[0].u == -20000)   //No moves, game is over
 	    return -1;
 
-    return best_move.u;
+    return pv[0].u;
 }
 
 
@@ -66,6 +52,8 @@ int search(int alpha, int beta, int depth, board_t board, int side)
 
         /*******************************MOVE GENERATION*******************************/
 	lastmove = genmoves(board, legal_moves, side);	//generate and store all of the pseudo-legal moves
+
+	sort_pv(legal_moves, depth, lastmove);
 
 	for (i = 0; i < lastmove; i++) {
         sort(legal_moves, lastmove);
@@ -112,4 +100,13 @@ void sort(movestack *moves, int last_move)
 	moves[0] = moves[bi];
 	moves[bi] = g;
 
+}
+
+void sort_pv(movestack *moves, int depth, int lastmove)
+{
+	int i;
+
+	for (i = 0; i < lastmove; ++i)
+		if (moves[i].m.u == pv[depth].u)
+			moves[i].score += 10000000;
 }
