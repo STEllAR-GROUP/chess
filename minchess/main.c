@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     init_board(&board); //Initialize the board to initial game state
     srand(time(0));    //Seed the random number generator
     mov = 0;  //Total moves made is 0
-    init_board_file();
 
     for (;;)
     {
@@ -47,7 +46,6 @@ int main(int argc, char *argv[])
       mov++;	//Update the move counter
       printf("Move #: %d\n", mov); //So we know where the game is when testing
       print_board(board);	//Print the board to screen
-      board_file_print(board);
       side ^= 1;	//Switch sides
 	  
 	  if (mov > 100)	//Assume king vs king endgame
@@ -55,8 +53,7 @@ int main(int argc, char *argv[])
       continue;
     } //end for(;;)
 
-    int return_val = close_board_file();
-    return return_val;
+    return 0;
 }
 
 /* print_board() prints the board */
@@ -112,6 +109,5 @@ void parseArgs(int argc, char **argv)
 void sig_int(int sig)
 {
 	printf("\nUser Interrupt, Exiting...\n");
-	int return_val = close_board_file();
-	exit(return_val);
+	exit(0);
 }

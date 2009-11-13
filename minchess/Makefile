@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall
-OBJECTS=main.o board.o data.o eval.o search2.o board_file.o
+OBJECTS=main.o board.o data.o eval.o search2.o
 pxchess: $(OBJECTS)
 	$(CC) -g -o minchess $(CFLAGS) $(OBJECTS)
 clean:
