@@ -75,11 +75,14 @@ int search(int alpha, int beta, int depth, board_t board, int side)
 		move_score = -search(-beta, -alpha, depth - 1, newmove, side ^ 1);	//Search again with this move to see opponent's responses
 		
 
-                if (move_score >= beta)
+		if (move_score >= beta)
                     return beta;
 
 		if (move_score > alpha)
+		{
+			pv[depth] = legal_moves[i].m;
 			alpha = move_score;
+		}
 	} //end for()
 
 	return alpha;
