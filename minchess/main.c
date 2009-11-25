@@ -116,7 +116,7 @@ void parseArgs(int argc, char **argv)
 
 void sig_int(int sig)
 {
-	printf("\nUser Interrupt, Exiting...\n");
+	if (!iProc) printf("\nUser Interrupt, Exiting...\n");
 	MPI_Finalize();
 	exit(0);
 }
