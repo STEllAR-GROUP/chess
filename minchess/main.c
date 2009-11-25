@@ -94,11 +94,12 @@ void print_board(board_t board)
 
 void parseArgs(int argc, char **argv)
 {
-    /*if (argc < 9)
+    if (argc < 3)
     {
-         fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
+         //fprintf(stderr, "usage: %s -w <white max depth> <alpha> <beta> -b <black max depth> <alpha> <beta> -nt <max_num_threads>\n", argv[0]);
+		fprintf(stderr, "usage: %s <white max depth> <black max depth>\n", argv[0]);
          exit(2);
-    }*/
+    }
       depth[WHITE] = atoi(argv[1]);
       alpha[WHITE] = -10000;
       beta[WHITE] = 10000;
