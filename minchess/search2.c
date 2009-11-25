@@ -12,6 +12,8 @@
  */
 
 int mdepth; //Max depth
+extern int iProc;
+extern int nProc;
 
 int pickbestmove(board_t board, int side)
 {
