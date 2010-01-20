@@ -1,10 +1,11 @@
-To compile the serial version type: make
+To compile, type 'make'
 
-To clean up the code type: make clean
+To remove the binary file, type 'make clean'
 
-This minchess build has removed all command line parameters and set them to their default
-values in order to make testing easier (will reimplement them when the need arises)
+To run (MPI only) type:
 
-To run type
-./minchess
+mpirun -np <number of processors> minchess <depth of white> <depth of black>
 
+ex.
+
+mpirun -np 4 minchess 10 3
