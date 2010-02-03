@@ -2,10 +2,6 @@ To compile, type 'make'
 
 To remove the binary file, type 'make clean'
 
-To run (MPI only) type:
+To run type
+./minchess
 
-mpirun -np <number of processors> minchess <depth of white> <depth of black>
-
-ex.
-
-mpirun -np 4 minchess 10 3

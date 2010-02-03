@@ -9,8 +9,6 @@ int depth[2] = {3,3};
 int alpha[2] = {-10000, -10000};
 int beta[2] = {10000, 10000};
 
-int endgame = 0;
-
 /* Now we have the mailbox array, so called because it looks like a
    mailbox, at least according to Bob Hyatt. This is useful when we
    need to figure out what pieces can go where. Let's say we have a
@@ -103,6 +101,3 @@ int init_piece[64] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	3, 1, 2, 4, 5, 2, 1, 3
 };
-
-
-move pv[MAX_DEPTH];
