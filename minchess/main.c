@@ -1,5 +1,5 @@
 /*
- * MPIChess
+ * MINChess
  * 
  *	main.c
  *
@@ -18,7 +18,7 @@ void sig_int(int sig);
 
 int main(int argc, char *argv[])
 {
-    printf("Starting MPIChess...\n");
+    printf("Starting MINChess...\n");
     signal(SIGINT, sig_int);
     int mov;    //Total number of moves made
     int side;       //Current side
