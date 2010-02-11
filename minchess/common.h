@@ -10,7 +10,6 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <omp.h>
 #include "defs.h"
 #include "data.h"
 #include "protos.h"
