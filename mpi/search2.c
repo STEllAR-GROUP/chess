@@ -35,13 +35,6 @@ int pickbestmove(board_t board, int side)
     if (pv[depth[side]-1].u == -20000)   //No moves, game is over
 	    return -1;
 
-/*	if (iProc == 0) {
-		for (i = 0; i < depth[side]; i++)
-			printf("depth: %d, from: %d, to: %d\n", i, pv[i].b.from, pv[i].b.to);
-		
-	}
-	sig_int(0);*/
-
     return pv[depth[side]-1].u;
 }
 
