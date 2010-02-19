@@ -18,35 +18,31 @@ extern int nProc;
 int pickbestmove(board_t board, int side)
 {
 	int i;
-    if (!endgame)
-    {
-	int piececount = 0;
-	for (i = 0; i < 64; i++)
-		if (board.piece[i] != EMPTY)
-			piececount++;
-	if (piececount < PC_ENDGAME)
-        {
-		endgame = 1;
-		printf("\n\nEnd Game has been reached.\n");
-        }
-    }
+    
 
 	memset(pv, 0, sizeof(pv));
 
+	mdepth = depth[side];
+
 	for (i = 0; i < depth[side]; i++)
 	{
-		mdepth = depth[side];
 		int ab[2];
 		if (iProc == 0) search_pv(&ab[0], &ab[1], alpha[side], beta[side], i, board, side);
 		MPI_Bcast( ab, 2, MPI_INT, 0, MPI_COMM_WORLD);
 		search(ab[0], ab[1], i, board, side);
 	}
 
-
-    if (pv[depth[side]].u == -20000)   //No moves, game is over
+    if (pv[depth[side]-1].u == -20000)   //No moves, game is over
 	    return -1;
 
-    return pv[depth[side]].u;
+/*	if (iProc == 0) {
+		for (i = 0; i < depth[side]; i++)
+			printf("depth: %d, from: %d, to: %d\n", i, pv[i].b.from, pv[i].b.to);
+		
+	}
+	sig_int(0);*/
+
+    return pv[depth[side]-1].u;
 }
 
 int search_pv(int *a, int *b, int alpha, int beta, int depth, board_t board, int side)
@@ -118,7 +114,7 @@ int search(int alpha, int beta, int depth, board_t board, int side)
 		if (depth == mdepth) MPI_Allreduce(&alpha, &alpha, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
 		if (move_score >= beta)
-                    return beta;
+            return beta;
 
 		if (move_score > alpha)
 		{

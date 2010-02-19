@@ -1,5 +1,5 @@
 /*
- * MINChess
+ * MPIChess
  * 
  *	main.c
  *
@@ -21,11 +21,11 @@ int nProc, iProc;
 
 int main(int argc, char *argv[])
 {
-    printf("Starting MinChess...\n");
-	MPI_Status status;
-	MPI_Init(&argc, &argv);	
-	MPI_Comm_size(MPI_COMM_WORLD, &nProc);
-	MPI_Comm_rank(MPI_COMM_WORLD, &iProc);
+    printf("Starting MPIChess...\n");
+    MPI_Status status;
+    MPI_Init(&argc, &argv);	
+    MPI_Comm_size(MPI_COMM_WORLD, &nProc);
+    MPI_Comm_rank(MPI_COMM_WORLD, &iProc);
     signal(SIGINT, sig_int);
     int mov;    //Total number of moves made
     int side;       //Current side
@@ -48,11 +48,11 @@ int main(int argc, char *argv[])
            break;
        }
 
-       makeourmove(board, m.b, &board, side);
+      makeourmove(board, m.b, &board, side);
 		
       mov++;	//Update the move counter
       if (iProc == 0) printf("Move #: %d\n", mov); //So we know where the game is when testing
-      //print_board(board);	//Print the board to screen
+      if (iProc == 0) print_board(board);	//Print the board to screen
       side ^= 1;	//Switch sides
 	  
 	  if (mov > 100)	//Assume king vs king endgame

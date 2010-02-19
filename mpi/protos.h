@@ -19,7 +19,6 @@ int gen_caps(board_t board, movestack *g, int side);
 void gen_push(int from, int to, int bits, movestack *g, int index, board_t board, int side);
 void gen_promote(int from, int to, int bits, movestack *g, int index);
 BOOL makeourmove(board_t board, move_bytes m, board_t *newboard, int side);
-int genendgame(board_t board, movestack *g, int side);
 void gen_end_push(int from, int to, int bits, movestack *g, int index, board_t board, int side);
 
 /* search2.c */
