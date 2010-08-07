@@ -1,7 +1,0 @@
-To compile, type 'make'
-
-To remove the binary file, type 'make clean'
-
-To run type
-./minchess
-
