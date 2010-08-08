@@ -1,0 +1,9 @@
+To build CHX type these commands (requires CMake)
+
+ $ cmake .
+ $ make
+
+To run type these commands
+
+ $ cd src
+ $ ./chx
