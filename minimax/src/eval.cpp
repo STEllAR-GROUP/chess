@@ -1,5 +1,5 @@
 /*
- *  EVAL.C
+ *  EVAL.CPP
  */
 
 #include "eval.hpp"

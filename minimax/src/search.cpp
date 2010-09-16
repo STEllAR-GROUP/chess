@@ -75,7 +75,7 @@ int search(node_t board, int depth)
 
     /* no legal moves? then we're in checkmate or stalemate */
     if (!f) {
-        if (c)
+        if (in_check(board, board.side))
             return -10000 + board.ply;
         else
             return 0;

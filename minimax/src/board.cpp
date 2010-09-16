@@ -231,66 +231,6 @@ void gen(std::vector<gen_t>& workq, node_t& board)
 }
 
 
-/* gen_caps() is basically a copy of gen() that's modified to
-   only generate capture and promote moves. It's used by the
-   quiescence search. */
-
-void gen_caps(std::vector<gen_t>& workq, node_t& board)
-{
-    int i, j, n;
-
-    for (i = 0; i < 64; ++i)
-        if (board.color[i] == board.side) {
-            if (board.piece[i]==PAWN) {
-                if (board.side == LIGHT) {
-                    if (COL(i) != 0 && board.color[i - 9] == DARK)
-                        gen_push(workq, board, i, i - 9, 17);
-                    if (COL(i) != 7 && board.color[i - 7] == DARK)
-                        gen_push(workq, board, i, i - 7, 17);
-                    if (i <= 15 && board.color[i - 8] == EMPTY)
-                        gen_push(workq, board, i, i - 8, 16);
-                }
-                if (board.side == DARK) {
-                    if (COL(i) != 0 && board.color[i + 7] == LIGHT)
-                        gen_push(workq, board, i, i + 7, 17);
-                    if (COL(i) != 7 && board.color[i + 9] == LIGHT)
-                        gen_push(workq, board, i, i + 9, 17);
-                    if (i >= 48 && board.color[i + 8] == EMPTY)
-                        gen_push(workq, board, i, i + 8, 16);
-                }
-            }
-            else
-                for (j = 0; j < offsets[board.piece[i]]; ++j)
-                    for (n = i;;) {
-                        n = mailbox[mailbox64[n] + offset[board.piece[i]][j]];
-                        if (n == -1)
-                            break;
-                        if (board.color[n] != EMPTY) {
-                            if (board.color[n] == board.side ^ 1)
-                                gen_push(workq, board, i, n, 1);
-                            break;
-                        }
-                        if (!slide[board.piece[i]])
-                            break;
-                    }
-        }
-    if (board.ep != -1) {
-        if (board.side == LIGHT) {
-            if (COL(board.ep) != 0 && board.color[board.ep + 7] == LIGHT && board.piece[board.ep + 7] == PAWN)
-                gen_push(workq, board, board.ep + 7, board.ep, 21);
-            if (COL(board.ep) != 7 && board.color[board.ep + 9] == LIGHT && board.piece[board.ep + 9] == PAWN)
-                gen_push(workq, board, board.ep + 9, board.ep, 21);
-        }
-        else {
-            if (COL(board.ep) != 0 && board.color[board.ep - 9] == DARK && board.piece[board.ep - 9] == PAWN)
-                gen_push(workq, board, board.ep - 9, board.ep, 21);
-            if (COL(board.ep) != 7 && board.color[board.ep - 7] == DARK && board.piece[board.ep - 7] == PAWN)
-                gen_push(workq, board, board.ep - 7, board.ep, 21);
-        }
-    }
-}
-
-
 /* gen_push() puts a move on the move stack, unless it's a
    pawn promotion that needs to be handled by gen_promote().
    It also assigns a score to the move for alpha-beta move

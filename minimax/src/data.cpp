@@ -3,7 +3,6 @@
  */
 
 
-#include <stdint.h>
 #include "defs.hpp"
 
 int depth[2] = {3,3};
