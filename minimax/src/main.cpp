@@ -48,7 +48,7 @@ int chx_main(int argc, char **argv)
         if (board.side == computer_side) {  /* computer's turn */
 
             /* think about the move and make it */
-            think(workq, board);
+            think(board);
             if (move_to_make.u == 0) {
                 std::cout << "(no legal moves)" << std::endl;
                 computer_side = EMPTY;

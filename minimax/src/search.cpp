@@ -5,12 +5,9 @@
 
 #include "search.hpp"
 
-int nodes;
-
-
 // think() calls search() 
 
-int think(std::vector<gen_t>& workq, node_t& board)
+int think(node_t& board)
 {
     board.ply = 0;
 
@@ -24,8 +21,8 @@ int think(std::vector<gen_t>& workq, node_t& board)
 
 int search(node_t board, int depth)
 {
-    int i, j, val, max;
-    BOOL c, f;
+    int val, max;
+    BOOL f;
 
     /* if we are a leaf node, return the value from the eval() function */
     if (!depth)

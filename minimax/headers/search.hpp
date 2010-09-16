@@ -10,7 +10,7 @@
 #include "board.hpp"
 #include "eval.hpp"
 
-int think(std::vector<gen_t>& workq, node_t& board);
+int think(node_t& board);
 int search(node_t board, int depth);
 int reps(node_t& board);
 #endif
