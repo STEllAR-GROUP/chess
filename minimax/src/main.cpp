@@ -1,5 +1,5 @@
 /*
- *  MAIN.C
+ *  MAIN.CPP
  */
 
 #include "main.hpp"
@@ -39,9 +39,6 @@ int chx_main(int argc, char **argv)
     }
     node_t board;
 
-    if (table)
-        hash_table = new HASHE[hash_table_size];
-
     init_hash();
     init_board(board);
     std::vector<gen_t> workq;
@@ -51,20 +48,22 @@ int chx_main(int argc, char **argv)
         if (board.side == computer_side) {  /* computer's turn */
 
             /* think about the move and make it */
-            think(workq, board, output);
-            if (!pv[0][0].u) {
+            think(workq, board);
+            if (move_to_make.u == 0) {
                 std::cout << "(no legal moves)" << std::endl;
                 computer_side = EMPTY;
                 continue;
             }
             if (output)
-                std::cout << "Computer's move: " << move_str(pv[0][0].b)
+                std::cout << "Computer's move: " << move_str(move_to_make.b)
                           << std::endl;
-            makemove(board, pv[0][0].b);
-            board.ply = 0;
+            makemove(board, move_to_make.b); // Make the move for our master
+                                             // board
+            board.ply = 0; // Reset the board ply to 0
 
-            workq.clear();
-            gen(workq, board);
+            workq.clear(); // Clear the work queue in preparation for next move
+            gen(workq, board); // Populate the work queue with the moves for
+                               // the next board position
 
             if (output)
                 print_board(board, stdout);
@@ -72,6 +71,8 @@ int chx_main(int argc, char **argv)
                 auto_move = print_result(workq, board);
             else
                 print_result(workq, board);
+
+            move_to_make.u = 0; // Reset the move to make
 
             continue;
         }
@@ -113,7 +114,8 @@ int chx_main(int argc, char **argv)
             std::cin >> depth[LIGHT];
             if (depth[LIGHT] <= 0)
             {
-                std::cerr << "Illegal depth given, setting depth to 1." << std::endl;
+                std::cerr << "Illegal depth given, setting depth to 1." 
+                          << std::endl;
                 depth[LIGHT] = 1;
             }
             continue;
@@ -122,21 +124,14 @@ int chx_main(int argc, char **argv)
             std::cin >> depth[DARK];
             if (depth[DARK] <= 0)
             {
-                std::cerr << "Illegal depth given, setting depth to 1." << std::endl;
+                std::cerr << "Illegal depth given, setting depth to 1." 
+                          << std::endl;
                 depth[DARK] = 1;
             }
             continue;
         }
         if (s == "d") {
             print_board(board, stdout);
-            continue;
-        }
-        if (s == "bench") {
-            computer_side = EMPTY;
-            bench();
-            init_board(board);
-            workq.clear();
-            gen(workq, board);
             continue;
         }
         if (s == "o") {
@@ -158,25 +153,13 @@ int chx_main(int argc, char **argv)
             std::cout << "wd n - sets white search depth to n (default 3)" << std::endl;
             std::cout << "bd n - sets black search depth to n (default 3)" << std::endl;
             std::cout << "d - display the board" << std::endl;
-            std::cout << "bench - run the built-in benchmark" << std::endl;
             std::cout << "o - toggles engine output on or off (default on)" << std::endl;
             std::cout << "exit - exit the program" << std::endl;
             std::cout << std::endl;
             continue;
         }
 
-        /* maybe the user entered a move? */
-        m = parse_move(workq, s.c_str());
-        move mov;
-        mov.u = m;
-        if (m == -1 || !makemove(board, mov.b))
-            std::cout << "Illegal move." << std::endl;
-        else {
-            board.ply = 0;
-            workq.clear();
-            gen(workq, board);
-            print_result(workq, board);
-        }
+        std::cout << "Illegal command." << std::endl;
     }
 
     return 0;
@@ -350,86 +333,6 @@ int print_result(std::vector<gen_t>& workq, node_t& board)
     return 1;
 }
 
-
-/* bench: This is a little benchmark code that calculates how many
-   nodes per second CHX searches.
-   It sets the position to move 17 of Bobby Fischer vs. J. Sherwin,
-   New Jersey State Open Championship, 9/2/1957.
-   Then it searches five ply three times. It calculates nodes per
-   second from the best time. */
-
-int bench_color[64] = {
-    6, 1, 1, 6, 6, 1, 1, 6,
-    1, 6, 6, 6, 6, 1, 1, 1,
-    6, 1, 6, 1, 1, 6, 1, 6,
-    6, 6, 6, 1, 6, 6, 0, 6,
-    6, 6, 1, 0, 6, 6, 6, 6,
-    6, 6, 0, 6, 6, 6, 0, 6,
-    0, 0, 0, 6, 6, 0, 0, 0,
-    0, 6, 0, 6, 0, 6, 0, 6
-};
-
-int bench_piece[64] = {
-    6, 3, 2, 6, 6, 3, 5, 6,
-    0, 6, 6, 6, 6, 0, 0, 0,
-    6, 0, 6, 4, 0, 6, 1, 6,
-    6, 6, 6, 1, 6, 6, 1, 6,
-    6, 6, 0, 0, 6, 6, 6, 6,
-    6, 6, 0, 6, 6, 6, 0, 6,
-    0, 0, 4, 6, 6, 0, 2, 0,
-    3, 6, 2, 6, 3, 6, 5, 6
-};
-
-void bench()
-{
-    int i;
-    int t[3];
-    double nps;
-
-    node_t board;
-
-    for (i = 0; i < 64; ++i) {
-        board.color[i] = bench_color[i];
-        board.piece[i] = bench_piece[i];
-    }
-    board.side = LIGHT;
-    board.castle = 0;
-    board.ep = -1;
-    board.fifty = 0;
-    board.ply = 0;
-    board.hply = 0;
-    board.hash = set_hash(board);
-    print_board(board, stdout);
-    depth[LIGHT] = 5;
-    depth[DARK] = 5;
-    std::vector<gen_t> workq;
-    int start_time;
-    int nodes;
-    for (i = 0; i < 3; ++i) {
-        nodes = think(workq, board, 1);
-        //FIXME: add timer code back in
-        //t[i] = (int)(timer.elapsed()*1000);
-        t[i] = 0;
-        std::cout << "Time: " << t[i] << " ms" << std::endl;
-    }
-    if (t[1] < t[0])
-        t[0] = t[1];
-    if (t[2] < t[0])
-        t[0] = t[2];
-    std::cout << std::endl;
-    std::cout << "Nodes: " << nodes << std::endl;
-    std::cout << "Best time: " << t[0] << " ms" << std::endl;
-    if (t[0] == 0) {
-        std::cout << "(invalid)" << std::endl;
-        return;
-    }
-    nps = (double)nodes / (double)t[0];
-    nps *= 1000.0;
-
-    std::cout << "Nodes per second: " << (int)nps 
-              << " (Score: " << (float)nps/177362 << ")" << std::endl;
-
-}
 int parseArgs(int argc, char **argv)
 {
     if (argc == 1)
@@ -438,7 +341,7 @@ int parseArgs(int argc, char **argv)
     }
     option_t *optList, *thisOpt;
     optList = NULL;
-    optList = GetOptList(argc, argv, "w:b:mxoht?");
+    optList = GetOptList(argc, argv, "w:b:mxoh?");
     int flag = 0;
 
     while (optList != NULL)
@@ -454,7 +357,6 @@ int parseArgs(int argc, char **argv)
             printf("-w n        Sets the depth of the white side to n (default 3)\n");
             printf("-b n        Sets the depth of the black side to n (default 3)\n");
             printf("-o          Turns off all engine output\n");
-            printf("-t          Turns off transposition table\n");
             printf("\n");
             FreeOptList(thisOpt);
             exit(0);
@@ -487,9 +389,6 @@ int parseArgs(int argc, char **argv)
                 break;
             case 'o':
                 output = 0;
-                break;
-            case 't':
-                table = 0;
                 break;
         }
         free(thisOpt);

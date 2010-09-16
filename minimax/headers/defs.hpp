@@ -4,9 +4,6 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-//#include "signature.h"
-
-
 #define BOOL            int
 #define TRUE            1
 #define FALSE           0
@@ -49,13 +46,6 @@
 #define COL(x)          (x & 7)
 
 
-#define TABLE_SIZE 26214400
-#define valUNKNOWN -1
-#define    hashfEXACT   0
-#define    hashfALPHA   1
-#define    hashfBETA    2
-
-
 /* This is the basic description of a move. promote is what
    piece to promote the pawn to, if the move is a pawn
    promotion. bits is a bitfield that describes the move,
@@ -84,18 +74,11 @@ typedef union {
 } move;
 
 /* an element of the move stack. it's just a move with a
-   score, so it can be sorted by the search functions. */
+   score, so it can be sorted by the search functions. 
+   (DEPRECATED FOR MINIMAX) */
 typedef struct {
     move m;
     int score;
 } gen_t;
-
-typedef struct {
-    int key;
-    int depth;
-    int flags;
-    int val;
-    move best;
-}   HASHE;
 
 #endif

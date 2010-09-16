@@ -26,15 +26,10 @@ extern int depth[2];
 extern int alpha[2];
 extern int beta[2];
 extern int output;
-extern int table;
-extern int hash_table_size;
 
 ////////////////////////////////////////////////////////////////////////////
 //State Information -- The global variables this program uses and modifies//
 //                     in order to work properly.                         //
 ////////////////////////////////////////////////////////////////////////////
 
-extern HASHE *hash_table;
-extern move pv[MAX_PLY][MAX_PLY];
-extern int pv_length[MAX_PLY];
-extern BOOL follow_pv;
+extern move move_to_make;

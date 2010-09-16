@@ -6,31 +6,18 @@
 #include <stdint.h>
 #include "defs.hpp"
 
- int depth[2] = {3,3};
- int alpha[2] = {-10000, -10000};
- int beta[2] = {10000, 10000};
- 
-/* The hash table. The sizeof(HASHE) == 20 bytes. This means for a 500
- * megabyte hash table, we need 26214400 entries.
- */
+int depth[2] = {3,3};
 
-HASHE *hash_table;
-int hash_table_size = TABLE_SIZE;
+
+move move_to_make; // Global variable keeping track of the next move to
+                   // make at the root level
 
 int output = 1; //Used to tell the engine whether to output or not.
-
-/* a "triangular" PV array; for a good explanation of why a triangular
-   array is needed, see "How Computers Play Chess" by Levy and Newborn. */
-move pv[MAX_PLY][MAX_PLY];
-int pv_length[MAX_PLY];
-BOOL follow_pv;
 
 /* random numbers used to compute hash; see set_hash() in board.c */
 int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
 int hash_side;
 int hash_ep[64];
-
-int table = 1; // Option for whether to use transposition table or not
 
 /* Now we have the mailbox array, so called because it looks like a
    mailbox, at least according to Bob Hyatt. This is useful when we

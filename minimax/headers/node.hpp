@@ -6,8 +6,7 @@
 #include <stdio.h>
 #include "defs.hpp"
 
-class hist_t {
-  public:
+struct hist_t {
     move m;
     int capture;
     int castle;
@@ -16,8 +15,7 @@ class hist_t {
     int hash;
 };
 
-class node_t { 
-  public:
+struct node_t { 
     std::vector<hist_t> hist_dat;
     int hash;
     int color[64];
