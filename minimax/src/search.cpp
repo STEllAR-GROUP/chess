@@ -18,11 +18,6 @@ int think(std::vector<gen_t>& workq, node_t& board, int out)
 {
     int i, j, val;
 
-    /* try the opening book first */
-    pv[0][0].u = book_move(workq, board);
-    if (pv[0][0].u != -1)
-        return 0;
-
     board.ply = 0;
     nodes = 0;
 

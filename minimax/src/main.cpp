@@ -44,7 +44,6 @@ int chx_main(int argc, char **argv)
 
     init_hash();
     init_board(board);
-    open_book();
     std::vector<gen_t> workq;
     gen(workq, board);
 
@@ -179,7 +178,6 @@ int chx_main(int argc, char **argv)
             print_result(workq, board);
         }
     }
-    close_book();
 
     return 0;
 }
@@ -188,7 +186,6 @@ void ctrlc(int s)
 {
     if (!auto_move && computer_side == EMPTY)
     {
-        close_book();
         exit(0);
     }
     auto_move = 0;
@@ -389,10 +386,6 @@ void bench()
     int t[3];
     double nps;
 
-    /* setting the position to a non-initial position confuses the opening
-       book code. */
-    close_book();
-
     node_t board;
 
     for (i = 0; i < 64; ++i) {
@@ -436,7 +429,6 @@ void bench()
     std::cout << "Nodes per second: " << (int)nps 
               << " (Score: " << (float)nps/177362 << ")" << std::endl;
 
-    open_book();
 }
 int parseArgs(int argc, char **argv)
 {

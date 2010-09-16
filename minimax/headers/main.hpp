@@ -7,7 +7,6 @@
 #include "defs.hpp"
 #include "data.hpp"
 #include "search.hpp"
-#include "book.hpp"
 
 int main(int argc, char *argv[]);
 int parse_move(std::vector<gen_t>& workq, const char *s);
