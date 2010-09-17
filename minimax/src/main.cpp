@@ -341,7 +341,7 @@ int parseArgs(int argc, char **argv)
     }
     option_t *optList, *thisOpt;
     optList = NULL;
-    optList = GetOptList(argc, argv, "w:b:mxoh?");
+    optList = GetOptList(argc, argv,"w:b:mxoh?");
     int flag = 0;
 
     while (optList != NULL)

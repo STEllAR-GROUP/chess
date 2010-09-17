@@ -66,7 +66,7 @@
 *                               PROTOTYPES
 ***************************************************************************/
 option_t *MakeOpt(const char option, char *const argument, const int index);
-int MatchOpt(const char argument, char *const options);
+int MatchOpt(const char argument, char const *options);
 
 /***************************************************************************
 *                                FUNCTIONS
@@ -98,7 +98,7 @@ int MatchOpt(const char argument, char *const options);
 *   NOTE: The caller is responsible for freeing up the option list when it
 *         is no longer needed.
 ****************************************************************************/
-option_t *GetOptList(const int argc, char *const argv[], char *const options)
+option_t *GetOptList(const int argc, char *const argv[], char const *options)
 {
     int nextArg;
     option_t *head, *tail;
@@ -242,7 +242,7 @@ void FreeOptList(option_t *list)
 *   Returned   : Index of argument in option list.  Index of end of string
 *                if arguement does not appear in the option list.
 ****************************************************************************/
-int MatchOpt(const char argument, char *const options)
+int MatchOpt(const char argument, char const *options)
 {
     int optIndex = 0;
 
