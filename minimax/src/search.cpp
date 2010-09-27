@@ -17,8 +17,6 @@ int think(node_t& board)
 }
 
 
-/* search() does just that, in negamax fashion */
-
 int search(node_t board, int depth)
 {
     int val, max;

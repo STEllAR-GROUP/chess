@@ -170,20 +170,8 @@ int chx_main(int argc, char **argv)
     return 0;
 }
 
-void ctrlc(int s)
-{
-    if (!auto_move && computer_side == EMPTY)
-    {
-        exit(0);
-    }
-    auto_move = 0;
-    computer_side = EMPTY;
-}
-
 int main(int argc, char *argv[])
 {
-
-    signal( SIGINT, ctrlc); // Catch the SIGINT signal
 
     int retcode = chx_main(argc, argv);
     return retcode;
@@ -388,9 +376,6 @@ int parseArgs(int argc, char **argv)
                     depth[DARK] = 1;
                 }
                 flag = 1;
-                break;
-            case 'x':
-                flag = 0;
                 break;
             case 'o':
                 output = 0;
