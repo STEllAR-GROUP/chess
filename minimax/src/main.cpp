@@ -22,27 +22,32 @@ int chx_main(int argc, char **argv)
     std::string s;
     int m;
 
+    // If there were no command line arguments, display message
     if (!arguments) {
         std::cout << std::endl;
-        std::cout << "HPX Chess (CHX) Serial Version" << std::endl;
-        std::cout << "dev build (feature incomplete)" << std::endl;
+        std::cout << "Chess (CHX) Serial Minimax Version" << std::endl;
         std::cout << "Phillip LeBlanc - CCT" << std::endl;
         std::cout << std::endl;
         std::cout << "\"help\" displays a list of commands." << std::endl;
         std::cout << std::endl;
         computer_side = EMPTY;
     }
-    else
+    else  // Else we start making moves
     {
         computer_side = LIGHT;
         auto_move = 1;
     }
-    node_t board;
+    node_t board;  // The board state is represented in the node_t struct
 
-    init_hash();
-    init_board(board);
-    std::vector<gen_t> workq;
-    gen(workq, board);
+    init_hash();  // Init hash sets up the hashing function
+                  // which is used for determining repeated moves
+    init_board(board);  // Initialize the board to its default state
+    std::vector<gen_t> workq;  // workq is a standard vector which contains
+                               // all possible psuedo-legal moves for the
+                               // current board position
+    gen(workq, board);  // gen() takes the current board position and
+                        // puts all of the psuedo-legal moves for the
+                        // position inside of the workq vector.
 
     for (;;) {
         if (board.side == computer_side) {  /* computer's turn */
@@ -178,7 +183,7 @@ void ctrlc(int s)
 int main(int argc, char *argv[])
 {
 
-    signal( SIGINT, ctrlc);
+    signal( SIGINT, ctrlc); // Catch the SIGINT signal
 
     int retcode = chx_main(argc, argv);
     return retcode;
