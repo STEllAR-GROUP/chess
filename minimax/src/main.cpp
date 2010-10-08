@@ -172,7 +172,6 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-
     int retcode = chx_main(argc, argv);
     return retcode;
 }
@@ -379,6 +378,7 @@ int parseArgs(int argc, char **argv)
                 break;
             case 'o':
                 output = 0;
+                flag = 1;
                 break;
         }
         free(thisOpt);

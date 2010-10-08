@@ -7,3 +7,12 @@ To run type these commands
 
  $ cd src
  $ ./chx
+
+
+Command line options:
+-h          Displays this help message
+-w n        Sets the depth of the white side to n (default 3)
+-b n        Sets the depth of the black side to n (default 3)
+-o          Turns off all engine output
+
+NOTE: Setting any command line parameters will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.
