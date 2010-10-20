@@ -18,8 +18,8 @@ struct hist_t {
 struct node_t { 
     std::vector<hist_t> hist_dat;
     int hash;
-    int color[64];
-    int piece[64];
+    char color[64];
+    char piece[64];
     int depth;
     int side;
     int castle;
