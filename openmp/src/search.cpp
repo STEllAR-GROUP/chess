@@ -43,8 +43,7 @@ int search(node_t board, int depth)
     max = -10000; // Set the max score to -infinity
 
     /* loop through the moves */
-#pragma omp parallel for shared (max, f, move_to_make) \
-                         private( val)
+#pragma omp parallel for shared (max, f, move_to_make) private(val)
     for (int i = 0; i < workq.size(); i++) {
         node_t p_board = board;
 
@@ -62,13 +61,12 @@ int search(node_t board, int depth)
                           // make another move
 
 
+#pragma omp critical
         if (val > max)  // Is this value our maximum?
         {
-#pragma omp critical
           max = val;
 
           if (p_board.ply == 0) {  // If we are at the root level, need to set 
-#pragma omp critical
             move_to_make = g.m;    // the move to make as this one
           }
         }

@@ -5,6 +5,13 @@
 #include "main.hpp"
 #include "optlist.hpp"
 #include <signal.h>
+#include <sys/time.h>
+#include <math.h>
+
+struct timeval startt;
+double sum_exec_times2 = 0;
+double sum_exec_times = 0;
+int count_exec_times;
 
 int parseArgs(int, char**);
 
@@ -34,7 +41,6 @@ int chx_main(int argc, char **argv)
     }
     else  // Else we start making moves
     {
-        computer_side = LIGHT;
         auto_move = 1;
     }
     node_t board;  // The board state is represented in the node_t struct
@@ -69,9 +75,28 @@ int chx_main(int argc, char **argv)
 
             if (output)
                 print_board(board, stdout);
-            if (auto_move)
+            if (auto_move) {
                 auto_move = print_result(workq, board);
-            else
+	    	if(!auto_move) {
+	    	    struct timeval endt;
+	    	    gettimeofday(&endt,0);
+	    	    double st = startt.tv_sec+1.0e-6*startt.tv_usec;
+	    	    double et = endt.tv_sec+1.0e-6*endt.tv_usec;
+		    sum_exec_times += (et-st);
+		    sum_exec_times2 += (et-st)*(et-st);
+		    count_exec_times ++;
+		    std::cout << " count  = " << count_exec_times << std::endl;
+      		    std::cout << " time = " << (et-st) << std::endl;
+		    double avg = sum_exec_times / count_exec_times;
+		    std::cout << " avg  = " << avg << std::endl;
+		    if(count_exec_times > 1) {
+			double f = (1.0*count_exec_times)/(count_exec_times-1);
+		    	double avg2 = sum_exec_times2 / (count_exec_times-1);
+			double stdv = sqrt(avg2-f*avg*avg);
+		    	std::cout << " stdv  = " << stdv << std::endl;
+		    }
+		}
+            } else
                 print_result(workq, board);
 
             move_to_make.u = 0; // Reset the move to make
@@ -103,6 +128,8 @@ int chx_main(int argc, char **argv)
             computer_side = board.side;
             auto_move = 1;
             auto_move = print_result(workq, board);
+	    std::cout << "starting timer" << std::endl;
+	    gettimeofday(&startt,0);
             continue;
         }
         if (s == "new") {
