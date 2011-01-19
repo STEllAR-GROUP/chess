@@ -159,6 +159,7 @@ int chx_main(int argc, char **argv)
             std::cin >> ply_level;
             std::cin >> num_runs;
             start_benchmark(filename, ply_level, num_runs);
+			continue;
         }
         if (s == "help") {
             std::cout << "bench filename ply_level num_runs - starts the benchmark" << std::endl;
@@ -209,6 +210,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
             getline (benchfile,line);
             line_num++;
             //Each line has 8 characters
+			if(line.length()==0)
+				break;
             for (int i = 0; i < 8; i++)
             {
                 c = line.at(i);
