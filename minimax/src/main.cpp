@@ -201,7 +201,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     
     // reading board configuration
     std::string line;
-    std::ifstream benchfile (filename);
+    std::ifstream benchfile(filename.c_str());
     if (benchfile.is_open())
     {
         while ( benchfile.good() )
@@ -218,7 +218,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
                     board.color[spot] = 6;
                     board.piece[spot] = 6;
                 }
-                else if islower(c)
+                else if(islower(c))
                 {
                     board.color[spot] = 1;
                     switch (c)
@@ -246,7 +246,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
                             break;
                     }
                 }
-                else if isupper(c)
+                else if(isupper(c))
                 {
                     board.color[line_num*(i+1)-1] = 0;
                     switch (c)
@@ -279,7 +279,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
         benchfile.close();
     }
     else {
-        cout << "Unable to open file";
+        std::cout << "Unable to open file";
         return;
     }
     
