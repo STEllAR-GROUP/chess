@@ -1,6 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include "node.hpp"
@@ -13,5 +14,6 @@ int parse_move(std::vector<gen_t>& workq, const char *s);
 char *move_str(move_bytes m);
 void print_board(node_t& board, FILE *stream);
 int print_result(std::vector<gen_t>& workq, node_t& board);
+void start_benchmark(std::string filename, int ply_level, int num_runs);
 
 #endif

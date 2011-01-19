@@ -151,7 +151,17 @@ int chx_main(int argc, char **argv)
             std::cout << "Thanks for using CHX!" << std::endl;
             break;
         }
+        if (s == "bench") {
+            std::string filename;
+            int ply_level;
+            int num_runs;
+            std::cin >> filename;
+            std::cin >> ply_level;
+            std::cin >> num_runs;
+            start_benchmark(filename, ply_level, num_runs);
+        }
         if (s == "help") {
+            std::cout << "bench filename ply_level num_runs - starts the benchmark" << std::endl;
             std::cout << "go - computer makes a move" << std::endl;
             std::cout << "auto - computer will continue to make moves until game is over" << std::endl;
             std::cout << "new - starts a new game" << std::endl;
@@ -174,6 +184,110 @@ int main(int argc, char *argv[])
 {
     int retcode = chx_main(argc, argv);
     return retcode;
+}
+
+void start_benchmark(std::string filename, int ply_level, int num_runs)
+{
+    depth[LIGHT] = ply_level;
+    depth[DARK]  = ply_level;
+    
+    node_t board;
+    
+    init_board(board);
+    
+    int line_num = 0;
+    char c;
+    int spot;
+    
+    // reading board configuration
+    std::string line;
+    std::ifstream benchfile (filename);
+    if (benchfile.is_open())
+    {
+        while ( benchfile.good() )
+        {
+            getline (benchfile,line);
+            line_num++;
+            //Each line has 8 characters
+            for (int i = 0; i < 8; i++)
+            {
+                c = line.at(i);
+                spot = line_num*(i+1)-1;
+                if (c == '.')
+                {
+                    board.color[spot] = 6;
+                    board.piece[spot] = 6;
+                }
+                else if islower(c)
+                {
+                    board.color[spot] = 1;
+                    switch (c)
+                    {
+                        case 'k':
+                            board.piece[spot] = 5;
+                            break;
+                        case 'q':
+                            board.piece[spot] = 4;
+                            break;
+                        case 'r':
+                            board.piece[spot] = 3;
+                            break;
+                        case 'b':
+                            board.piece[spot] = 2;
+                            break;
+                        case 'n':
+                            board.piece[spot] = 1;
+                            break;
+                        case 'p':
+                            board.piece[spot] = 0;
+                            break;
+                        default:
+                            //error
+                            break;
+                    }
+                }
+                else if isupper(c)
+                {
+                    board.color[line_num*(i+1)-1] = 0;
+                    switch (c)
+                    {
+                        case 'K':
+                            board.piece[spot] = 5;
+                            break;
+                        case 'Q':
+                            board.piece[spot] = 4;
+                            break;
+                        case 'R':
+                            board.piece[spot] = 3;
+                            break;
+                        case 'B':
+                            board.piece[spot] = 2;
+                            break;
+                        case 'N':
+                            board.piece[spot] = 1;
+                            break;
+                        case 'P':
+                            board.piece[spot] = 0;
+                            break;
+                        default:
+                            //error
+                            break;
+                    }
+                }
+            }
+        }
+        benchfile.close();
+    }
+    else {
+        cout << "Unable to open file";
+        return;
+    }
+    
+    //At this point we have the board position configured to the file specification
+    std::vector<gen_t> workq;
+    gen(workq, board);
+    
+    
 }
 
 
