@@ -323,6 +323,13 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
         else if (t[i] < best_time)
             best_time = t[i];
         std::cout << "time: " << t[i] << " ms" << std::endl;
+        
+        if (move_to_make.u == 0) {
+            std::cout << "(no legal moves)" << std::endl;
+        }
+        else
+            std::cout << "  Computer's move: " << move_str(move_to_make.b)
+                      << std::endl;
     }
     
     for (int i = 0; i < num_runs; ++i)
