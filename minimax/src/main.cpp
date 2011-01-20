@@ -116,6 +116,7 @@ int chx_main(int argc, char **argv)
             continue;
         }
         if (s == "wd") {
+            std::cout << "Set depth of white player: ";
             std::cin >> depth[LIGHT];
             if (depth[LIGHT] <= 0)
             {
@@ -126,6 +127,7 @@ int chx_main(int argc, char **argv)
             continue;
         }
         if (s == "bd") {
+            std::cout << "Set depth of black player: ";
             std::cin >> depth[DARK];
             if (depth[DARK] <= 0)
             {
@@ -155,22 +157,26 @@ int chx_main(int argc, char **argv)
             std::string filename;
             int ply_level;
             int num_runs;
+            std::cout << "Name of file: ";
             std::cin >> filename;
+            std::cout << "Search depth (ply): ";
             std::cin >> ply_level;
+            std::cout << "Number of runs: ";
             std::cin >> num_runs;
+            std::cout << std::endl;
             start_benchmark(filename, ply_level, num_runs);
 			continue;
         }
         if (s == "help") {
-            std::cout << "bench filename ply_level num_runs - starts the benchmark" << std::endl;
-            std::cout << "go - computer makes a move" << std::endl;
-            std::cout << "auto - computer will continue to make moves until game is over" << std::endl;
-            std::cout << "new - starts a new game" << std::endl;
-            std::cout << "wd n - sets white search depth to n (default 3)" << std::endl;
-            std::cout << "bd n - sets black search depth to n (default 3)" << std::endl;
-            std::cout << "d - display the board" << std::endl;
-            std::cout << "o - toggles engine output on or off (default on)" << std::endl;
-            std::cout << "exit - exit the program" << std::endl;
+            std::cout << "bench   - starts the benchmark" << std::endl;
+            std::cout << "go      - computer makes a move" << std::endl;
+            std::cout << "auto    - computer will continue to make moves until game is over" << std::endl;
+            std::cout << "new     - starts a new game" << std::endl;
+            std::cout << "wd      - sets white search depth (default 3)" << std::endl;
+            std::cout << "bd      - sets black search depth (default 3)" << std::endl;
+            std::cout << "d       - display the board" << std::endl;
+            std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
+            std::cout << "exit    - exit the program" << std::endl;
             std::cout << std::endl;
             continue;
         }
@@ -196,7 +202,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     
     init_board(board);
     
-    int line_num = 0;
+    int line_num = -1;
     char c;
     int spot;
     
@@ -210,12 +216,12 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
             getline (benchfile,line);
             line_num++;
             //Each line has 8 characters
-			if(line.length()==0)
+			if(line.length()!=8)
 				break;
             for (int i = 0; i < 8; i++)
             {
                 c = line.at(i);
-                spot = line_num*(i+1)-1;
+                spot = line_num*8+i;
                 if (c == '.')
                 {
                     board.color[spot] = 6;
@@ -251,7 +257,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
                 }
                 else if(isupper(c))
                 {
-                    board.color[line_num*(i+1)-1] = 0;
+                    board.color[spot] = 0;
                     switch (c)
                     {
                         case 'K':
@@ -285,12 +291,52 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
         std::cout << "Unable to open file";
         return;
     }
-    
+    board.side = LIGHT;
+    board.castle = 15;
+    board.ep = -1;
+    board.fifty = 0;
+    board.ply = 0;
+    board.hply = 0;
+    board.hist_dat.resize(10);
+    /* init_hash() must be called before this function */
+    board.hash = set_hash(board);
     //At this point we have the board position configured to the file specification
+    print_board(board, stdout);
     std::vector<gen_t> workq;
     gen(workq, board);
     
+    int start_time;
+    int* t;
+    t = (int *)malloc(sizeof(int)*num_runs);  // Allocate an int array to hold all of the times for the runs
+    double average_time = 0;
+    int best_time = 0;
     
+    for (int i = 0; i < num_runs; ++i) 
+    {
+        std::cout << "Run " << i+1 << " ";
+        fflush(stdout);
+        start_time = get_ms();          // Start the clock
+        think(board);                   // Do the processing
+        t[i] = get_ms() - start_time;   // Measure the time
+        if (i == 0)
+            best_time = t[0];
+        else if (t[i] < best_time)
+            best_time = t[i];
+        std::cout << "time: " << t[i] << " ms" << std::endl;
+    }
+    
+    for (int i = 0; i < num_runs; ++i)
+    {
+        average_time += t[i];
+    }
+    average_time = average_time / num_runs;
+    
+    std::cout << std::endl;
+    std::cout << "Results:" << std::endl;
+    std::cout << "Number of runs:       " << num_runs << std::endl;
+    std::cout << "Time for best run:    " << best_time << " ms"<< std::endl;
+    std::cout << "Average time for run: " << (int)average_time << " ms" << std::endl;
+
 }
 
 
@@ -501,4 +547,13 @@ int parseArgs(int argc, char **argv)
         free(thisOpt);
     }
     return flag;
+}
+
+/* get_ms() gets the current time in milliseconds */
+
+int get_ms()
+{
+    struct timeb timebuffer;
+    ftime(&timebuffer);
+    return (timebuffer.time * 1000) + timebuffer.millitm;
 }
