@@ -6,9 +6,11 @@
 #include "optlist.hpp"
 #include <signal.h>
 
+#ifdef READLINE_SUPPORT
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 
 int parseArgs(int, char**);
 
@@ -24,7 +26,11 @@ int chx_main(int argc, char **argv)
     int arguments = parseArgs(argc,argv);
     
     int m;
+    #ifdef READLINE_SUPPORT
     char *buf;
+    #else
+    std::string s;
+    #endif
 
     // If there were no command line arguments, display message
     if (!arguments) {
@@ -98,16 +104,20 @@ int chx_main(int argc, char **argv)
 
         /* get user input */
         
+        #ifdef READLINE_SUPPORT
         buf = readline("chx> ");
-        
         std::string s(buf);
         free(buf);
+        if (s != "")
+              add_history(s.c_str());
+        #else
+        std::cout << "chx> ";
+        std::cin >> s;
+        #endif
         
         if (s.empty())
             return 0;
             
-        if (s != "")
-              add_history(s.c_str());
         if (s == "go") {
             computer_side = board.side;
             auto_move = 0;
@@ -167,9 +177,17 @@ int chx_main(int argc, char **argv)
         if (s == "bench") {
             int ply_level;
             int num_runs;
+            
+            #ifdef READLINE_SUPPORT
             buf = readline("Name of file:  ");
             std::string filename(buf);
             free(buf);
+            #else
+            std::string filename;
+            std::cout << "Name of file: ";
+            std::cin >> filename;
+            #endif
+            
             std::cout << "Search depth (ply): ";
             std::cin >> ply_level;
             std::cout << "Number of runs: ";
