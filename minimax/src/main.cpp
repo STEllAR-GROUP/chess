@@ -6,6 +6,10 @@
 #include "optlist.hpp"
 #include <signal.h>
 
+#include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 int parseArgs(int, char**);
 
 /* main() is basically an infinite loop that either calls
@@ -18,9 +22,9 @@ int computer_side;
 int chx_main(int argc, char **argv)
 {
     int arguments = parseArgs(argc,argv);
-
-    std::string s;
+    
     int m;
+    char *buf;
 
     // If there were no command line arguments, display message
     if (!arguments) {
@@ -93,10 +97,17 @@ int chx_main(int argc, char **argv)
         }
 
         /* get user input */
-        std::cout << "chx> ";
-        std::cin >> s;
+        
+        buf = readline("chx> ");
+        
+        std::string s(buf);
+        free(buf);
+        
         if (s.empty())
             return 0;
+            
+        if (s != "")
+              add_history(s.c_str());
         if (s == "go") {
             computer_side = board.side;
             auto_move = 0;
@@ -154,11 +165,11 @@ int chx_main(int argc, char **argv)
             break;
         }
         if (s == "bench") {
-            std::string filename;
             int ply_level;
             int num_runs;
-            std::cout << "Name of file: ";
-            std::cin >> filename;
+            buf = readline("Name of file:  ");
+            std::string filename(buf);
+            free(buf);
             std::cout << "Search depth (ply): ";
             std::cin >> ply_level;
             std::cout << "Number of runs: ";
