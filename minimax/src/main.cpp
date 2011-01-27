@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <sstream>
 #endif
 
 int parseArgs(int, char**);
@@ -174,7 +175,8 @@ int chx_main(int argc, char **argv)
             std::cout << "Thanks for using CHX!" << std::endl;
             break;
         }
-        if (s == "bench") {
+		std::string bench = "bench";
+        if (s == bench) {
             int ply_level;
             int num_runs;
             
@@ -196,6 +198,22 @@ int chx_main(int argc, char **argv)
             start_benchmark(filename, ply_level, num_runs);
 			continue;
         }
+		if(s.compare(0,bench.length(),bench)==0) {
+            int ply_level;
+            int num_runs;
+			std::istringstream iss(s);
+			std::string first;
+			iss >> first;
+            
+            std::string filename;
+            iss >> filename;
+            
+            iss >> ply_level;
+            iss >> num_runs;
+            std::cout << std::endl;
+            start_benchmark(filename, ply_level, num_runs);
+			continue;
+		}
         if (s == "help") {
             std::cout << "bench   - starts the benchmark" << std::endl;
             std::cout << "go      - computer makes a move" << std::endl;
@@ -234,6 +252,10 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     int line_num = -1;
     char c;
     int spot;
+
+	std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
+	std::cout << "  ply level: " << ply_level << std::endl;
+	std::cout << "  num runs: " << num_runs << std::endl;
     
     // reading board configuration
     std::string line;

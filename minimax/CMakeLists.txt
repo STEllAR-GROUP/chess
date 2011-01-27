@@ -14,6 +14,6 @@ ENDIF (READLINE_FOUND)
 include_directories ("${PROJECT_SOURCE_DIR}/headers")
 include_directories ("${PROJECT_SOURCE_DIR}/liboptlist")
 add_subdirectory (liboptlist)
-set (EXTRA_LIBS ${EXTRA_LIBS} optlist readline)
+set (EXTRA_LIBS ${EXTRA_LIBS} optlist readline ncurses)
 
 add_subdirectory (src)
