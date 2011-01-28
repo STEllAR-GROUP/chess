@@ -10,9 +10,9 @@ To run type these commands
 You then get an interactive prompt ("chx>"). At the prompt you can run
 the benchmark by typing:
 
-    bench inputs/board2 3 4
+    bench ../inputs/board2 3 4
 
-This will load the board from file inputs/board2, and evaluate the solution to ply depth 3 and do it 4 times. The program will display the best move, as well as the time for each board evaluation, the average time, and the best time.
+This will load the board from file ../inputs/board2, and evaluate the solution to ply depth 3 and do it 4 times. The program will display the best move, as well as the time for each board evaluation, the average time, and the best time.
 
 When the readline package is enabled, the user will be able to access command line history to edit and re-execute commands.
 
@@ -21,5 +21,6 @@ Command line options:
 -w n        Sets the depth of the white side to n (default 3)
 -b n        Sets the depth of the black side to n (default 3)
 -o          Turns off all engine output
+-e			Sets the evaluation method to simple material evaluation
 
 NOTE: Setting any command line parameters will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.

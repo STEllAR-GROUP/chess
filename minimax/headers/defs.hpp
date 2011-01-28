@@ -8,10 +8,6 @@
 #define TRUE            1
 #define FALSE           0
 
-#define GEN_STACK       1120
-#define MAX_PLY         32
-#define HIST_STACK      400
-
 #define LIGHT           0
 #define DARK            1
 
@@ -23,6 +19,10 @@
 #define KING            5
 
 #define EMPTY           6
+
+// Evaluator Defs
+#define ORIGINAL        0
+#define SIMPLE          1
 
 /* useful squares */
 #define A1              56

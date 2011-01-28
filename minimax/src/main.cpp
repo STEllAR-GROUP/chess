@@ -214,8 +214,19 @@ int chx_main(int argc, char **argv)
             start_benchmark(filename, ply_level, num_runs);
 			continue;
 		}
+		if (s == "eval") {
+		    if (chosen_evaluator == ORIGINAL) {
+                std::cout << "Switching evaluator to simple material evaluator" << std::endl;
+                chosen_evaluator = SIMPLE;
+            } else if (chosen_evaluator == SIMPLE) {
+                std::cout << "Switching evaluator to original evaluator" << std::endl;
+                chosen_evaluator = ORIGINAL;
+            }
+            continue;
+		}
         if (s == "help") {
             std::cout << "bench   - starts the benchmark" << std::endl;
+            std::cout << "eval    - switches the current move evaluator in use" << std::endl;
             std::cout << "go      - computer makes a move" << std::endl;
             std::cout << "auto    - computer will continue to make moves until game is over" << std::endl;
             std::cout << "new     - starts a new game" << std::endl;
@@ -256,6 +267,11 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 	std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
 	std::cout << "  ply level: " << ply_level << std::endl;
 	std::cout << "  num runs: " << num_runs << std::endl;
+	if (chosen_evaluator == ORIGINAL) {
+        std::cout << "  evaluator: original" << std::endl;
+    } else if (chosen_evaluator == SIMPLE) {
+        std::cout << "  evaluator: simple" << std::endl;
+    }
     
     // reading board configuration
     std::string line;
@@ -349,7 +365,6 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     board.ply = 0;
     board.hply = 0;
     board.hist_dat.resize(10);
-    /* init_hash() must be called before this function */
     board.hash = set_hash(board);
     //At this point we have the board position configured to the file specification
     print_board(board, stdout);
@@ -554,7 +569,7 @@ int parseArgs(int argc, char **argv)
     }
     option_t *optList, *thisOpt;
     optList = NULL;
-    optList = GetOptList(argc, argv,"w:b:mxoh?");
+    optList = GetOptList(argc, argv,"w:b:mxohe?");
     int flag = 0;
 
     while (optList != NULL)
@@ -570,6 +585,7 @@ int parseArgs(int argc, char **argv)
             printf("-w n        Sets the depth of the white side to n (default 3)\n");
             printf("-b n        Sets the depth of the black side to n (default 3)\n");
             printf("-o          Turns off all engine output\n");
+            printf("-e          Sets the evaluation method to simple material evaluation\n");
             printf("\n");
             FreeOptList(thisOpt);
             exit(0);
@@ -600,6 +616,10 @@ int parseArgs(int argc, char **argv)
             case 'o':
                 output = 0;
                 flag = 1;
+                break;
+            case 'e':
+                flag = 1;
+                chosen_evaluator = SIMPLE;
                 break;
         }
         free(thisOpt);

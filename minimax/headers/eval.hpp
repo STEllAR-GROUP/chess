@@ -15,7 +15,9 @@
 #define ROOK_OPEN_FILE_BONUS		15
 #define ROOK_ON_SEVENTH_BONUS		20
 
-int eval(node_t& board);
+int eval(node_t& board, int evaluator);
+int eval_simple(node_t& board);
+int eval_orig(node_t& board);
 int eval_light_pawn(int sq);
 int eval_dark_pawn(int sq);
 int eval_light_king(int sq);

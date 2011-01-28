@@ -13,6 +13,8 @@ move move_to_make; // Global variable keeping track of the next move to
 
 int output = 1; //Used to tell the engine whether to output or not.
 
+int chosen_evaluator = ORIGINAL; // Which evaluation function to use
+
 /* random numbers used to compute hash; see set_hash() in board.c */
 int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
 int hash_side;

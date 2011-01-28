@@ -93,7 +93,59 @@ int pawn_rank[2][10];
 int piece_mat[2];  /* the value of a side's pieces */
 int pawn_mat[2];  /* the value of a side's pawns */
 
-int eval(node_t& board)
+int eval(node_t& board, int evaluator)
+{
+    // Interface function that selects which evaluator to use
+    
+    if (evaluator == ORIGINAL)
+        return eval_orig(board);
+    else
+        return eval_simple(board);
+}
+
+int eval_simple(node_t& board)
+{
+    // A simple material evaluator
+    
+    enum material_weight {KING_WEIGHT = 200, QUEEN_WEIGHT = 9, ROOK_WEIGHT = 5, BISHOP_WEIGHT = 3, KNIGHT_WEIGHT = 3, PAWN_WEIGHT = 1};
+    
+    int score[2];
+    int i;
+    score[LIGHT]=0;
+    score[DARK]=0;
+    
+    for (i = 0; i < 64; ++i)
+    {
+        if (board.color[i] == EMPTY)
+            continue;
+        switch (board.piece[i]) {
+            case KING:
+                score[board.color[i]]+=KING_WEIGHT;
+                break;
+            case QUEEN:
+                score[board.color[i]]+=QUEEN_WEIGHT;
+                break;
+            case ROOK:
+                score[board.color[i]]+=ROOK_WEIGHT;
+                break;
+            case BISHOP:
+                score[board.color[i]]+=BISHOP_WEIGHT;
+                break;
+            case KNIGHT:
+                score[board.color[i]]+=KNIGHT_WEIGHT;
+                break;
+            case PAWN:
+                score[board.color[i]]+=PAWN_WEIGHT;
+                break;
+        }
+    }
+    
+    if (board.side == LIGHT)
+        return score[LIGHT] - score[DARK];
+    return score[DARK] - score[LIGHT];
+}
+
+int eval_orig(node_t& board)
 {
     int i;
     int f;  /* file */
