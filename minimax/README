@@ -7,7 +7,14 @@ To run type these commands
 
  $ cd src
  $ ./chx
+You then get an interactive prompt ("chx>"). At the prompt you can run
+the benchmark by typing:
 
+    bench inputs/board2 3 4
+
+This will load the board from file inputs/board2, and evaluate the solution to ply depth 3 and do it 4 times. The program will display the best move, as well as the time for each board evaluation, the average time, and the best time.
+
+When the readline package is enabled, the user will be able to access command line history to edit and re-execute commands.
 
 Command line options:
 -h          Displays this help message
