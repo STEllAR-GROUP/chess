@@ -5,6 +5,8 @@
 #include "main.hpp"
 #include "optlist.hpp"
 #include <signal.h>
+#include <fstream>
+#include <time.h>
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
@@ -82,7 +84,7 @@ int chx_main(int argc, char **argv)
                                // the next board position
 
             if (output)
-                print_board(board, stdout);
+                print_board(board, std::cout);
             if (auto_move)
                 auto_move = print_result(workq, board);
             else
@@ -160,7 +162,7 @@ int chx_main(int argc, char **argv)
             continue;
         }
         if (s == "d") {
-            print_board(board, stdout);
+            print_board(board, std::cout);
             continue;
         }
         if (s == "o") {
@@ -263,14 +265,26 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     int line_num = -1;
     char c;
     int spot;
+    
+    // Logging to file code
+    std::string logfilename = get_log_name();
+    
+    std::ofstream logfile;
+    logfile.open(logfilename.c_str());
 
 	std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
 	std::cout << "  ply level: " << ply_level << std::endl;
 	std::cout << "  num runs: " << num_runs << std::endl;
+	
+	logfile << "Using benchmark file: '" << filename << "'" << std::endl;
+	logfile << "  ply level: " << ply_level << std::endl;
+	logfile << "  num runs: " << num_runs << std::endl;
 	if (chosen_evaluator == ORIGINAL) {
         std::cout << "  evaluator: original" << std::endl;
+        logfile << "  evaluator: original" << std::endl;
     } else if (chosen_evaluator == SIMPLE) {
         std::cout << "  evaluator: simple" << std::endl;
+        logfile << "  evaluator: simple" << std::endl;
     }
     
     // reading board configuration
@@ -356,6 +370,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     }
     else {
         std::cout << "Unable to open file";
+        logfile << "Unable to open file";
         return;
     }
     board.side = LIGHT;
@@ -367,7 +382,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     board.hist_dat.resize(10);
     board.hash = set_hash(board);
     //At this point we have the board position configured to the file specification
-    print_board(board, stdout);
+    print_board(board, std::cout);
+    print_board(board, logfile);
     std::vector<gen_t> workq;
     gen(workq, board);
     
@@ -380,6 +396,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     for (int i = 0; i < num_runs; ++i) 
     {
         std::cout << "Run " << i+1 << " ";
+        logfile << "Run " << i+1 << " ";
         fflush(stdout);
         start_time = get_ms();          // Start the clock
         think(board);                   // Do the processing
@@ -389,13 +406,20 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
         else if (t[i] < best_time)
             best_time = t[i];
         std::cout << "time: " << t[i] << " ms" << std::endl;
+        logfile << "time: " << t[i] << " ms" << std::endl;
         
         if (move_to_make.u == 0) {
             std::cout << "(no legal moves)" << std::endl;
+            logfile << "time: " << t[i] << " ms" << std::endl;
         }
         else
+        {
             std::cout << "  Computer's move: " << move_str(move_to_make.b)
                       << std::endl;
+            
+            logfile << "  Computer's move: " << move_str(move_to_make.b)
+                      << std::endl;
+        }
     }
     
     for (int i = 0; i < num_runs; ++i)
@@ -409,6 +433,12 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     std::cout << "Number of runs:       " << num_runs << std::endl;
     std::cout << "Time for best run:    " << best_time << " ms"<< std::endl;
     std::cout << "Average time for run: " << (int)average_time << " ms" << std::endl;
+    
+    logfile << std::endl;
+    logfile << "Results:" << std::endl;
+    logfile << "Number of runs:       " << num_runs << std::endl;
+    logfile << "Time for best run:    " << best_time << " ms"<< std::endl;
+    logfile << "Average time for run: " << (int)average_time << " ms" << std::endl;
 
 }
 
@@ -499,27 +529,34 @@ char *move_str(move_bytes m)
 
 /* print_board() prints the board */
 
-void print_board(node_t& board, FILE *stream)
+void print_board(node_t& board, std::ostream& out)
 {
     int i;
 
-    fprintf(stream, "\n8 ");
+    //fprintf(stream, "\n8 ");
+    out << std::endl << "8 ";
     for (i = 0; i < 64; ++i) {
         switch (board.color[i]) {
             case EMPTY:
-                fprintf(stream, " .");
+                //fprintf(stream, " .");
+                out << " .";
                 break;
             case LIGHT:
-                fprintf(stream, " %c", piece_char[board.piece[i]]);
+                //fprintf(stream, " %c", piece_char[board.piece[i]]);
+                out << " " << piece_char[board.piece[i]];
                 break;
             case DARK:
-                fprintf(stream, " %c", piece_char[board.piece[i]] + ('a' - 'A'));
+                //fprintf(stream, " %c", piece_char[board.piece[i]] + ('a' - 'A'));
+                char ch = (piece_char[board.piece[i]] + ('a' - 'A'));
+                out << " " << ch;
                 break;
         }
         if ((i + 1) % 8 == 0 && i != 63)
-            fprintf(stream, "\n%d ", 7 - ROW(i));
+            out << std::endl << 7 - ROW(i) << " ";
+            //fprintf(stream, "\n%d ", 7 - ROW(i));
     }
-    fprintf(stream, "\n\n   a b c d e f g h\n\n");
+    out << std::endl << std::endl << "   a b c d e f g h" << std::endl << std::endl;
+    //fprintf(stream, "\n\n   a b c d e f g h\n\n");
 }
 
 
@@ -634,4 +671,36 @@ int get_ms()
     struct timeb timebuffer;
     ftime(&timebuffer);
     return (timebuffer.time * 1000) + timebuffer.millitm;
+}
+
+std::string get_log_name()
+{
+    time_t rawtime;
+    struct tm * timeinfo;
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    
+    std::stringstream logfilenamestream;
+    logfilenamestream << (timeinfo->tm_year+1900) << ".";
+    
+    if ((timeinfo->tm_mon+1) < 10)
+        logfilenamestream << "0";
+    logfilenamestream << (timeinfo->tm_mon+1) << ".";
+    if ((timeinfo->tm_mday) < 10)
+        logfilenamestream << "0";
+    logfilenamestream << (timeinfo->tm_mday) << ".";
+    if ((timeinfo->tm_hour) < 10)
+        logfilenamestream << "0";
+    logfilenamestream << (timeinfo->tm_hour) << ":"; 
+    if (timeinfo->tm_min+1 < 10)
+        logfilenamestream << "0";
+    logfilenamestream << (timeinfo->tm_min+1) << ":";
+    if (timeinfo->tm_sec+1 < 10)
+        logfilenamestream << "0";
+    logfilenamestream << (timeinfo->tm_sec+1) << ".chx_bench.log";
+                      
+    std::string logfilename;
+    logfilename = logfilenamestream.str();
+    
+    return logfilename;
 }
