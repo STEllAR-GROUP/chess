@@ -42,27 +42,34 @@ int search(node_t board, int depth)
 
     max = -10000; // Set the max score to -infinity
 
-    /* loop through the moves */
-    while (workq.size() != 0) {
-        gen_t g = workq.back(); // Get the move at the end
-        workq.pop_back();       // Remove it from the work queue
+    // loop through the moves
+    
+#pragma omp parallel for shared (max, f, move_to_make) private(val)
+    for (int i = 0; i < workq.size(); i++) {
+        node_t p_board = board;
 
-        if (!makemove(board, g.m.b)) { // Make the move, if it isn't 
+        gen_t g = workq[i];
+
+        if (!makemove(p_board, g.m.b)) { // Make the move, if it isn't 
             continue;                  // legal, then go to the next one
         }
         
-        f = TRUE;  // We have at least one legal move
-        val = -search(board, depth - 1); // Recursively search this new board
+        if (f == FALSE) {
+#pragma omp critical
+            f = TRUE;  // We have at least one legal move
+        }
+        val = -search(p_board, depth - 1); // Recursively search this new board
                                          // position for its score
-        takeback(board);  // Lets go back to our original board so we can
+        takeback(p_board);  // Lets go back to our original board so we can
                           // make another move
 
 
+#pragma omp critical
         if (val > max)  // Is this value our maximum?
         {
           max = val;
 
-          if (board.ply == 0) {  // If we are at the root level, need to set 
+          if (p_board.ply == 0) {  // If we are at the root level, need to set 
             move_to_make = g.m;    // the move to make as this one
           }
         }

@@ -6,7 +6,8 @@
 #include "optlist.hpp"
 #include <signal.h>
 #include <fstream>
-#include <time.h>
+#include <sys/time.h>
+#include <math.h>
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
@@ -14,6 +15,15 @@
 #include <readline/history.h>
 #include <sstream>
 #endif
+
+#ifdef OPENMP_SUPPORT
+#include <omp.h>
+#endif
+
+struct timeval startt;
+double sum_exec_times2 = 0;
+double sum_exec_times = 0;
+int count_exec_times;
 
 int parseArgs(int, char**);
 
@@ -38,7 +48,7 @@ int chx_main(int argc, char **argv)
     // If there were no command line arguments, display message
     if (!arguments) {
         std::cout << std::endl;
-        std::cout << "Chess (CHX) Serial Minimax Version" << std::endl;
+        std::cout << "Chess (CHX) OpenMP Minimax Version" << std::endl;
         std::cout << "Phillip LeBlanc - CCT" << std::endl;
         std::cout << std::endl;
         std::cout << "\"help\" displays a list of commands." << std::endl;
@@ -173,6 +183,15 @@ int chx_main(int argc, char **argv)
                 std::cout << "Output is now off" << std::endl;
             continue;
         }
+        #ifdef OPENMP_SUPPORT
+        if (s == "nt") {
+            int nt;
+            std::cout << "Set number of threads: ";
+            std::cin >> nt;
+            omp_set_num_threads(nt);
+            continue;
+        }
+        #endif
         if ((s == "exit")||(s == "quit")) {
             std::cout << "Thanks for using CHX!" << std::endl;
             break;
@@ -237,6 +256,9 @@ int chx_main(int argc, char **argv)
             std::cout << "d       - display the board" << std::endl;
             std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
             std::cout << "exit    - exit the program" << std::endl;
+            #ifdef OPENMP_SUPPORT
+            std::cout << "nt      - sets the number of threads for parallel execution" << std::endl;
+            #endif
             std::cout << std::endl;
             continue;
         }
@@ -275,10 +297,16 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 	std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
 	std::cout << "  ply level: " << ply_level << std::endl;
 	std::cout << "  num runs: " << num_runs << std::endl;
+	#ifdef OPENMP_SUPPORT
+    std::cout << "  num threads: " << omp_get_num_threads() << std::endl;
+    #endif
 	
 	logfile << "Using benchmark file: '" << filename << "'" << std::endl;
 	logfile << "  ply level: " << ply_level << std::endl;
 	logfile << "  num runs: " << num_runs << std::endl;
+	#ifdef OPENMP_SUPPORT
+    logfile << "  num threads: " << omp_get_num_threads() << std::endl;
+    #endif
 	if (chosen_evaluator == ORIGINAL) {
         std::cout << "  evaluator: original" << std::endl;
         logfile << "  evaluator: original" << std::endl;
@@ -393,7 +421,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     double average_time = 0;
     int best_time = 0;
     
-    for (int i = 0; i < num_runs; ++i) 
+    for (int i = 0; i < num_runs; ++i)
     {
         std::cout << "Run " << i+1 << " ";
         logfile << "Run " << i+1 << " ";
@@ -439,6 +467,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     logfile << "Number of runs:       " << num_runs << std::endl;
     logfile << "Time for best run:    " << best_time << " ms"<< std::endl;
     logfile << "Average time for run: " << (int)average_time << " ms" << std::endl;
+    
+    logfile.close(); // Close the open file
 
 }
 
@@ -606,7 +636,11 @@ int parseArgs(int argc, char **argv)
     }
     option_t *optList, *thisOpt;
     optList = NULL;
+    #ifdef OPENMP_SUPPORT
+    optList = GetOptList(argc, argv,"w:b:mxohet:?");
+    #else
     optList = GetOptList(argc, argv,"w:b:mxohe?");
+    #endif
     int flag = 0;
 
     while (optList != NULL)
@@ -623,6 +657,9 @@ int parseArgs(int argc, char **argv)
             printf("-b n        Sets the depth of the black side to n (default 3)\n");
             printf("-o          Turns off all engine output\n");
             printf("-e          Sets the evaluation method to simple material evaluation\n");
+            #ifdef OPENMP_SUPPORT
+            printf("-t n        Sets the number of threads to n\n");
+            #endif
             printf("\n");
             FreeOptList(thisOpt);
             exit(0);
@@ -658,6 +695,11 @@ int parseArgs(int argc, char **argv)
                 flag = 1;
                 chosen_evaluator = SIMPLE;
                 break;
+            #ifdef OPENMP_SUPPORT
+            case 't':
+                omp_set_num_threads(atoi(thisOpt->argument));
+                break;
+            #endif
         }
         free(thisOpt);
     }

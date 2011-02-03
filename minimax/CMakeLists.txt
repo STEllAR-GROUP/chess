@@ -4,16 +4,25 @@ SET (CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(Readline)
+find_package(OpenMP)
 
 IF (READLINE_FOUND)
 	SET( CMAKE_CXX_FLAGS "-D READLINE_SUPPORT")
+	set (EXTRA_LIBS ${EXTRA_LIBS} readline)
 ELSE (READLINE_FOUND)
 	MESSAGE(STATUS "Disabling GNU Readline: Not found")
 ENDIF (READLINE_FOUND)
 
+IF (OPENMP_FOUND)
+	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D OPENMP_SUPPORT")
+	MESSAGE(STATUS "Enabling OpenMP Support")
+ELSE (OPENMP_FOUND)
+	MESSAGE(STATUS "Disabling OpenMP Support: Not found")
+ENDIF (OPENMP_FOUND)
+
 include_directories ("${PROJECT_SOURCE_DIR}/headers")
 include_directories ("${PROJECT_SOURCE_DIR}/liboptlist")
 add_subdirectory (liboptlist)
-set (EXTRA_LIBS ${EXTRA_LIBS} optlist readline ncurses)
+set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses)
 
 add_subdirectory (src)
