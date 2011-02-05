@@ -48,7 +48,11 @@ int chx_main(int argc, char **argv)
     // If there were no command line arguments, display message
     if (!arguments) {
         std::cout << std::endl;
+        #ifdef OPENMP_SUPPORT
         std::cout << "Chess (CHX) OpenMP Minimax Version" << std::endl;
+        #else
+        std::cout << "Chess (CHX) Serial Minimax Version" << std::endl;
+        #endif
         std::cout << "Phillip LeBlanc - CCT" << std::endl;
         std::cout << std::endl;
         std::cout << "\"help\" displays a list of commands." << std::endl;
@@ -184,10 +188,23 @@ int chx_main(int argc, char **argv)
             continue;
         }
         #ifdef OPENMP_SUPPORT
-        if (s == "nt") {
+        std::string nt = "nt";
+        if (s == nt) {
             int nt;
             std::cout << "Set number of threads: ";
             std::cin >> nt;
+            number_threads = nt;
+            omp_set_num_threads(nt);
+            continue;
+        }
+        if (s.compare(0,nt.length(),nt)==0) {
+            int nt;
+            std::istringstream iss(s);
+            std::string first;
+            iss >> first;
+            
+            iss >> nt;
+            number_threads = nt;
             omp_set_num_threads(nt);
             continue;
         }
@@ -271,6 +288,7 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+    number_threads = omp_get_num_threads();
     int retcode = chx_main(argc, argv);
     return retcode;
 }
@@ -298,14 +316,14 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 	std::cout << "  ply level: " << ply_level << std::endl;
 	std::cout << "  num runs: " << num_runs << std::endl;
 	#ifdef OPENMP_SUPPORT
-    std::cout << "  num threads: " << omp_get_num_threads() << std::endl;
+    std::cout << "  num threads: " << number_threads << std::endl;
     #endif
 	
 	logfile << "Using benchmark file: '" << filename << "'" << std::endl;
 	logfile << "  ply level: " << ply_level << std::endl;
 	logfile << "  num runs: " << num_runs << std::endl;
 	#ifdef OPENMP_SUPPORT
-    logfile << "  num threads: " << omp_get_num_threads() << std::endl;
+    logfile << "  num threads: " << number_threads << std::endl;
     #endif
 	if (chosen_evaluator == ORIGINAL) {
         std::cout << "  evaluator: original" << std::endl;
@@ -697,7 +715,9 @@ int parseArgs(int argc, char **argv)
                 break;
             #ifdef OPENMP_SUPPORT
             case 't':
-                omp_set_num_threads(atoi(thisOpt->argument));
+                int nt = atoi(thisOpt->argument);
+                number_threads = nt;
+                omp_set_num_threads(nt);
                 break;
             #endif
         }

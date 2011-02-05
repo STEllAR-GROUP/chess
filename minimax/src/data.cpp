@@ -7,6 +7,9 @@
 
 int depth[2] = {3,3};
 
+#ifdef OPENMP_SUPPORT
+int number_threads = 1;
+#endif
 
 move move_to_make; // Global variable keeping track of the next move to
                    // make at the root level

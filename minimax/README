@@ -1,7 +1,8 @@
 To build CHX type these commands (requires CMake)
 Note: By default CHX will build with OpenMP support if your compiler supports it.
-  To disable OpenMP manually run the command: (doesn't work right now, will always build it by default. Silly CMake.)
+  To disable OpenMP manually, run the command:
 		$ cmake . -DOPENMP=FALSE
+  otherwise run the following command.
 
  $ cmake .
  $ make
