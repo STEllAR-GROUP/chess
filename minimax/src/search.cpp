@@ -1,5 +1,5 @@
 /*
- *  SEARCH.C
+ *  search.cpp
  */
 
 
@@ -22,7 +22,7 @@ int search(node_t board, int depth)
     int val, max;
     BOOL f;
 
-    /* if we are a leaf node, return the value from the eval() function */
+    // if we are a leaf node, return the value from the eval() function
     if (!depth)
     {
       return eval(board, chosen_evaluator);
@@ -75,7 +75,7 @@ int search(node_t board, int depth)
         }
     }
 
-    /* no legal moves? then we're in checkmate or stalemate */
+    // no legal moves? then we're in checkmate or stalemate
     if (!f) {
         if (in_check(board, board.side))
             return -10000 + board.ply;
@@ -83,7 +83,7 @@ int search(node_t board, int depth)
             return 0;
     }
 
-    /* fifty move draw rule */
+    // fifty move draw rule
     if (board.fifty >= 100)
         return 0;
 

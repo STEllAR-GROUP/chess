@@ -1,5 +1,5 @@
 /*
- *  MAIN.CPP
+ *  main.cpp
  */
 
 #include "main.hpp"
@@ -77,9 +77,9 @@ int chx_main(int argc, char **argv)
                         // position inside of the workq vector.
 
     for (;;) {
-        if (board.side == computer_side) {  /* computer's turn */
+        if (board.side == computer_side) {  // computer's turn
 
-            /* think about the move and make it */
+            // think about the move and make it
             think(board);
             if (move_to_make.u == 0) {
                 std::cout << "(no legal moves)" << std::endl;
@@ -119,7 +119,7 @@ int chx_main(int argc, char **argv)
             break;
         }
 
-        /* get user input */
+        // get user input
         
         #ifdef READLINE_SUPPORT
         buf = readline("chx> ");
@@ -498,7 +498,7 @@ int parse_move(std::vector<gen_t>& workq, const char *s)
 {
     int from, to, i;
 
-    /* make sure the string looks like a move */
+    // make sure the string looks like a move
     if (s[0] < 'a' || s[0] > 'h' ||
             s[1] < '0' || s[1] > '9' ||
             s[2] < 'a' || s[2] > 'h' ||
@@ -530,12 +530,12 @@ int parse_move(std::vector<gen_t>& workq, const char *s)
         }
     }
 
-    /* didn't find the move */
+    // didn't find the move
     return -1;
 }
 
 
-/* move_str returns a string with move m in coordinate notation */
+// move_str returns a string with move m in coordinate notation
 
 char *move_str(move_bytes m)
 {
@@ -575,36 +575,30 @@ char *move_str(move_bytes m)
 }
 
 
-/* print_board() prints the board */
+// print_board() prints the board
 
 void print_board(node_t& board, std::ostream& out)
 {
     int i;
 
-    //fprintf(stream, "\n8 ");
     out << std::endl << "8 ";
     for (i = 0; i < 64; ++i) {
         switch (board.color[i]) {
             case EMPTY:
-                //fprintf(stream, " .");
                 out << " .";
                 break;
             case LIGHT:
-                //fprintf(stream, " %c", piece_char[board.piece[i]]);
                 out << " " << piece_char[board.piece[i]];
                 break;
             case DARK:
-                //fprintf(stream, " %c", piece_char[board.piece[i]] + ('a' - 'A'));
                 char ch = (piece_char[board.piece[i]] + ('a' - 'A'));
                 out << " " << ch;
                 break;
         }
         if ((i + 1) % 8 == 0 && i != 63)
             out << std::endl << 7 - ROW(i) << " ";
-            //fprintf(stream, "\n%d ", 7 - ROW(i));
     }
     out << std::endl << std::endl << "   a b c d e f g h" << std::endl << std::endl;
-    //fprintf(stream, "\n\n   a b c d e f g h\n\n");
 }
 
 
@@ -615,7 +609,7 @@ int print_result(std::vector<gen_t>& workq, node_t& board)
 {
     int i;
 
-    /* is there a legal move? */
+    // is there a legal move?
     for (i = 0; i < workq.size() ; ++i) { 
         if (makemove(board, workq[i].m.b)) {
             takeback(board);
@@ -726,7 +720,7 @@ int parseArgs(int argc, char **argv)
     return flag;
 }
 
-/* get_ms() gets the current time in milliseconds */
+// get_ms() gets the current time in milliseconds
 
 int get_ms()
 {

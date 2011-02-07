@@ -1,11 +1,11 @@
 /*
- *  BOARD.C
+ *  board.cpp
  */
 
 
 #include "board.hpp"
 
-/* init_board() sets the board to the initial game state. */
+// init_board() sets the board to the initial game state.
 
 void init_board(node_t& board)
 {
@@ -22,12 +22,12 @@ void init_board(node_t& board)
     board.ply = 0;
     board.hply = 0;
     board.hist_dat.resize(10);
-    /* init_hash() must be called before this function */
+    // init_hash() must be called before this function
     board.hash = set_hash(board);  
 }
 
 
-/* init_hash() initializes the random numbers used by set_hash(). */
+// init_hash() initializes the random numbers used by set_hash().
 
 void init_hash()
 {
@@ -154,7 +154,7 @@ void gen(std::vector<gen_t>& workq, node_t& board)
 {
     int i, j, n;
 
-    /* so far, we have no moves for the current ply */
+    // so far, we have no moves for the current ply
 
     for (i = 0; i < 64; ++i)
         if (board.color[i] == board.side) {
@@ -199,7 +199,7 @@ void gen(std::vector<gen_t>& workq, node_t& board)
                     }
         }
 
-    /* generate castle moves */
+    // generate castle moves
     if (board.side == LIGHT) {
         if (board.castle & 1)
             gen_push(workq, board, E1, G1, 2);
@@ -213,7 +213,7 @@ void gen(std::vector<gen_t>& workq, node_t& board)
             gen_push(workq, board, E8, C8, 2);
     }
     
-    /* generate en passant moves */
+    // generate en passant moves
     if (board.ep != -1) {
         if (board.side == LIGHT) {
             if (COL(board.ep) != 0 && board.color[board.ep + 7] == LIGHT && board.piece[board.ep + 7] == PAWN)
@@ -341,7 +341,7 @@ BOOL makemove(node_t& board, move_bytes m)
         board.piece[from] = EMPTY;
     }
 
-    /* back up information so we can take the move back later. */
+    // back up information so we can take the move back later.
 
     if (board.hply >= board.hist_dat.size())
     {
@@ -406,7 +406,7 @@ BOOL makemove(node_t& board, move_bytes m)
 }
 
 
-/* takeback() is very similar to makemove(), only backwards :)  */
+// takeback() is very similar to makemove(), only backwards :)
 
 void takeback(node_t& board)
 {

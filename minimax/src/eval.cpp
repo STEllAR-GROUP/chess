@@ -1,10 +1,10 @@
 /*
- *  EVAL.CPP
+ *  eval.cpp
  */
 
 #include "eval.hpp"
 
-/* the values of the pieces */
+// the values of the pieces
 int piece_value[6] = {
     100, 300, 300, 500, 900, 0
 };
@@ -90,8 +90,8 @@ int flip[64] = {
    test for pawns on a rank and it simplifies some pawn evaluation code. */
 int pawn_rank[2][10];
 
-int piece_mat[2];  /* the value of a side's pieces */
-int pawn_mat[2];  /* the value of a side's pawns */
+int piece_mat[2];  // the value of a side's pieces
+int pawn_mat[2];  // the value of a side's pawns
 
 int eval(node_t& board, int evaluator)
 {
@@ -148,10 +148,10 @@ int eval_simple(node_t& board)
 int eval_orig(node_t& board)
 {
     int i;
-    int f;  /* file */
-    int score[2];  /* each side's score */
+    int f;  // file
+    int score[2];  // each side's score
 
-    /* this is the first pass: set up pawn_rank, piece_mat, and pawn_mat. */
+    // this is the first pass: set up pawn_rank, piece_mat, and pawn_mat.
     for (i = 0; i < 10; ++i) {
         pawn_rank[LIGHT][i] = 0;
         pawn_rank[DARK][i] = 7;
@@ -165,7 +165,7 @@ int eval_orig(node_t& board)
             continue;
         if (board.piece[i] == PAWN) {
             pawn_mat[board.color[i]] += piece_value[PAWN];
-            f = COL(i) + 1;  /* add 1 because of the extra file in the array */
+            f = COL(i) + 1;  // add 1 because of the extra file in the array
             if (board.color[i] == LIGHT) {
                 if (pawn_rank[LIGHT][f] < ROW(i))
                     pawn_rank[LIGHT][f] = ROW(i);
@@ -179,7 +179,7 @@ int eval_orig(node_t& board)
             piece_mat[board.color[i]] += piece_value[board.piece[i]];
     }
 
-    /* this is the second pass: evaluate each piece */
+    // this is the second pass: evaluate each piece
     score[LIGHT] = piece_mat[LIGHT] + pawn_mat[LIGHT];
     score[DARK] = piece_mat[DARK] + pawn_mat[DARK];
     for (i = 0; i < 64; ++i) {
@@ -254,15 +254,15 @@ int eval_orig(node_t& board)
 
 int eval_light_pawn(int sq)
 {
-    int r;  /* the value to return */
-    int f;  /* the pawn's file */
+    int r;  // the value to return
+    int f;  // the pawn's file
 
     r = 0;
     f = COL(sq) + 1;
 
     r += pawn_pcsq[sq];
 
-    /* if there's a pawn behind this one, it's doubled */
+    // if there's a pawn behind this one, it's doubled
     if (pawn_rank[LIGHT][f] > ROW(sq))
         r -= DOUBLED_PAWN_PENALTY;
 
@@ -272,12 +272,12 @@ int eval_light_pawn(int sq)
             (pawn_rank[LIGHT][f + 1] == 0))
         r -= ISOLATED_PAWN_PENALTY;
 
-    /* if it's not isolated, it might be backwards */
+    // if it's not isolated, it might be backwards
     else if ((pawn_rank[LIGHT][f - 1] < ROW(sq)) &&
             (pawn_rank[LIGHT][f + 1] < ROW(sq)))
         r -= BACKWARDS_PAWN_PENALTY;
 
-    /* add a bonus if the pawn is passed */
+    // add a bonus if the pawn is passed
     if ((pawn_rank[DARK][f - 1] >= ROW(sq)) &&
             (pawn_rank[DARK][f] >= ROW(sq)) &&
             (pawn_rank[DARK][f + 1] >= ROW(sq)))
@@ -288,15 +288,15 @@ int eval_light_pawn(int sq)
 
 int eval_dark_pawn(int sq)
 {
-    int r;  /* the value to return */
-    int f;  /* the pawn's file */
+    int r;  // the value to return
+    int f;  // the pawn's file
 
     r = 0;
     f = COL(sq) + 1;
 
     r += pawn_pcsq[flip[sq]];
 
-    /* if there's a pawn behind this one, it's doubled */
+    // if there's a pawn behind this one, it's doubled
     if (pawn_rank[DARK][f] < ROW(sq))
         r -= DOUBLED_PAWN_PENALTY;
 
@@ -306,12 +306,12 @@ int eval_dark_pawn(int sq)
             (pawn_rank[DARK][f + 1] == 7))
         r -= ISOLATED_PAWN_PENALTY;
 
-    /* if it's not isolated, it might be backwards */
+    // if it's not isolated, it might be backwards
     else if ((pawn_rank[DARK][f - 1] > ROW(sq)) &&
             (pawn_rank[DARK][f + 1] > ROW(sq)))
         r -= BACKWARDS_PAWN_PENALTY;
 
-    /* add a bonus if the pawn is passed */
+    // add a bonus if the pawn is passed
     if ((pawn_rank[LIGHT][f - 1] <= ROW(sq)) &&
             (pawn_rank[LIGHT][f] <= ROW(sq)) &&
             (pawn_rank[LIGHT][f + 1] <= ROW(sq)))
@@ -322,7 +322,7 @@ int eval_dark_pawn(int sq)
 
 int eval_light_king(int sq)
 {
-    int r;  /* the value to return */
+    int r;  //the value to return
     int i;
 
     r = king_pcsq[sq];
@@ -359,26 +359,26 @@ int eval_light_king(int sq)
     return r;
 }
 
-/* eval_lkp(f) evaluates the Light King Pawn on file f */
+// eval_lkp(f) evaluates the Light King Pawn on file f
 
 int eval_lkp(int f)
 {
     int r = 0;
 
-    if (pawn_rank[LIGHT][f] == 6);  /* pawn hasn't moved */
+    if (pawn_rank[LIGHT][f] == 6);  // pawn hasn't moved
     else if (pawn_rank[LIGHT][f] == 5)
-        r -= 10;  /* pawn moved one square */
+        r -= 10;  // pawn moved one square
     else if (pawn_rank[LIGHT][f] != 0)
-        r -= 20;  /* pawn moved more than one square */
+        r -= 20;  // pawn moved more than one square
     else
-        r -= 25;  /* no pawn on this file */
+        r -= 25;  // no pawn on this file
 
     if (pawn_rank[DARK][f] == 7)
-        r -= 15;  /* no enemy pawn */
+        r -= 15;  // no enemy pawn
     else if (pawn_rank[DARK][f] == 5)
-        r -= 10;  /* enemy pawn on the 3rd rank */
+        r -= 10;  // enemy pawn on the 3rd rank
     else if (pawn_rank[DARK][f] == 4)
-        r -= 5;   /* enemy pawn on the 4th rank */
+        r -= 5;   // enemy pawn on the 4th rank
 
     return r;
 }

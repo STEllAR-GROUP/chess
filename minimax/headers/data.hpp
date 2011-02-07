@@ -1,10 +1,10 @@
 /*
- *  DATA.H
+ *  data.hpp
  */
 
 
-/* this is basically a copy of data.c that's included by most
-   of the source files so they can use the data.c variables */
+/* this is basically a copy of data.cpp that's included by most
+   of the source files so they can use the data.cpp variables */
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@ extern int depth[2];
 extern int alpha[2];
 extern int beta[2];
 extern int output;
-extern int chosen_evaluator;
+extern int chosen_evaluator; // not really static but shouldn't change during a run
 extern int number_threads;
 
 ////////////////////////////////////////////////////////////////////////////
