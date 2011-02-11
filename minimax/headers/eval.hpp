@@ -15,14 +15,20 @@
 #define ROOK_OPEN_FILE_BONUS		15
 #define ROOK_ON_SEVENTH_BONUS		20
 
-int eval(node_t& board, int evaluator);
-int eval_simple(node_t& board);
-int eval_orig(node_t& board);
-int eval_light_pawn(int sq);
-int eval_dark_pawn(int sq);
-int eval_light_king(int sq);
-int eval_lkp(int f);
-int eval_dark_king(int sq);
-int eval_dkp(int f);
+struct evaluator {
+    int pawn_rank[2][10];
+    int piece_mat[2];  // the value of a side's pieces
+    int pawn_mat[2];  // the value of a side's pawns
+
+	int eval(node_t& board, int evaluator);
+	int eval_simple(node_t& board);
+	int eval_orig(node_t& board);
+	int eval_light_pawn(int sq);
+	int eval_dark_pawn(int sq);
+	int eval_light_king(int sq);
+	int eval_lkp(int f);
+	int eval_dark_king(int sq);
+	int eval_dkp(int f);
+};
 
 #endif

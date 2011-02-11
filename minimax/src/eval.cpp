@@ -88,12 +88,14 @@ int flip[64] = {
    logic later. If there's no pawn on a rank, we pretend the pawn is
    impossibly far advanced (0 for LIGHT and 7 for DARK). This makes it easy to
    test for pawns on a rank and it simplifies some pawn evaluation code. */
+/*
 int pawn_rank[2][10];
 
 int piece_mat[2];  // the value of a side's pieces
 int pawn_mat[2];  // the value of a side's pawns
+*/
 
-int eval(node_t& board, int evaluator)
+int evaluator::eval(node_t& board, int evaluator)
 {
     // Interface function that selects which evaluator to use
     
@@ -103,7 +105,7 @@ int eval(node_t& board, int evaluator)
         return eval_simple(board);
 }
 
-int eval_simple(node_t& board)
+int evaluator::eval_simple(node_t& board)
 {
     // A simple material evaluator
     
@@ -145,7 +147,7 @@ int eval_simple(node_t& board)
     return score[DARK] - score[LIGHT];
 }
 
-int eval_orig(node_t& board)
+int evaluator::eval_orig(node_t& board)
 {
     int i;
     int f;  // file
@@ -252,7 +254,7 @@ int eval_orig(node_t& board)
     return score[DARK] - score[LIGHT];
 }
 
-int eval_light_pawn(int sq)
+int evaluator::eval_light_pawn(int sq)
 {
     int r;  // the value to return
     int f;  // the pawn's file
@@ -286,7 +288,7 @@ int eval_light_pawn(int sq)
     return r;
 }
 
-int eval_dark_pawn(int sq)
+int evaluator::eval_dark_pawn(int sq)
 {
     int r;  // the value to return
     int f;  // the pawn's file
@@ -320,7 +322,7 @@ int eval_dark_pawn(int sq)
     return r;
 }
 
-int eval_light_king(int sq)
+int evaluator::eval_light_king(int sq)
 {
     int r;  //the value to return
     int i;
@@ -361,7 +363,7 @@ int eval_light_king(int sq)
 
 // eval_lkp(f) evaluates the Light King Pawn on file f
 
-int eval_lkp(int f)
+int evaluator::evaluator::eval_lkp(int f)
 {
     int r = 0;
 
@@ -383,7 +385,7 @@ int eval_lkp(int f)
     return r;
 }
 
-int eval_dark_king(int sq)
+int evaluator::eval_dark_king(int sq)
 {
     int r;
     int i;
@@ -410,7 +412,7 @@ int eval_dark_king(int sq)
     return r;
 }
 
-int eval_dkp(int f)
+int evaluator::eval_dkp(int f)
 {
     int r = 0;
 

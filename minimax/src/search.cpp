@@ -25,7 +25,8 @@ int search(node_t board, int depth)
     // if we are a leaf node, return the value from the eval() function
     if (!depth)
     {
-      return eval(board, chosen_evaluator);
+      evaluator ev;
+      return ev.eval(board, chosen_evaluator);
     }
     /* if this isn't the root of the search tree (where we have
        to pick a move and can't simply return 0) then check to
