@@ -288,7 +288,7 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-    number_threads = omp_get_num_threads();
+    omp_set_num_threads(1);
     int retcode = chx_main(argc, argv);
     return retcode;
 }

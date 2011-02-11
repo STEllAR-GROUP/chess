@@ -4,6 +4,7 @@
 
 
 #include "search.hpp"
+#include <algorithm>
 
 // think() calls search() 
 
@@ -20,7 +21,6 @@ int think(node_t& board)
 int search(node_t board, int depth)
 {
     int val, max;
-    BOOL f;
 
     // if we are a leaf node, return the value from the eval() function
     if (!depth)
@@ -35,16 +35,15 @@ int search(node_t board, int depth)
         return 0;
 
     std::vector<gen_t> workq;
+    
+    std::vector<move> max_moves; // This is a vector of the moves that all have the same score and are the highest. To be sorted by the hash value.
     gen(workq, board); // Generate the moves
-    f = FALSE; // Set this to false, if we have at least one legal move
-               // we will set it to true (this is used for detecting 
-               // stalemates and checkmates)
 
     max = -10000; // Set the max score to -infinity
 
     // loop through the moves
     
-#pragma omp parallel for shared (max, f, move_to_make) private(val)
+#pragma omp parallel for shared (max, workq) private(val)
     for (int i = 0; i < workq.size(); i++) {
         node_t p_board = board;
 
@@ -53,11 +52,7 @@ int search(node_t board, int depth)
         if (!makemove(p_board, g.m.b)) { // Make the move, if it isn't 
             continue;                  // legal, then go to the next one
         }
-        
-        if (f == FALSE) {
-#pragma omp critical
-            f = TRUE;  // We have at least one legal move
-        }
+
         val = -search(p_board, depth - 1); // Recursively search this new board
                                          // position for its score
         takeback(p_board);  // Lets go back to our original board so we can
@@ -65,22 +60,36 @@ int search(node_t board, int depth)
 
 
 #pragma omp critical
+{
         if (val > max)  // Is this value our maximum?
         {
           max = val;
+          
+          max_moves.clear();
+          max_moves.push_back(g.m);
 
-          if (p_board.ply == 0) {  // If we are at the root level, need to set 
+          /*if (p_board.ply == 0) {  // If we are at the root level, need to set 
             move_to_make = g.m;    // the move to make as this one
-          }
+          }*/
         }
+        else if (val == max)
+        {
+            max_moves.push_back(g.m);
+        }
+}
     }
 
     // no legal moves? then we're in checkmate or stalemate
-    if (!f) {
+    if (max_moves.size() == 0) {
         if (in_check(board, board.side))
             return -10000 + board.ply;
         else
             return 0;
+    }
+    
+    if (board.ply == 0) {
+        sort(max_moves.begin(), max_moves.end(), compare_moves);
+        move_to_make = *(max_moves.begin());
     }
 
     // fifty move draw rule
@@ -107,4 +116,13 @@ int reps(node_t& board)
     return r;
 }
 
+bool compare_moves(move a, move b)
+{
+    if (a.b.from == b.b.from)
+        return (a.b.to) > (b.b.to);
+    else if (a.b.to == b.b.to)
+        std::cerr << "Error, comparing similar moves";
+        
+    return (a.b.to) > (b.b.to);
+}
 
