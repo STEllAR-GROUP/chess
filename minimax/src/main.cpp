@@ -288,7 +288,9 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+	#ifdef OPENMP_SUPPORT
     omp_set_num_threads(1);
+    #endif
     int retcode = chx_main(argc, argv);
     return retcode;
 }
