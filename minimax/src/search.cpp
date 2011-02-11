@@ -118,11 +118,13 @@ int reps(node_t& board)
 
 bool compare_moves(move a, move b)
 {
-    if (a.b.from == b.b.from)
+    if (a.b.from == b.b.from) 
+    {
+        if (a.b.to == b.b.to)
+          std::cerr << "Error, comparing similar moves";
         return (a.b.to) > (b.b.to);
-    else if (a.b.to == b.b.to)
-        std::cerr << "Error, comparing similar moves";
-        
-    return (a.b.to) > (b.b.to);
+    }
+    else
+        return (a.b.from) > (b.b.from);
 }
 
