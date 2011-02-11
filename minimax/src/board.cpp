@@ -92,7 +92,7 @@ int set_hash(node_t& board)
    otherwise. It just scans the board to find side s's king
    and calls attack() to see if it's being attacked. */
 
-BOOL in_check(node_t& board, int s)
+BOOL in_check(const node_t& board, int s)
 {
     int i;
 
@@ -106,7 +106,7 @@ BOOL in_check(node_t& board, int s)
 /* attack() returns TRUE if square sq is being attacked by side
    s and FALSE otherwise. */
 
-BOOL attack(node_t& board, int sq, int s)
+BOOL attack(const node_t& board, int sq, int s)
 {
     int i, j, n;
 
@@ -150,7 +150,7 @@ BOOL attack(node_t& board, int sq, int s)
    combination, it calls gen_push to put the move on the "move
    stack." */
 
-void gen(std::vector<gen_t>& workq, node_t& board)
+void gen(std::vector<gen_t>& workq, const node_t& board)
 {
     int i, j, n;
 
@@ -240,7 +240,7 @@ void gen(std::vector<gen_t>& workq, node_t& board)
    1,000,000 is added to a capture move's score, so it
    always gets ordered above a "normal" move. */
 
-void gen_push(std::vector<gen_t>& workq, node_t& board, int from, int to, int bits)
+void gen_push(std::vector<gen_t>& workq, const node_t& board, int from, int to, int bits)
 {
     gen_t g;
     

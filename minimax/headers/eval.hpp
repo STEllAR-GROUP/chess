@@ -20,9 +20,9 @@ struct evaluator {
     int piece_mat[2];  // the value of a side's pieces
     int pawn_mat[2];  // the value of a side's pawns
 
-	int eval(node_t& board, int evaluator);
-	int eval_simple(node_t& board);
-	int eval_orig(node_t& board);
+	int eval(const node_t& board, int evaluator);
+	int eval_simple(const node_t& board);
+	int eval_orig(const node_t& board);
 	int eval_light_pawn(int sq);
 	int eval_dark_pawn(int sq);
 	int eval_light_king(int sq);

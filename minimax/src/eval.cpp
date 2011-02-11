@@ -95,7 +95,7 @@ int piece_mat[2];  // the value of a side's pieces
 int pawn_mat[2];  // the value of a side's pawns
 */
 
-int evaluator::eval(node_t& board, int evaluator)
+int evaluator::eval(const node_t& board, int evaluator)
 {
     // Interface function that selects which evaluator to use
     
@@ -105,7 +105,7 @@ int evaluator::eval(node_t& board, int evaluator)
         return eval_simple(board);
 }
 
-int evaluator::eval_simple(node_t& board)
+int evaluator::eval_simple(const node_t& board)
 {
     // A simple material evaluator
     
@@ -147,7 +147,7 @@ int evaluator::eval_simple(node_t& board)
     return score[DARK] - score[LIGHT];
 }
 
-int evaluator::eval_orig(node_t& board)
+int evaluator::eval_orig(const node_t& board)
 {
     int i;
     int f;  // file

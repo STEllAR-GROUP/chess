@@ -18,7 +18,7 @@ int think(node_t& board)
 }
 
 
-int search(node_t board, int depth)
+int search(const node_t& board, int depth)
 {
     int val, max;
 
@@ -56,7 +56,7 @@ int search(node_t board, int depth)
 
         val = -search(p_board, depth - 1); // Recursively search this new board
                                          // position for its score
-        takeback(p_board);  // Lets go back to our original board so we can
+        //takeback(p_board);  // Lets go back to our original board so we can
                           // make another move
 
 
@@ -106,7 +106,7 @@ int search(node_t board, int depth)
    has been repeated. It compares the current value of hash
    to previous values. */
 
-int reps(node_t& board)
+int reps(const node_t& board)
 {
     int i;
     int r = 0;

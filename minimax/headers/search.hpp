@@ -11,7 +11,7 @@
 #include "eval.hpp"
 
 int think(node_t& board);
-int search(node_t board, int depth);
-int reps(node_t& board);
+int search(const node_t& board, int depth);
+int reps(const node_t& board);
 bool compare_moves(move a, move b);
 #endif
