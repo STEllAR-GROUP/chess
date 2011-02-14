@@ -44,7 +44,9 @@ int search(const node_t& board, int depth)
 
     // loop through the moves
     
+#ifdef OPENMP_SUPPORT
 #pragma omp parallel for shared (max, workq) private(val)
+#endif
     for (int i = 0; i < workq.size(); i++) {
         node_t p_board = board;
 
@@ -60,7 +62,9 @@ int search(const node_t& board, int depth)
                           // make another move
 
 
+#ifdef OPENMP_SUPPORT
 #pragma omp critical
+#endif
 {
         if (val > max)  // Is this value our maximum?
         {
