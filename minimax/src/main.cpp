@@ -476,6 +476,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     }
     average_time = average_time / num_runs;
     
+    free(t);
+    
     std::cout << std::endl;
     std::cout << "Results:" << std::endl;
     std::cout << "Number of runs:       " << num_runs << std::endl;

@@ -4,7 +4,6 @@
 # openmp support are set.  
 #
 # The following variables are set:
-#   OpenMP_C_FLAGS - flags to add to the C compiler for OpenMP support
 #   OpenMP_CXX_FLAGS - flags to add to the CXX compiler for OpenMP support
 #   OPENMP_FOUND - true if openmp is detected
 #
@@ -48,11 +47,8 @@ set(OpenMP_CXX_TEST_SOURCE
 "
 #include <omp.h>
 int main() { 
-#ifdef _OPENMP
-  return 0; 
-#else
-  breaks_on_purpose
-#endif
+omp_set_num_threads(1);
+return omp_get_num_threads();
 }
 ")
 # if these are set then do not try to find them again,
@@ -73,9 +69,11 @@ foreach(FLAG ${OpenMP_CXX_FLAG_CANDIDATES})
   message(STATUS "Try OpenMP CXX flag = [${FLAG}]")
 
   foreach(LINK ${OpenMP_LINK_FLAG_CANDIDATES})
+    set(SAFE_CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES}")
     set(CMAKE_REQUIRED_LIBRARIES "${LINK}")
     check_cxx_source_compiles("${OpenMP_CXX_TEST_SOURCE}" OpenMP_FLAG_DETECTED)
     set(CMAKE_REQUIRED_FLAGS "${SAFE_CMAKE_REQUIRED_FLAGS}")
+    set(CMAKE_REQUIRED_LIBRARIES "${SAFE_CMAKE_REQUIRED_LIBRARIES}")
     if(OpenMP_FLAG_DETECTED)
       set(OpenMP_CXX_FLAGS_INTERNAL "${FLAG}")
       set(OpenMP_LINK_FLAGS_INTERNAL "${LINK}")
