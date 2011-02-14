@@ -20,19 +20,11 @@
 # 31/07/2009
 # Fix unset uses
 
-include(CheckCXXSourceCompiles)
-include(FindPackageHandleStandardArgs)
+#include(FindPackageHandleStandardArgs)
 
 message(STATUS "Compiler is ${CMAKE_C_COMPILER_ID}")
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
-    set(OpenMP_C_FLAGS "-openmp")
-    set(OpenMP_LINK_FLAGS "-liomp5 -lpthread")
-else()
-    set(OpenMP_C_FLAGS "-fopenmp")
-    set(OpenMP_LINK_FLAGS "-lgomp")
-endif() 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     set(OpenMP_CXX_FLAGS "-openmp")
     set(OpenMP_LINK_FLAGS "-liomp5 -lpthread")
