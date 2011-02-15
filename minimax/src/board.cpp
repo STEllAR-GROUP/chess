@@ -92,21 +92,21 @@ int set_hash(node_t& board)
    otherwise. It just scans the board to find side s's king
    and calls attack() to see if it's being attacked. */
 
-BOOL in_check(const node_t& board, int s)
+bool in_check(const node_t& board, int s)
 {
     int i;
 
     for (i = 0; i < 64; ++i)
         if (board.piece[i] == KING && board.color[i] == s)
             return attack(board, i, s ^ 1);
-    return TRUE;  /* shouldn't get here */
+    return true;  /* shouldn't get here */
 }
 
 
 /* attack() returns TRUE if square sq is being attacked by side
    s and FALSE otherwise. */
 
-BOOL attack(const node_t& board, int sq, int s)
+bool attack(const node_t& board, int sq, int s)
 {
     int i, j, n;
 
@@ -115,15 +115,15 @@ BOOL attack(const node_t& board, int sq, int s)
             if (board.piece[i] == PAWN) {
                 if (s == LIGHT) {
                     if (COL(i) != 0 && i - 9 == sq)
-                        return TRUE;
+                        return true;
                     if (COL(i) != 7 && i - 7 == sq)
-                        return TRUE;
+                        return true;
                 }
                 else {
                     if (COL(i) != 0 && i + 7 == sq)
-                        return TRUE;
+                        return true;
                     if (COL(i) != 7 && i + 9 == sq)
-                        return TRUE;
+                        return true;
                 }
             }
             else
@@ -133,14 +133,14 @@ BOOL attack(const node_t& board, int sq, int s)
                         if (n == -1)
                             break;
                         if (n == sq)
-                            return TRUE;
+                            return true;
                         if (board.color[n] != EMPTY)
                             break;
                         if (!slide[board.piece[i]])
                             break;
                     }
         }
-    return FALSE;
+    return false;
 }
 
 
@@ -291,7 +291,7 @@ void gen_promote(std::vector<gen_t>& workq, int from, int to, int bits)
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
 
-BOOL makemove(node_t& board, move_bytes m)
+bool makemove(node_t& board, move_bytes m)
 {
     
     /* test to see if a castle move is legal and move the rook
@@ -300,33 +300,33 @@ BOOL makemove(node_t& board, move_bytes m)
         int from, to;
 
         if (in_check(board, board.side))
-            return FALSE;
+            return false;
         switch (m.to) {
             case 62:
                 if (board.color[F1] != EMPTY || board.color[G1] != EMPTY ||
                         attack(board, F1, board.side ^ 1) || attack(board, G1, board.side ^ 1))
-                    return FALSE;
+                    return false;
                 from = H1;
                 to = F1;
                 break;
             case 58:
                 if (board.color[B1] != EMPTY || board.color[C1] != EMPTY || board.color[D1] != EMPTY ||
                         attack(board, C1, board.side ^ 1) || attack(board, D1, board.side ^ 1))
-                    return FALSE;
+                    return false;
                 from = A1;
                 to = D1;
                 break;
             case 6:
                 if (board.color[F8] != EMPTY || board.color[G8] != EMPTY ||
                         attack(board, F8, board.side ^ 1) || attack(board, G8, board.side ^ 1))
-                    return FALSE;
+                    return false;
                 from = H8;
                 to = F8;
                 break;
             case 2:
                 if (board.color[B8] != EMPTY || board.color[C8] != EMPTY || board.color[D8] != EMPTY ||
                         attack(board, C8, board.side ^ 1) || attack(board, D8, board.side ^ 1))
-                    return FALSE;
+                    return false;
                 from = A8;
                 to = D8;
                 break;
@@ -395,82 +395,12 @@ BOOL makemove(node_t& board, move_bytes m)
 
     /* switch sides and test for legality (if we can capture
        the other guy's king, it's an illegal position and
-       we need to take the move back) */
+       we need to return FALSE) */
     board.side ^= 1;
+    
     if (in_check(board, board.side ^ 1)) {
-        takeback(board);
-        return FALSE;
+        return false;
     }
     board.hash = set_hash(board);
-    return TRUE;
-}
-
-
-// takeback() is very similar to makemove(), only backwards :)
-
-void takeback(node_t& board)
-{
-    move_bytes m;
-
-    board.side ^= 1;
-    board.ply--;
-    board.hply--;
-    m = board.hist_dat[board.hply].m.b;
-    board.castle = board.hist_dat[board.hply].castle;
-    board.ep = board.hist_dat[board.hply].ep;
-    board.fifty = board.hist_dat[board.hply].fifty;
-    board.hash = board.hist_dat[board.hply].hash;
-    board.color[(int)m.from] = board.side;
-    if (m.bits & 32)
-        board.piece[(int)m.from] = PAWN;
-    else
-        board.piece[(int)m.from] = board.piece[(int)m.to];
-    if (board.hist_dat[board.hply].capture == EMPTY) {
-        board.color[(int)m.to] = EMPTY;
-        board.piece[(int)m.to] = EMPTY;
-    }
-    else {
-        board.color[(int)m.to] = board.side ^ 1;
-        board.piece[(int)m.to] = board.hist_dat[board.hply].capture;
-    }
-    if (m.bits & 2) {
-        int from, to;
-
-        switch(m.to) {
-            case 62:
-                from = F1;
-                to = H1;
-                break;
-            case 58:
-                from = D1;
-                to = A1;
-                break;
-            case 6:
-                from = F8;
-                to = H8;
-                break;
-            case 2:
-                from = D8;
-                to = A8;
-                break;
-            default:  /* shouldn't get here */
-                from = -1;
-                to = -1;
-                break;
-        }
-        board.color[to] = board.side;
-        board.piece[to] = ROOK;
-        board.color[from] = EMPTY;
-        board.piece[from] = EMPTY;
-    }
-    if (m.bits & 4) {
-        if (board.side == LIGHT) {
-            board.color[m.to + 8] = board.side ^ 1;
-            board.piece[m.to + 8] = PAWN;
-        }
-        else {
-            board.color[m.to - 8] = board.side ^ 1;
-            board.piece[m.to - 8] = PAWN;
-        }
-    }
+    return true;
 }

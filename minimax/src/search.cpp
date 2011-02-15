@@ -58,8 +58,6 @@ int search(const node_t& board, int depth)
 
         val = -search(p_board, depth - 1); // Recursively search this new board
                                          // position for its score
-        //takeback(p_board);  // Lets go back to our original board so we can
-                          // make another move
 
 
 #ifdef OPENMP_SUPPORT

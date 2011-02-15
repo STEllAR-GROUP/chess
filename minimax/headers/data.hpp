@@ -15,7 +15,7 @@ extern int hash_side;
 extern int hash_ep[64];
 extern int mailbox[120];
 extern int mailbox64[64];
-extern BOOL slide[6];
+extern bool slide[6];
 extern int offsets[6];
 extern int offset[6][8];
 extern int castle_mask[64];

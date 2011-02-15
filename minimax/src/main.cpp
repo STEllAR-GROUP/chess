@@ -615,8 +615,8 @@ int print_result(std::vector<gen_t>& workq, node_t& board)
 
     // is there a legal move?
     for (i = 0; i < workq.size() ; ++i) { 
-        if (makemove(board, workq[i].m.b)) {
-            takeback(board);
+        node_t p_board = board;
+        if (makemove(p_board, workq[i].m.b)) {
             break;
         }
     }

@@ -33,7 +33,7 @@ int hash_ep[64];
    mailbox number, which is 61. Then we subtract 1 from 61 (60) and
    see what mailbox[60] is. In this case, it's -1, so it's out of
    bounds and we can forget it. You can see how mailbox[] is used
-   in attack() in board.c. */
+   in attack() in board.cpp. */
 
 int mailbox[120] = {
      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -68,8 +68,8 @@ int mailbox64[64] = {
    number of directions it can move in, and offset is an array
    of the actual directions. */
 
-BOOL slide[6] = {
-    FALSE, FALSE, TRUE, TRUE, TRUE, FALSE
+bool slide[6] = {
+    false, false, true, true, true, false
 };
 
 int offsets[6] = {

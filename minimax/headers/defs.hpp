@@ -4,10 +4,6 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#define BOOL            int
-#define TRUE            1
-#define FALSE           0
-
 #define LIGHT           0
 #define DARK            1
 
