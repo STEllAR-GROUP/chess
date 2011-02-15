@@ -150,7 +150,7 @@ bool attack(const node_t& board, int sq, int s)
    combination, it calls gen_push to put the move on the "move
    stack." */
 
-void gen(std::vector<gen_t>& workq, const node_t& board)
+void gen(std::vector<move>& workq, const node_t& board)
 {
     int i, j, n;
 
@@ -240,9 +240,9 @@ void gen(std::vector<gen_t>& workq, const node_t& board)
    1,000,000 is added to a capture move's score, so it
    always gets ordered above a "normal" move. */
 
-void gen_push(std::vector<gen_t>& workq, const node_t& board, int from, int to, int bits)
+void gen_push(std::vector<move>& workq, const node_t& board, int from, int to, int bits)
 {
-    gen_t g;
+    move g;
     
     if (bits & 16) {
         if (board.side == LIGHT) {
@@ -258,12 +258,11 @@ void gen_push(std::vector<gen_t>& workq, const node_t& board, int from, int to, 
             }
         }
     }
-    g.m.b.from = (char)from;
-    g.m.b.to = (char)to;
-    g.m.b.promote = 0;
-    g.m.b.bits = (char)bits;
-    if (board.color[to] != EMPTY)
-        g.score = 1000000 + (board.piece[to] * 10) - board.piece[from];
+    g.b.from = (char)from;
+    g.b.to = (char)to;
+    g.b.promote = 0;
+    g.b.bits = (char)bits;
+
     workq.push_back(g);
 }
 
@@ -271,17 +270,16 @@ void gen_push(std::vector<gen_t>& workq, const node_t& board, int from, int to, 
 /* gen_promote() is just like gen_push(), only it puts 4 moves
    on the move stack, one for each possible promotion piece */
 
-void gen_promote(std::vector<gen_t>& workq, int from, int to, int bits)
+void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 {
     int i;
-    gen_t g;
+    move g;
     
     for (i = KNIGHT; i <= QUEEN; ++i) {
-        g.m.b.from = (char)from;
-        g.m.b.to = (char)to;
-        g.m.b.promote = (char)i;
-        g.m.b.bits = (char)(bits | 32);
-        g.score = 1000000 + (i * 10);
+        g.b.from = (char)from;
+        g.b.to = (char)to;
+        g.b.promote = (char)i;
+        g.b.bits = (char)(bits | 32);
         workq.push_back(g);
     }
 }

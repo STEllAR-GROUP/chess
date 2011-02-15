@@ -35,7 +35,7 @@ int search(const node_t& board, int depth)
     if (board.ply && reps(board))
         return 0;
 
-    std::vector<gen_t> workq;
+    std::vector<move> workq;
     
     std::vector<move> max_moves; // This is a vector of the moves that all have the same score and are the highest. To be sorted by the hash value.
     gen(workq, board); // Generate the moves
@@ -50,9 +50,9 @@ int search(const node_t& board, int depth)
     for (int i = 0; i < workq.size(); i++) {
         node_t p_board = board;
 
-        gen_t g = workq[i];
+        move g = workq[i];
 
-        if (!makemove(p_board, g.m.b)) { // Make the move, if it isn't 
+        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
             continue;                  // legal, then go to the next one
         }
 
@@ -69,15 +69,12 @@ int search(const node_t& board, int depth)
           max = val;
           
           max_moves.clear();
-          max_moves.push_back(g.m);
+          max_moves.push_back(g);
 
-          /*if (p_board.ply == 0) {  // If we are at the root level, need to set 
-            move_to_make = g.m;    // the move to make as this one
-          }*/
         }
         else if (val == max)
         {
-            max_moves.push_back(g.m);
+            max_moves.push_back(g);
         }
 }
     }

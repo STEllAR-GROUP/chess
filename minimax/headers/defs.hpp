@@ -69,12 +69,4 @@ typedef union {
     int u;
 } move;
 
-/* an element of the move stack. it's just a move with a
-   score, so it can be sorted by the search functions. 
-   (DEPRECATED FOR MINIMAX) */
-typedef struct {
-    move m;
-    int score;
-} gen_t;
-
 #endif

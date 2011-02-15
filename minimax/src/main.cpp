@@ -69,7 +69,7 @@ int chx_main(int argc, char **argv)
     init_hash();  // Init hash sets up the hashing function
                   // which is used for determining repeated moves
     init_board(board);  // Initialize the board to its default state
-    std::vector<gen_t> workq;  // workq is a standard vector which contains
+    std::vector<move> workq;  // workq is a standard vector which contains
                                // all possible psuedo-legal moves for the
                                // current board position
     gen(workq, board);  // gen() takes the current board position and
@@ -432,7 +432,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     //At this point we have the board position configured to the file specification
     print_board(board, std::cout);
     print_board(board, logfile);
-    std::vector<gen_t> workq;
+    std::vector<move> workq;
     gen(workq, board);
     
     int start_time;
@@ -498,7 +498,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 /* parse the move s (in coordinate notation) and return the move's
    int value, or -1 if the move is illegal */
 
-int parse_move(std::vector<gen_t>& workq, const char *s)
+int parse_move(std::vector<move>& workq, const char *s)
 {
     int from, to, i;
 
@@ -515,22 +515,22 @@ int parse_move(std::vector<gen_t>& workq, const char *s)
     to += 8 * (8 - (s[3] - '0'));
 
     for (int i = 0; i < workq.size(); i++) {
-        if (workq[i].m.b.from == from && workq[i].m.b.to == to) {
-            if (workq[i].m.b.bits & 32)
+        if (workq[i].b.from == from && workq[i].b.to == to) {
+            if (workq[i].b.bits & 32)
                 switch (s[4]) {
                     case 'N':
-                        if (workq[i].m.b.promote == KNIGHT)
-                            return workq[i].m.u;
+                        if (workq[i].b.promote == KNIGHT)
+                            return workq[i].u;
                     case 'B':
-                        if (workq[i].m.b.promote == BISHOP)
-                            return workq[i].m.u;
+                        if (workq[i].b.promote == BISHOP)
+                            return workq[i].u;
                     case 'R':
-                        if (workq[i].m.b.promote == ROOK)
-                            return workq[i].m.u;
+                        if (workq[i].b.promote == ROOK)
+                            return workq[i].u;
                     default:
-                        return workq[i].m.u;
+                        return workq[i].u;
                 }
-            return workq[i].m.u;
+            return workq[i].u;
         }
     }
 
@@ -609,14 +609,14 @@ void print_board(node_t& board, std::ostream& out)
 /* print_result() checks to see if the game is over, and if so,
    prints the result. */
 
-int print_result(std::vector<gen_t>& workq, node_t& board)
+int print_result(std::vector<move>& workq, node_t& board)
 {
     int i;
 
     // is there a legal move?
     for (i = 0; i < workq.size() ; ++i) { 
         node_t p_board = board;
-        if (makemove(p_board, workq[i].m.b)) {
+        if (makemove(p_board, workq[i].b)) {
             break;
         }
     }
