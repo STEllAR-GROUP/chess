@@ -1,3 +1,10 @@
+Thanks for getting CHX!
+
+To report any problems/bugs/comments with CHX please send an email to:
+gopx@cct.lsu.edu
+
+==================== COMPILING ====================
+
 To build CHX type these commands (requires CMake)
 Note: By default CHX will build with OpenMP support if your compiler supports it.
   To disable OpenMP manually, run the command:
@@ -7,16 +14,28 @@ Note: By default CHX will build with OpenMP support if your compiler supports it
  $ cmake .
  $ make
 
+If you are on a machine that has an intel compiler, use this command instead (if gcc doesn't compile successfully with OpenMP):
+
+ $ cmake . -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc
+ $ make
+
+==================== RUNNING ====================
+
 To run type these commands
 
  $ cd src
  $ ./chx
-You then get an interactive prompt ("chx>"). At the prompt you can run
-the benchmark by typing:
+You then get an interactive prompt ("chx>"). 
+
+==================== BENCHMARK ====================
+
+At the prompt you can run the benchmark by typing:
 
     bench ../inputs/board2 3 4
 
 This will load the board from file ../inputs/board2, and evaluate the solution to ply depth 3 and do it 4 times. The program will display the best move, as well as the time for each board evaluation, the average time, and the best time.
+
+==================== ADDITIONAL NOTES ====================
 
 When the readline package is enabled, the user will be able to access command line history to edit and re-execute commands.
 
@@ -26,6 +45,7 @@ Command line options:
 -b n        Sets the depth of the black side to n (default 3)
 -o          Turns off all engine output
 -e			Sets the evaluation method to simple material evaluation
+-a          Sets the search method to alpha beta
 -t			Sets the number of threads of parallel execution (requires a compiler that supports OpenMP)
 
 NOTE: Setting any command line parameters will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.

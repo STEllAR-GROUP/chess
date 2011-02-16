@@ -49,9 +49,9 @@ int chx_main(int argc, char **argv)
     if (!arguments) {
         std::cout << std::endl;
         #ifdef OPENMP_SUPPORT
-        std::cout << "Chess (CHX) OpenMP Minimax Version" << std::endl;
+        std::cout << "Chess (CHX) OpenMP Minimax/Alpha-Beta Version" << std::endl;
         #else
-        std::cout << "Chess (CHX) Serial Minimax Version" << std::endl;
+        std::cout << "Chess (CHX) Serial Minimax/Alpha-Beta Version" << std::endl;
         #endif
         std::cout << "Phillip LeBlanc - CCT" << std::endl;
         std::cout << std::endl;
@@ -262,9 +262,20 @@ int chx_main(int argc, char **argv)
             }
             continue;
 		}
+		if (s == "search") {
+		    if (search_method == MINIMAX) {
+		        std::cout << "Alpha Beta search method now in use" << std::endl;
+                search_method = ALPHABETA;
+		    } else if (search_method == ALPHABETA) {
+                std::cout << "Minimax search method now in use" << std::endl;
+                search_method = MINIMAX;
+		    }
+            continue;
+		}
         if (s == "help") {
             std::cout << "bench   - starts the benchmark" << std::endl;
-            std::cout << "eval    - switches the current move evaluator in use" << std::endl;
+            std::cout << "eval    - switches the current move evaluator in use (default original)" << std::endl;
+            std::cout << "search  - switches the current search method in use (default minimax)" << std::endl;
             std::cout << "go      - computer makes a move" << std::endl;
             std::cout << "auto    - computer will continue to make moves until game is over" << std::endl;
             std::cout << "new     - starts a new game" << std::endl;
@@ -333,6 +344,14 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     } else if (chosen_evaluator == SIMPLE) {
         std::cout << "  evaluator: simple" << std::endl;
         logfile << "  evaluator: simple" << std::endl;
+    }
+    
+    if (search_method == MINIMAX) {
+        std::cout << "  search method: minimax" << std::endl;
+        logfile << "  search method: minimax" << std::endl;
+    } else if (search_method == ALPHABETA) {
+        std::cout << "  search method: alpha-beta" << std::endl;
+        logfile << "  search method: alpha-beta" << std::endl;
     }
     
     // reading board configuration
@@ -653,9 +672,9 @@ int parseArgs(int argc, char **argv)
     option_t *optList, *thisOpt;
     optList = NULL;
     #ifdef OPENMP_SUPPORT
-    optList = GetOptList(argc, argv,"w:b:mxohet:?");
+    optList = GetOptList(argc, argv,"w:b:mxoheat:?");
     #else
-    optList = GetOptList(argc, argv,"w:b:mxohe?");
+    optList = GetOptList(argc, argv,"w:b:mxohea?");
     #endif
     int flag = 0;
 
@@ -671,11 +690,12 @@ int parseArgs(int argc, char **argv)
             printf("-h          Displays this help message\n");
             printf("-w n        Sets the depth of the white side to n (default 3)\n");
             printf("-b n        Sets the depth of the black side to n (default 3)\n");
-            printf("-o          Turns off all engine output\n");
             printf("-e          Sets the evaluation method to simple material evaluation\n");
-            #ifdef OPENMP_SUPPORT
+            printf("-a          Sets the search method to be alpha-beta");
+#ifdef OPENMP_SUPPORT
             printf("-t n        Sets the number of threads to n\n");
-            #endif
+#endif
+            printf("-o          Turns off all engine output\n");
             printf("\n");
             FreeOptList(thisOpt);
             exit(0);
@@ -706,6 +726,10 @@ int parseArgs(int argc, char **argv)
             case 'o':
                 output = 0;
                 flag = 1;
+                break;
+            case 'a':
+                flag = 1;
+                search_method = ALPHABETA;
                 break;
             case 'e':
                 flag = 1;

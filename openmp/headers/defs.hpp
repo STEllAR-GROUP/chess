@@ -20,6 +20,10 @@
 #define ORIGINAL        0
 #define SIMPLE          1
 
+// Search method Defs
+#define MINIMAX         0
+#define ALPHABETA       1
+
 /* useful squares */
 #define A1              56
 #define B1              57

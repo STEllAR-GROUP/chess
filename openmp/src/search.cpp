@@ -11,9 +11,14 @@
 int think(node_t& board)
 {
     board.ply = 0;
-
-    search(board, depth[board.side]);
-
+    
+    if (search_method == MINIMAX) {
+        search(board, depth[board.side]);
+    } else if (search_method == ALPHABETA) {
+        // Initially alpha is -infinity, beta is infinity
+        search_ab(board, depth[board.side], -10000, 10000, board.side);
+    }
+    
     return 1;
 }
 
@@ -99,6 +104,101 @@ int search(const node_t& board, int depth)
     return max;
 }
 
+/*
+    Alpha Beta search function. Uses OpenMP parallelization by the 
+    'Young Brothers Wait' algorithm which searches the eldest brother (i.e. move)
+    serially to determine alpha-beta bounds and then searches the rest of the
+    brothers in parallel.
+    
+    In order for this to be effective, move ordering is crucial. In theory,
+    if the best move is ordered first, then it will produce a cutoff which leads
+    to smaller search spaces which can be searched faster than standard minimax.
+    However we don't know what a "good move" is until we have searched it, which
+    is what iterative deepening is for.
+    
+    The algorithm maintains two values, alpha and beta, which represent the minimum 
+    score that the maximizing player is assured of and the maximum score that the minimizing 
+    player is assured of respectively. Initially alpha is negative infinity and beta is 
+    positive infinity. As the recursion progresses the "window" becomes smaller. 
+    When beta becomes less than alpha, it means that the current position cannot 
+    be the result of best play by both players and hence need not be explored further.
+    
+    As a first cut, there is no move ordering (and no iterative deepening) 
+    in this alpha-beta algorithm.
+*/
+
+int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
+{
+    int val;
+
+    // if we are a leaf node, return the value from the eval() function
+    if (!depth)
+    {
+      evaluator ev;
+      return ev.eval(board, chosen_evaluator);
+    }
+    /* if this isn't the root of the search tree (where we have
+       to pick a move and can't simply return 0) then check to
+       see if the position is a repeat. if so, we can assume that
+       this line is a draw and return 0. */
+    if (board.ply && reps(board))
+        return 0;
+        
+    // fifty move draw rule
+    if (board.fifty >= 100)
+        return 0;
+
+    std::vector<move> workq;
+
+    gen(workq, board); // Generate the moves
+
+    // loop through the moves
+    
+    if (board.side == max_side)
+    {
+        for (int i = 0; i < workq.size(); i++) {
+            node_t p_board = board;
+
+            move g = workq[i];
+
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                  // legal, then go to the next one
+            }
+                
+            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            
+            if (val > alpha)
+            {
+                alpha = val;
+                if (board.ply == 0)
+                    move_to_make = g;
+            }
+                
+            if (beta <= alpha)
+                break; //beta cutoff
+        }
+        return alpha;
+    } else { // we are the minimizing side
+        for (int i = 0; i < workq.size(); i++) {
+            node_t p_board = board;
+
+            move g = workq[i];
+
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                  // legal, then go to the next one
+            }
+                
+            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            
+            if (val < beta)
+                beta = val;
+                
+            if (beta <= alpha)
+                break; //beta cutoff
+        }
+        return beta;
+    }
+}
 
 
 /* reps() returns the number of times the current position
