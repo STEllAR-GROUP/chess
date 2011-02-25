@@ -153,10 +153,58 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
     gen(workq, board); // Generate the moves
 
     // loop through the moves
+    int j;
     
     if (board.side == max_side)
     {
-        for (int i = 0; i < workq.size(); i++) {
+        for (j = 0; j < workq.size(); j++) {
+            node_t p_board = board;
+            move g = workq[j];
+            
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                  // legal, then go to the next one
+            }
+            
+            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            
+            if (val > alpha)
+            {
+                alpha = val;
+                if (board.ply == 0)
+                    move_to_make = g;
+            }
+                
+            if (beta <= alpha)
+                return alpha; //beta cutoff
+            break;
+        }
+    } else { // we are the minimizing side
+        for (j = 0; j < workq.size(); j++) {
+            node_t p_board = board;
+            move g = workq[j];
+            
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                  // legal, then go to the next one
+            }
+            
+            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            
+            if (val < beta)
+                beta = val;
+                
+            if (beta <= alpha)
+                return beta; //beta cutoff
+        }
+    }
+    
+    // BEGIN OpenMP
+    
+    if (board.side == max_side)
+    {
+#ifdef OPENMP_SUPPORT
+#pragma omp parallel for shared (workq) private(val, alpha, beta)
+#endif
+        for (int i = j; i < workq.size(); i++) {
             node_t p_board = board;
 
             move g = workq[i];
@@ -171,15 +219,20 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
             {
                 alpha = val;
                 if (board.ply == 0)
+                {
+#ifdef OPENMP_SUPPORT
+#pragma omp critical
+#endif
                     move_to_make = g;
+                }
             }
-                
-            if (beta <= alpha)
-                break; //beta cutoff
         }
         return alpha;
     } else { // we are the minimizing side
-        for (int i = 0; i < workq.size(); i++) {
+#ifdef OPENMP_SUPPORT
+#pragma omp parallel for shared (workq) private(val, alpha, beta)
+#endif
+        for (int i = 1; i < workq.size(); i++) {
             node_t p_board = board;
 
             move g = workq[i];
@@ -192,9 +245,6 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
             
             if (val < beta)
                 beta = val;
-                
-            if (beta <= alpha)
-                break; //beta cutoff
         }
         return beta;
     }
