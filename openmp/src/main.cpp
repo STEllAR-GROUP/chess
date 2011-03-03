@@ -27,7 +27,7 @@ double sum_exec_times = 0;
 int count_exec_times;
 
 int parseArgs(int, char**);
-bool parseIni();
+bool parseIni(const char * filename);
 
 /* main() is basically an infinite loop that either calls
    think() when it's the computer's turn to move or prompts
@@ -39,7 +39,8 @@ int computer_side;
 int chx_main(int argc, char **argv)
 {
     int arguments = 0;
-    parseIni();
+    std::string s("settings.ini");
+    parseIni(s.c_str());
     arguments = parseArgs(argc,argv);
     
     int m;
@@ -676,9 +677,9 @@ int parseArgs(int argc, char **argv)
     option_t *optList, *thisOpt;
     optList = NULL;
     #ifdef OPENMP_SUPPORT
-    optList = GetOptList(argc, argv,"w:b:mxoheat:?");
+    optList = GetOptList(argc, argv,"w:b:oheas:t:?");
     #else
-    optList = GetOptList(argc, argv,"w:b:mxohea?");
+    optList = GetOptList(argc, argv,"w:b:oheas:?");
     #endif
     int flag = 0;
 
@@ -692,10 +693,11 @@ int parseArgs(int argc, char **argv)
             // display help
             printf("Command line options:\n");
             printf("-h          Displays this help message\n");
+            printf("-s file     Uses the specified settings file instead of settings.ini\n");
             printf("-w n        Sets the depth of the white side to n (default 3)\n");
             printf("-b n        Sets the depth of the black side to n (default 3)\n");
             printf("-e          Sets the evaluation method to simple material evaluation\n");
-            printf("-a          Sets the search method to be alpha-beta");
+            printf("-a          Sets the search method to be alpha-beta\n");
 #ifdef OPENMP_SUPPORT
             printf("-t n        Sets the number of threads to n\n");
 #endif
@@ -738,6 +740,9 @@ int parseArgs(int argc, char **argv)
             case 'e':
                 flag = 1;
                 chosen_evaluator = SIMPLE;
+                break;
+            case 's':
+                parseIni(thisOpt->argument);
                 break;
             #ifdef OPENMP_SUPPORT
             case 't':
@@ -793,10 +798,10 @@ std::string get_log_name()
     return logfilename;
 }
 
-bool parseIni()
+bool parseIni(const char * filename)
 {
     CSimpleIniA ini;
-    SI_Error rc = ini.LoadFile("settings.ini");
+    SI_Error rc = ini.LoadFile(filename);
     if (rc < 0) return false;  // file not found
     
     // arguments to ini.GetValue are 1) section name 2) key name 3) value to return if its not in the ini file
