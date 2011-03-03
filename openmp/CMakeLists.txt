@@ -25,7 +25,9 @@ ENDIF ("${OPENMP}" MATCHES "FALSE")
 
 include_directories ("${PROJECT_SOURCE_DIR}/headers")
 include_directories ("${PROJECT_SOURCE_DIR}/liboptlist")
+include_directories ("${PROJECT_SOURCE_DIR}/libini")
 add_subdirectory (liboptlist)
-set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses)
+add_subdirectory (libini)
+set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses ini)
 
 add_subdirectory (src)

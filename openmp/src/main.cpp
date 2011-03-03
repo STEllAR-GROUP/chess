@@ -4,6 +4,7 @@
 
 #include "main.hpp"
 #include "optlist.hpp"
+#include "SimpleIni.h"
 #include <signal.h>
 #include <fstream>
 #include <sys/time.h>
@@ -26,6 +27,7 @@ double sum_exec_times = 0;
 int count_exec_times;
 
 int parseArgs(int, char**);
+bool parseIni();
 
 /* main() is basically an infinite loop that either calls
    think() when it's the computer's turn to move or prompts
@@ -36,7 +38,9 @@ int computer_side;
 
 int chx_main(int argc, char **argv)
 {
-    int arguments = parseArgs(argc,argv);
+    int arguments = 0;
+    parseIni();
+    arguments = parseArgs(argc,argv);
     
     int m;
     #ifdef READLINE_SUPPORT
@@ -787,4 +791,48 @@ std::string get_log_name()
     logfilename = logfilenamestream.str();
     
     return logfilename;
+}
+
+bool parseIni()
+{
+    CSimpleIniA ini;
+    SI_Error rc = ini.LoadFile("settings.ini");
+    if (rc < 0) return false;  // file not found
+    
+    // arguments to ini.GetValue are 1) section name 2) key name 3) value to return if its not in the ini file
+    std::string s = std::string(ini.GetValue("CHX Main", "search_method", "minimax")); // ini.GetValue returns char * , so wrap it in std::string for fun    
+    if (s == "minimax")
+        search_method = MINIMAX;
+    else if (s == "alphabeta")
+        search_method = ALPHABETA;
+    else
+        std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" or \"alphabeta\" " << std::endl;
+        
+    depth[LIGHT] = atoi(ini.GetValue("Depth", "white", "3"));
+    depth[DARK]  = atoi(ini.GetValue("Depth", "black", "3"));
+    
+    #ifdef OPENMP_SUPPORT
+    number_threads = atoi(ini.GetValue("CHX Main", "num_threads", "1"));
+    omp_set_num_threads(number_threads);
+    #endif
+    
+    s = std::string(ini.GetValue("CHX Main", "eval_method", "original"));
+    if (s == "original")
+        chosen_evaluator = ORIGINAL;
+    else if (s == "simple")
+        chosen_evaluator = SIMPLE;
+    else
+        std::cerr << "Invalid parameter in ini file for 'eval_method', please use \"original\" or \"simple\" " << std::endl;
+        
+    s = std::string(ini.GetValue("CHX Main", "output", "true"));
+    if (s == "true")
+        output = 1;
+    else if (s == "false")
+        output = 0;
+    else
+        std::cerr << "Invalid parameter in ini file for 'output', please use \"true\" or \"false\" " << std::endl;
+    
+    
+    
+    return true;
 }

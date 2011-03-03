@@ -27,9 +27,18 @@ To run type these commands
  $ ./chx
 You then get an interactive prompt ("chx>"). 
 
+================= SETTING OPTIONS ================
+
+You can use CHX with command line options or with the provided settings.ini file.
+Any settings made via the command line arguments will override those provided in the
+settings.ini file
+
+NOTE: In order for the settings.ini file to read in properly, you need to be
+in the same working directory as the settings file when you run the program.
+
 ==================== BENCHMARK ====================
 
-At the prompt you can run the benchmark by typing:
+At the interactive prompt you can run the benchmark by typing:
 
     bench ../inputs/board2 3 4
 

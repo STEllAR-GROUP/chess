@@ -1,3 +1,9 @@
+3/1/2011
+- Adds in a library for handling ini files as well as a routine for handling
+  ini settings.
+- Adds in a default ini file to show how it works
+- Updates README file to show how settings.ini works
+
 2/16/2011
 - Adds in a serial Alpha Beta search method. Note that this search method is
   not yet working with OpenMP and is serial.
