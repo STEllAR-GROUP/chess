@@ -22,11 +22,22 @@ int think(node_t& board)
         pv.resize(depth[board.side]);
         int alpha = -10000;
         int beta = 10000;
+        bool brk = false;  // Indicates whether we broke away from iterative deepening 
+                           // and need to call search on the actual ply
 
         for (int i = 1; i <= depth[board.side]; i++) // Iterative deepening
         {
           search_ab(board, i, alpha, beta);
+          
+          if (i >= iter_depth)
+          {
+            brk = true;
+            break;
+          }
         }
+
+        if (brk)
+          search_ab(board, depth[board.side], alpha, beta);
         pv.clear();
     }
     

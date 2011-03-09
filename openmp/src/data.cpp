@@ -20,6 +20,8 @@ int chosen_evaluator = ORIGINAL; // Which evaluation function to use
 
 int search_method = MINIMAX; // Which search method to use
 
+int iter_depth = 5;
+
 /* random numbers used to compute hash; see set_hash() in board.c */
 int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
 int hash_side;

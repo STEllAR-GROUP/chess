@@ -312,6 +312,14 @@ int main(int argc, char *argv[])
 
 void start_benchmark(std::string filename, int ply_level, int num_runs)
 {
+    std::ifstream benchfile(filename.c_str());
+
+    if (!benchfile.is_open())
+    {
+        std::cerr << "Unable to open file" << std::endl;
+        return;
+    }
+
     depth[LIGHT] = ply_level;
     depth[DARK]  = ply_level;
     
@@ -360,15 +368,12 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
     
     // reading board configuration
     std::string line;
-    std::ifstream benchfile(filename.c_str());
-    if (benchfile.is_open())
+    while ( benchfile.good() )
     {
-        while ( benchfile.good() )
-        {
-            getline (benchfile,line);
-            line_num++;
-            //Each line has 8 characters
-			if(line.length()!=8)
+      getline (benchfile,line);
+      line_num++;
+      //Each line has 8 characters
+      if(line.length()!=8)
 				break;
             for (int i = 0; i < 8; i++)
             {
@@ -438,12 +443,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
             }
         }
         benchfile.close();
-    }
-    else {
-        std::cout << "Unable to open file";
-        logfile << "Unable to open file";
-        return;
-    }
+
     board.side = LIGHT;
     board.castle = 15;
     board.ep = -1;
@@ -835,8 +835,33 @@ bool parseIni(const char * filename)
         output = 0;
     else
         std::cerr << "Invalid parameter in ini file for 'output', please use \"true\" or \"false\" " << std::endl;
-    
-    
+
+
+    // Benchmark ini parsing
+
+    s = std::string(ini.GetValue("Benchmark", "mode", "false"));
+    if (s == "true")
+    {
+      s = std::string(ini.GetValue("Benchmark", "file", "ERROR"));
+
+      if (s == "ERROR")
+      {
+        std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
+        exit(-1);
+      }
+
+      int max_ply = atoi(ini.GetValue("Benchmark", "max_ply", "3"));
+      int num_runs  = atoi(ini.GetValue("Benchmark", "num_runs", "1"));
+
+      init_hash();
+      start_benchmark(s, max_ply, num_runs);
+      exit(0);
+    }
+    else if (s != "false")
+      std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
+
+    iter_depth = atoi(ini.GetValue("CHX Main", "iter_depth", "5"));
     
     return true;
 }
+

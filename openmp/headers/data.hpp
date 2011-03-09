@@ -29,6 +29,7 @@ extern int output;
 extern int chosen_evaluator; // not really static but shouldn't change during a run
 extern int number_threads;
 extern int search_method;
+extern int iter_depth;
 
 ////////////////////////////////////////////////////////////////////////////
 //State Information -- The global variables this program uses and modifies//
