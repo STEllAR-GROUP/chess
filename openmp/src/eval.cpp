@@ -5,7 +5,7 @@
 #include "eval.hpp"
 
 // the values of the pieces
-int piece_value[6] = {
+const int piece_value[6] = {
     100, 300, 300, 500, 900, 0
 };
 
@@ -13,7 +13,7 @@ int piece_value[6] = {
    added to the material value of the piece based on the
    location of the piece. */
 
-int pawn_pcsq[64] = {
+const int pawn_pcsq[64] = {
       0,   0,   0,   0,   0,   0,   0,   0,
       5,  10,  15,  20,  20,  15,  10,   5,
       4,   8,  12,  16,  16,  12,   8,   4,
@@ -24,7 +24,7 @@ int pawn_pcsq[64] = {
       0,   0,   0,   0,   0,   0,   0,   0
 };
 
-int knight_pcsq[64] = {
+const int knight_pcsq[64] = {
     -10, -10, -10, -10, -10, -10, -10, -10,
     -10,   0,   0,   0,   0,   0,   0, -10,
     -10,   0,   5,   5,   5,   5,   0, -10,
@@ -35,7 +35,7 @@ int knight_pcsq[64] = {
     -10, -30, -10, -10, -10, -10, -30, -10
 };
 
-int bishop_pcsq[64] = {
+const int bishop_pcsq[64] = {
     -10, -10, -10, -10, -10, -10, -10, -10,
     -10,   0,   0,   0,   0,   0,   0, -10,
     -10,   0,   5,   5,   5,   5,   0, -10,
@@ -46,7 +46,7 @@ int bishop_pcsq[64] = {
     -10, -10, -20, -10, -10, -20, -10, -10
 };
 
-int king_pcsq[64] = {
+const int king_pcsq[64] = {
     -40, -40, -40, -40, -40, -40, -40, -40,
     -40, -40, -40, -40, -40, -40, -40, -40,
     -40, -40, -40, -40, -40, -40, -40, -40,
@@ -57,7 +57,7 @@ int king_pcsq[64] = {
       0,  20,  40, -20,   0, -20,  40,  20
 };
 
-int king_endgame_pcsq[64] = {
+const int king_endgame_pcsq[64] = {
       0,  10,  20,  30,  30,  20,  10,   0,
      10,  20,  30,  40,  40,  30,  20,  10,
      20,  30,  40,  50,  50,  40,  30,  20,
@@ -72,7 +72,7 @@ int king_endgame_pcsq[64] = {
    values for DARK pieces. The piece/square value of a
    LIGHT pawn is pawn_pcsq[sq] and the value of a DARK
    pawn is pawn_pcsq[flip[sq]] */
-int flip[64] = {
+const int flip[64] = {
      56,  57,  58,  59,  60,  61,  62,  63,
      48,  49,  50,  51,  52,  53,  54,  55,
      40,  41,  42,  43,  44,  45,  46,  47,
@@ -152,6 +152,9 @@ int evaluator::eval_orig(const node_t& board)
     int i;
     int f;  // file
     int score[2];  // each side's score
+
+    f = i = 0;
+    score[0] = score[1] = 0;
 
     // this is the first pass: set up pawn_rank, piece_mat, and pawn_mat.
     for (i = 0; i < 10; ++i) {

@@ -16,7 +16,9 @@ int think(node_t& board)
         search(board, depth[board.side]);
     } else if (search_method == ALPHABETA) {
         // Initially alpha is -infinity, beta is infinity
-        search_ab(board, depth[board.side], -10000, 10000, board.side);
+        int alpha = -10000;
+        int beta = 10000;
+        search_ab(board, depth[board.side], alpha, beta);
     }
     
     return 1;
@@ -127,10 +129,8 @@ int search(const node_t& board, int depth)
     in this alpha-beta algorithm.
 */
 
-int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
+int search_ab(const node_t& board, int depth, int alpha, int beta)
 {
-    int val;
-
     // if we are a leaf node, return the value from the eval() function
     if (!depth)
     {
@@ -155,9 +155,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
     // loop through the moves
     int j;
     
-    if (board.side == max_side)
-    {
-        for (j = 0; j < workq.size(); j++) {
+        for (j = 0; j < workq.size() && j < 3; j++) {
             node_t p_board = board;
             move g = workq[j];
             
@@ -165,7 +163,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
                 continue;                  // legal, then go to the next one
             }
             
-            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            int val = -search_ab(p_board, depth-1, -beta, -alpha);
             
             if (val > alpha)
             {
@@ -178,31 +176,11 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
                 return alpha; //beta cutoff
             break;
         }
-    } else { // we are the minimizing side
-        for (j = 0; j < workq.size(); j++) {
-            node_t p_board = board;
-            move g = workq[j];
-            
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                  // legal, then go to the next one
-            }
-            
-            val = search_ab(p_board, depth-1, alpha, beta, max_side);
-            
-            if (val < beta)
-                beta = val;
-                
-            if (beta <= alpha)
-                return beta; //beta cutoff
-        }
-    }
     
     // BEGIN OpenMP
     
-    if (board.side == max_side)
-    {
 #ifdef OPENMP_SUPPORT
-#pragma omp parallel for shared (workq) private(val, alpha, beta)
+#pragma omp parallel for shared (workq,alpha,beta)
 #endif
         for (int i = j; i < workq.size(); i++) {
             node_t p_board = board;
@@ -213,41 +191,23 @@ int search_ab(const node_t& board, int depth, int alpha, int beta, int max_side)
                 continue;                  // legal, then go to the next one
             }
                 
-            val = search_ab(p_board, depth-1, alpha, beta, max_side);
+            int val = -search_ab(p_board, depth-1, -beta, -alpha);
             
             if (val > alpha)
             {
-                alpha = val;
-                if (board.ply == 0)
-                {
 #ifdef OPENMP_SUPPORT
 #pragma omp critical
 #endif
-                    move_to_make = g;
+                {
+                    alpha = val;
+                    if (board.ply == 0)
+                    {
+                        move_to_make = g;
+                    }
                 }
             }
         }
         return alpha;
-    } else { // we are the minimizing side
-#ifdef OPENMP_SUPPORT
-#pragma omp parallel for shared (workq) private(val, alpha, beta)
-#endif
-        for (int i = 1; i < workq.size(); i++) {
-            node_t p_board = board;
-
-            move g = workq[i];
-
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                  // legal, then go to the next one
-            }
-                
-            val = search_ab(p_board, depth-1, alpha, beta, max_side);
-            
-            if (val < beta)
-                beta = val;
-        }
-        return beta;
-    }
 }
 
 
