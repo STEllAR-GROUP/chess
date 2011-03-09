@@ -8,6 +8,9 @@
 
 // think() calls search() 
 
+std::vector<move> pv;  // Principle Variation, used in iterative deepening
+
+
 int think(node_t& board)
 {
     board.ply = 0;
@@ -16,9 +19,15 @@ int think(node_t& board)
         search(board, depth[board.side]);
     } else if (search_method == ALPHABETA) {
         // Initially alpha is -infinity, beta is infinity
+        pv.resize(depth[board.side]);
         int alpha = -10000;
         int beta = 10000;
-        search_ab(board, depth[board.side], alpha, beta);
+
+        for (int i = 1; i <= depth[board.side]; i++) // Iterative deepening
+        {
+          search_ab(board, i, alpha, beta);
+        }
+        pv.clear();
     }
     
     return 1;
@@ -124,9 +133,6 @@ int search(const node_t& board, int depth)
     positive infinity. As the recursion progresses the "window" becomes smaller. 
     When beta becomes less than alpha, it means that the current position cannot 
     be the result of best play by both players and hence need not be explored further.
-    
-    As a first cut, there is no move ordering (and no iterative deepening) 
-    in this alpha-beta algorithm.
 */
 
 int search_ab(const node_t& board, int depth, int alpha, int beta)
@@ -152,62 +158,66 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     gen(workq, board); // Generate the moves
 
+
     // loop through the moves
     int j;
     
-        for (j = 0; j < workq.size() && j < 3; j++) {
-            node_t p_board = board;
-            move g = workq[j];
-            
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                  // legal, then go to the next one
-            }
-            
-            int val = -search_ab(p_board, depth-1, -beta, -alpha);
-            
-            if (val > alpha)
-            {
-                alpha = val;
-                if (board.ply == 0)
-                    move_to_make = g;
-            }
-                
-            if (beta <= alpha)
-                return alpha; //beta cutoff
-            break;
+    for (j = 0; j < workq.size(); j++) {
+        node_t p_board = board;
+        sort_pv(workq, board.ply); // Part of iterative deepening
+        move g = workq[j];
+        
+        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+            continue;                  // legal, then go to the next one
         }
+        
+        int val = -search_ab(p_board, depth-1, -beta, -alpha);
+        
+        if (val > alpha)
+        {
+            alpha = val;
+            if (board.ply == 0)
+                move_to_make = g;
+            pv[board.ply] = g;
+        }
+            
+        if (beta <= alpha)
+            return alpha; //beta cutoff
+        break;
+    }
     
     // BEGIN OpenMP
-    
+
 #ifdef OPENMP_SUPPORT
 #pragma omp parallel for shared (workq,alpha,beta)
 #endif
-        for (int i = j; i < workq.size(); i++) {
-            node_t p_board = board;
+    for (int i = j; i < workq.size(); i++) {
+      node_t p_board = board;
 
-            move g = workq[i];
+      move g = workq[i];
 
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                  // legal, then go to the next one
-            }
-                
-            int val = -search_ab(p_board, depth-1, -beta, -alpha);
-            
-            if (val > alpha)
-            {
+      if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+        continue;                  // legal, then go to the next one
+      }
+
+      int val = -search_ab(p_board, depth-1, -beta, -alpha);
+
+      if (val > alpha)
+      {
 #ifdef OPENMP_SUPPORT
 #pragma omp critical
 #endif
-                {
-                    alpha = val;
-                    if (board.ply == 0)
-                    {
-                        move_to_make = g;
-                    }
-                }
-            }
+        {
+          alpha = val;
+          if (board.ply == 0)
+          {
+            move_to_make = g;
+          }
+          pv[board.ply] = g;
         }
-        return alpha;
+      }
+    }
+    return alpha;
 }
 
 
@@ -231,10 +241,23 @@ bool compare_moves(move a, move b)
     if (a.b.from == b.b.from) 
     {
         if (a.b.to == b.b.to)
-          std::cerr << "Error, comparing similar moves";
+          std::cerr << "Error, comparing similar moves" << std::endl;
         return (a.b.to) > (b.b.to);
     }
     else
         return (a.b.from) > (b.b.from);
 }
 
+void sort_pv(std::vector<move>& workq, int ply)
+{
+   for(int i = 0; i < workq.size() ; i++)
+   {
+     move temp;
+     if (workq[i].u == pv[ply].u) // If we have a move in the work queue that is the same as the best move we have searched before
+     {
+        temp = workq[0];
+        workq[0] = workq[i];
+        workq[i] = temp;
+     }
+   }
+}

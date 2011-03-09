@@ -50,11 +50,12 @@ When the readline package is enabled, the user will be able to access command li
 
 Command line options:
 -h          Displays this help message
+-s file     Uses the specified settings file instead of settings.ini
 -w n        Sets the depth of the white side to n (default 3)
 -b n        Sets the depth of the black side to n (default 3)
+-e          Sets the evaluation method to simple material evaluation
+-a          Sets the search method to be alpha-beta
+-t n        Sets the number of threads to n
 -o          Turns off all engine output
--e			Sets the evaluation method to simple material evaluation
--a          Sets the search method to alpha beta
--t			Sets the number of threads of parallel execution (requires a compiler that supports OpenMP)
 
-NOTE: Setting any command line parameters will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.
+NOTE: Setting any command line parameters (except -s) will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.

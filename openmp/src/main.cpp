@@ -21,7 +21,6 @@
 #include <omp.h>
 #endif
 
-struct timeval startt;
 double sum_exec_times2 = 0;
 double sum_exec_times = 0;
 int count_exec_times;
@@ -248,13 +247,13 @@ int chx_main(int argc, char **argv)
 			std::string first;
 			iss >> first;
             
-            std::string filename;
-            iss >> filename;
-            
-            iss >> ply_level;
-            iss >> num_runs;
-            std::cout << std::endl;
-            start_benchmark(filename, ply_level, num_runs);
+      std::string filename;
+      iss >> filename;
+      
+      iss >> ply_level;
+      iss >> num_runs;
+      std::cout << std::endl;
+      start_benchmark(filename, ply_level, num_runs);
 			continue;
 		}
 		if (s == "eval") {
