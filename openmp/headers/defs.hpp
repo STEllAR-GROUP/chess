@@ -23,6 +23,7 @@
 // Search method Defs
 #define MINIMAX         0
 #define ALPHABETA       1
+#define MTDF            2
 
 /* useful squares */
 #define A1              56

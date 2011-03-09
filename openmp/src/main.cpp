@@ -270,6 +270,9 @@ int chx_main(int argc, char **argv)
         std::cout << "Alpha Beta search method now in use" << std::endl;
         search_method = ALPHABETA;
       } else if (search_method == ALPHABETA) {
+        std::cout << "MTD-f search method now in use" << std::endl;
+        search_method = MTDF;
+      } else if (search_method == MTDF) {
         std::cout << "Minimax search method now in use" << std::endl;
         search_method = MINIMAX;
       }
@@ -363,6 +366,9 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   } else if (search_method == ALPHABETA) {
     std::cout << "  search method: alpha-beta" << std::endl;
     logfile << "  search method: alpha-beta" << std::endl;
+  } else if (search_method == MTDF) {
+    std::cout << "  search method: MTD-f" << std::endl;
+    logfile << "  search method: MTD-f" << std::endl;
   }
 
   // reading board configuration
@@ -808,6 +814,8 @@ bool parseIni(const char * filename)
     search_method = MINIMAX;
   else if (s == "alphabeta")
     search_method = ALPHABETA;
+  else if (s == "mtd-f")
+    search_method = MTDF;
   else
     std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" or \"alphabeta\" " << std::endl;
 

@@ -6,17 +6,46 @@
 #include "search.hpp"
 #include <algorithm>
 
-// think() calls search() 
+inline int min(int a,int b) { return a < b ? a : b; }
 
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
+/** MTD-f */
+int mtdf(const node_t& board,int f,int depth)
+{
+    int g = f;
+    int upper =  10000;
+    int lower = -10000;
+    while(lower < upper) {
+        int beta = g;
+        if(g == lower)
+            beta++;
+        g = search_ab(board,depth,beta-1,beta);
+        if(g < beta)
+            upper = g;
+        else 
+            lower = g;
+    }
+    return g;
+}
 
+// think() calls search() 
 int think(node_t& board)
 {
   board.ply = 0;
 
   if (search_method == MINIMAX) {
     search(board, depth[board.side]);
+  } else if (search_method == MTDF) {
+    pv.resize(depth[board.side]);
+    int alpha = -10000;
+    int beta = 10000;
+    int d = min(3,depth[board.side]);
+    int f = search_ab(board,d,alpha,beta);
+    while(d <= depth[board.side]) {
+        f = mtdf(board,f,d);
+        d+=2;
+    }
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
