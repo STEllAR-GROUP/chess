@@ -24,7 +24,10 @@ struct node_t {
     int side;
     int castle;
     int ep;
+    
+    /* the number of moves since a capture or pawn move, used to handle the fifty-move-draw rule */
     int fifty;
+    
     int ply;
     int hply;
 };
