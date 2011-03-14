@@ -48,13 +48,15 @@ void init_hash()
    we have good coverage of all 32 bits. (rand() returns 16-bit numbers
    on some systems.) */
 
-int hash_rand()
+hash_t hash_rand()
 {
     int i;
-    int r = 0;
+    hash_t r(0);
 
-    for (i = 0; i < 32; ++i)
-        r ^= rand() << i;
+    for (i = 0; i < 32; ++i) {
+        hash_t v(rand());
+        r ^= v << i;
+    }
     return r;
 }
 
@@ -71,11 +73,11 @@ int hash_rand()
    XORed if there is one. (A chess technicality is that one position can't
    be a repetition of another if the en passant state is different.) */
 
-int set_hash(node_t& board)
+hash_t set_hash(node_t& board)
 {
     int i;
 
-    int hash = 0;   
+    hash_t hash(0);   
     for (i = 0; i < 64; ++i)
         if (board.color[i] != EMPTY)
             hash ^= hash_piece[board.color[i]][board.piece[i]][i];

@@ -4,11 +4,12 @@
 #include "node.hpp"
 #include "defs.hpp"
 #include "data.hpp"
+#include "hash.hpp"
 
 void init_board(node_t& board);
 void init_hash();
-int hash_rand();
-int set_hash(node_t& board);
+hash_t hash_rand();
+hash_t set_hash(node_t& board);
 bool in_check(const node_t& board, int s);
 bool attack(const node_t& board, int sq, int s);
 void gen(std::vector<move>& workq, const node_t& board);

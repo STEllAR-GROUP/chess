@@ -1,3 +1,4 @@
+#include "hash.hpp"
 /*
  *  data.hpp
  */
@@ -10,9 +11,9 @@
 /////////////////////////////////////////////////////////////////////////
 // Static Global Variables                                             //
 /////////////////////////////////////////////////////////////////////////
-extern int hash_piece[2][6][64];
-extern int hash_side;
-extern int hash_ep[64];
+extern hash_t hash_piece[2][6][64];
+extern hash_t hash_side;
+extern hash_t hash_ep[64];
 extern int mailbox[120];
 extern int mailbox64[64];
 extern bool slide[6];

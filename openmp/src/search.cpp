@@ -2,11 +2,30 @@
  *  search.cpp
  */
 
-
 #include "search.hpp"
 #include <algorithm>
+#include <map>
 
 inline int min(int a,int b) { return a < b ? a : b; }
+inline int max(int a,int b) { return a > b ? a : b; }
+
+const int zdepth = 3;
+
+struct zkey_t {
+    hash_t hash;
+    int depth;
+};
+
+bool operator<(const zkey_t& k1,const zkey_t& k2) {
+    if(k1.hash < k2.hash)
+        return true;
+    else if(k1.hash == k2.hash)
+        return k1.depth < k2.depth;
+    else
+        return false;
+}
+
+std::map<zkey_t,int> bound;
 
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
@@ -32,6 +51,7 @@ int mtdf(const node_t& board,int f,int depth)
 // think() calls search() 
 int think(node_t& board)
 {
+  bound.clear();
   board.ply = 0;
 
   if (search_method == MINIMAX) {
@@ -40,23 +60,30 @@ int think(node_t& board)
     pv.resize(depth[board.side]);
     int alpha = -10000;
     int beta = 10000;
-    int d = min(3,depth[board.side]);
+    int d = 2;
+    if(depth[board.side] % 2 == 1)
+        d = 1;
     int f = search_ab(board,d,alpha,beta);
     while(d <= depth[board.side]) {
         f = mtdf(board,f,d);
         d+=2;
     }
+    std::cout << "f=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
+    int f;
     int alpha = -10000;
     int beta = 10000;
     bool brk = false;  /* Indicates whether we broke away from iterative deepening 
                           and need to call search on the actual ply */
 
-    for (int i = 1; i <= depth[board.side]; i++) // Iterative deepening
+    int low = 2;
+    if(depth[board.side] % 2 == 1)
+        low = 1;
+    for (int i = low; i <= depth[board.side]; i++) // Iterative deepening
     {
-      search_ab(board, i, alpha, beta);
+      f = search_ab(board, i, alpha, beta);
 
       if (i >= iter_depth)
       {
@@ -64,10 +91,12 @@ int think(node_t& board)
         break;
       }
     }
+    bound.clear();
 
     if (brk)
-      search_ab(board, depth[board.side], alpha, beta);
+      f=search_ab(board, depth[board.side], alpha, beta);
     pv.clear();
+    std::cout << "f=" << f << std::endl;
   }
 
   return 1;
@@ -195,6 +224,18 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   if (board.fifty >= 100)
     return 0;
 
+  if(depth >= zdepth) {
+    zkey_t k;
+    k.hash = board.hash;
+    k.depth = depth;
+    std::map<zkey_t,int>::iterator f = bound.find(k);
+    if(f != bound.end()) {
+        if(f->second >= beta)
+            return f->second;
+        alpha = max(alpha,f->second);
+    }
+  }
+
   std::vector<move> workq;
 
   gen(workq, board); // Generate the moves
@@ -216,14 +257,19 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     if (val > alpha)
     {
+      zkey_t k;
+      k.hash = board.hash;
+      k.depth = depth;
+      bound[k] = val;
       alpha = val;
       if (board.ply == 0)
         move_to_make = g;
       pv[board.ply] = g;
     }
 
-    if (beta <= alpha)
+    if (beta <= alpha) {
       return alpha; //beta cutoff
+    }
     break;
   }
 
@@ -251,6 +297,10 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 #pragma omp critical
 #endif
       {
+        zkey_t k;
+        k.hash = board.hash;
+        k.depth = depth;
+        bound[k] = val;
         alpha = val;
         if (board.ply == 0)
         {

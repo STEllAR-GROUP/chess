@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "defs.hpp"
+#include "hash.hpp"
 
 struct hist_t {
     move m;
@@ -12,12 +13,12 @@ struct hist_t {
     int castle;
     int ep;
     int fifty;
-    int hash;
+    hash_t hash;
 };
 
 struct node_t { 
     std::vector<hist_t> hist_dat;
-    int hash;
+    hash_t hash;
     char color[64];
     char piece[64];
     int depth;
