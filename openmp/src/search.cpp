@@ -9,7 +9,7 @@
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
-const int zdepth = 3;
+const int zdepth = 2;
 
 struct zkey_t {
     hash_t hash;
@@ -60,13 +60,14 @@ int think(node_t& board)
     pv.resize(depth[board.side]);
     int alpha = -10000;
     int beta = 10000;
-    int d = 2;
-    if(depth[board.side] % 2 == 1)
-        d = 1;
+    int stepsize = 2;
+    int d = depth[board.side] % stepsize;
+    if(d == 0)
+        d = stepsize;
     int f = search_ab(board,d,alpha,beta);
     while(d <= depth[board.side]) {
         f = mtdf(board,f,d);
-        d+=2;
+        d+=stepsize;
     }
     std::cout << "f=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
@@ -91,7 +92,6 @@ int think(node_t& board)
         break;
       }
     }
-    bound.clear();
 
     if (brk)
       f=search_ab(board, depth[board.side], alpha, beta);
