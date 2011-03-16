@@ -35,15 +35,23 @@ int mtdf(const node_t& board,int f,int depth)
     int g = f;
     int upper =  10000;
     int lower = -10000;
+    // Technically, MTD-f uses "zero-width" searches
+    // However, Aske Plaat points out that it performs
+    // better with a coarser evaluation function. Since
+    // this maps readily onto a wider, non-zero width
+    // we provide a width setting for optimization.
+    int width = 5;
     while(lower < upper) {
-        int beta = g;
-        if(g == lower)
-            beta++;
-        g = search_ab(board,depth,beta-1,beta);
-        if(g < beta)
+        int alpha = max(lower,g-1-width/2);
+        int beta = alpha+width+1;
+        g = search_ab(board,depth,alpha,beta);
+        if(g < beta) {
+            if(g > alpha)
+                break;
             upper = g;
-        else 
+        } else {
             lower = g;
+        }
     }
     return g;
 }
