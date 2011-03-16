@@ -4,7 +4,7 @@
 
 #include "search.hpp"
 #include <algorithm>
-#include <map>
+#include <assert.h>
 
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
@@ -13,19 +13,32 @@ const int zdepth = 2;
 
 struct zkey_t {
     hash_t hash;
-    int depth;
+    int score;
 };
-
-bool operator<(const zkey_t& k1,const zkey_t& k2) {
-    if(k1.hash < k2.hash)
-        return true;
-    else if(k1.hash == k2.hash)
-        return k1.depth < k2.depth;
-    else
-        return false;
-}
-
-std::map<zkey_t,int> bound;
+const int table_size = 1024;
+struct array2d {
+    zkey_t *data;
+    const int d1,d2,n;
+    array2d(int dim1,int dim2) : d1(dim1), d2(dim2), n(d1*d2) {
+        data = new zkey_t[n];
+    }
+    ~array2d() {
+        delete[] data;
+    }
+    zkey_t *get(int n1,int n2) {
+        assert(n1 >= 0 && n1 < d1);
+        assert(n2 >= 0 && n2 < d2);
+        int nn = d1*n2+n1;
+        assert(nn >= 0 && nn < n);
+        return &data[nn];
+    }
+    void clear() {
+        for(int i=0;i<n;i++) {
+            data[i].hash = 0;
+        }
+    }
+};
+array2d *table = 0;
 
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
@@ -59,7 +72,8 @@ int mtdf(const node_t& board,int f,int depth)
 // think() calls search() 
 int think(node_t& board)
 {
-  bound.clear();
+  table = new array2d(table_size,depth[board.side]+1);
+  table->clear();
   board.ply = 0;
 
   if (search_method == MINIMAX) {
@@ -107,6 +121,7 @@ int think(node_t& board)
     std::cout << "f=" << f << std::endl;
   }
 
+  delete table;
   return 1;
 }
 
@@ -233,14 +248,11 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     return 0;
 
   if(depth >= zdepth) {
-    zkey_t k;
-    k.hash = board.hash;
-    k.depth = depth;
-    std::map<zkey_t,int>::iterator f = bound.find(k);
-    if(f != bound.end()) {
-        if(f->second >= beta)
-            return f->second;
-        alpha = max(alpha,f->second);
+    zkey_t *z = table->get(board.hash % table_size,depth);
+    if(z->hash == board.hash) {
+        if(z->score >= beta)
+            return z->score;
+        alpha = max(alpha,z->score);
     }
   }
 
@@ -265,10 +277,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     if (val > alpha)
     {
-      zkey_t k;
-      k.hash = board.hash;
-      k.depth = depth;
-      bound[k] = val;
+      zkey_t *z = table->get(board.hash % table_size,depth);
+      z->hash = board.hash;
+      z->score = val;
       alpha = val;
       if (board.ply == 0)
         move_to_make = g;
@@ -305,10 +316,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 #pragma omp critical
 #endif
       {
-        zkey_t k;
-        k.hash = board.hash;
-        k.depth = depth;
-        bound[k] = val;
+        zkey_t *z = table->get(board.hash % table_size,depth);
+        z->hash = board.hash;
+        z->score = val;
         alpha = val;
         if (board.ply == 0)
         {
