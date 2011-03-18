@@ -246,9 +246,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   // loop through the moves
   int j;
 
+  sort_pv(workq, board.ply); // Part of iterative deepening
   for (j = 0; j < workq.size(); j++) {
     node_t p_board = board;
-    sort_pv(workq, board.ply); // Part of iterative deepening
     move g = workq[j];
 
     if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
@@ -363,6 +363,7 @@ void sort_pv(std::vector<move>& workq, int ply)
       temp = workq[0];
       workq[0] = workq[i];
       workq[i] = temp;
+      break;
     }
   }
 }
