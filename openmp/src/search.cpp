@@ -4,42 +4,19 @@
 
 #include "search.hpp"
 #include <algorithm>
+#include <math.h>
 #include <assert.h>
 
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
 const int zdepth = 2;
+const int N = 8;  // bits for bucket size
+const int M = 8;  // bits for table size N+M is total bits that can be indexed by transposition table
+const int bucket_size = pow(2, N);
+const int table_size = pow(2, M);
 
-struct zkey_t {
-    hash_t hash;
-    int score;
-};
-const int table_size = 1024;
-struct array2d {
-    zkey_t *data;
-    const int d1,d2,n;
-    array2d(int dim1,int dim2) : d1(dim1), d2(dim2), n(d1*d2) {
-        data = new zkey_t[n];
-    }
-    ~array2d() {
-        delete[] data;
-    }
-    zkey_t *get(int n1,int n2) {
-        assert(n1 >= 0 && n1 < d1);
-        assert(n2 >= 0 && n2 < d2);
-        int nn = d1*n2+n1;
-        assert(nn >= 0 && nn < n);
-        return &data[nn];
-    }
-    void clear() {
-        for(int i=0;i<n;i++) {
-            data[i].hash = 0;
-        }
-    }
-};
-array2d *table = 0;
-
+std::vector<bucket_t> hash_bucket;
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
 /** MTD-f */
@@ -72,8 +49,7 @@ int mtdf(const node_t& board,int f,int depth)
 // think() calls search() 
 int think(node_t& board)
 {
-  table = new array2d(table_size,depth[board.side]+1);
-  table->clear();
+  hash_bucket = std::vector<bucket_t>(bucket_size, table_size);
   board.ply = 0;
 
   if (search_method == MINIMAX) {
@@ -118,10 +94,9 @@ int think(node_t& board)
     if (brk)
       f=search_ab(board, depth[board.side], alpha, beta);
     pv.clear();
-    std::cout << "f=" << f << std::endl;
+    //std::cout << "f=" << f << std::endl;
   }
 
-  delete table;
   return 1;
 }
 
@@ -248,12 +223,19 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     return 0;
 
   if(depth >= zdepth) {
-    zkey_t *z = table->get(board.hash % table_size,depth);
-    if(z->hash == board.hash) {
+    int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+    hash_bucket[b_index].lock();
+    zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
+    if ((z->hash == board.hash)&&(z->depth == depth)) {
         if(z->score >= beta)
-            return z->score;
+        {
+          int zscore = z->score;
+          hash_bucket[b_index].unlock();
+          return zscore;
+        }
         alpha = max(alpha,z->score);
     }
+    hash_bucket[b_index].unlock();
   }
 
   std::vector<move> workq;
@@ -277,9 +259,15 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     if (val > alpha)
     {
-      zkey_t *z = table->get(board.hash % table_size,depth);
+      
+      int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+      hash_bucket[b_index].lock();
+      zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
       z->hash = board.hash;
       z->score = val;
+      z->depth = depth;
+      hash_bucket[b_index].unlock();
+      
       alpha = val;
       if (board.ply == 0)
         move_to_make = g;
@@ -316,9 +304,14 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 #pragma omp critical
 #endif
       {
-        zkey_t *z = table->get(board.hash % table_size,depth);
+        int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+        hash_bucket[b_index].lock();
+        zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
         z->hash = board.hash;
         z->score = val;
+        z->depth = depth;
+        hash_bucket[b_index].unlock();
+        
         alpha = val;
         if (board.ply == 0)
         {
