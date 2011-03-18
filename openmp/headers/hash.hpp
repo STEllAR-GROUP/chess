@@ -16,7 +16,7 @@ struct bucket_t {
   pthread_mutex_t mutex;
   zkey_t *table;
   size_t size;
-  bucket_t(int M) : size(M) { pthread_mutex_init(&mutex, NULL); table = new zkey_t[M]; }
+  bucket_t(int M) : size(M) { pthread_mutex_init(&mutex, NULL); table = new zkey_t[M]; init(); }
   ~bucket_t() {}
   void lock() { pthread_mutex_lock(&mutex); }
   void unlock() { pthread_mutex_unlock(&mutex); }

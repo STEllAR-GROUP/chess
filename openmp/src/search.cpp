@@ -50,10 +50,6 @@ int mtdf(const node_t& board,int f,int depth)
 int think(node_t& board)
 {
   hash_bucket = std::vector<bucket_t>(bucket_size, table_size);
-  for(size_t i = 0; i < bucket_size; ++i)
-  {
-    hash_bucket[i].init();
-  }
   board.ply = 0;
 
   if (search_method == MINIMAX) {
