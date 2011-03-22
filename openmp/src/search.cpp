@@ -10,14 +10,24 @@
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
+/*
 const int zdepth = 2;
-const int N = 8;  // bits for bucket size
+const int N = 4;  // bits for bucket size
 const int M = 8;  // bits for table size N+M is total bits that can be indexed by transposition table
-const int bucket_size = pow(2, N);
-const int table_size = pow(2, M);
+const int bucket_size = 1<<N;//pow(2, N);
+const int table_size = 1<<M;//pow(2, M);
+*/
 
-std::vector<bucket_t> hash_bucket;
+//std::vector<bucket_t> hash_bucket;
+bucket_t hash_bucket[bucket_size];
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
+
+inline int get_bucket_index(const node_t& board,int depth) {
+    return ((board.hash >> M) ^ depth) & ((1<<N)-1);
+}
+inline int get_entry_index(const node_t& board,int depth) {
+    return board.hash & ((1<<M)-1);
+}
 
 /** MTD-f */
 int mtdf(const node_t& board,int f,int depth)
@@ -49,13 +59,17 @@ int mtdf(const node_t& board,int f,int depth)
 // think() calls search() 
 int think(node_t& board)
 {
-  hash_bucket = std::vector<bucket_t>(bucket_size, table_size);
+  //hash_bucket = std::vector<bucket_t>(bucket_size, table_size);
+  for(int i=0;i<bucket_size;i++)
+    hash_bucket[i].init();
   board.ply = 0;
 
   if (search_method == MINIMAX) {
     search(board, depth[board.side]);
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
+    for(int i=0;i<pv.size();i++)
+        pv[i].u = 0;
     int alpha = -10000;
     int beta = 10000;
     int stepsize = 2;
@@ -223,9 +237,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     return 0;
 
   if(depth >= zdepth) {
-    int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+    int b_index = get_bucket_index(board,depth);
     hash_bucket[b_index].lock();
-    zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
+    zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
     if ((z->hash == board.hash)&&(z->depth == depth)) {
         if(z->score >= beta)
         {
@@ -259,10 +273,10 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     if (val > alpha)
     {
-      
-      int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+      int b_index = get_bucket_index(board,depth);
       hash_bucket[b_index].lock();
-      zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
+      zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
+
       z->hash = board.hash;
       z->score = val;
       z->depth = depth;
@@ -304,9 +318,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 #pragma omp critical
 #endif
       {
-        int b_index = board.hash & ((N>>M)&((1<<N)-1)); // Some bit magic to get the bucket index
+        int b_index = get_bucket_index(board,depth);
         hash_bucket[b_index].lock();
-        zkey_t* z = hash_bucket[b_index].get(board.hash & (1<<M - 1));
+        zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
         z->hash = board.hash;
         z->score = val;
         z->depth = depth;
