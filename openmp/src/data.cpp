@@ -7,10 +7,6 @@
 
 int depth[2] = {3,3};
 
-#ifdef OPENMP_SUPPORT
-int number_threads = 1;
-#endif
-
 move move_to_make; // Global variable keeping track of the next move to
                    // make at the root level
 
@@ -20,7 +16,7 @@ int chosen_evaluator = ORIGINAL; // Which evaluation function to use
 
 int search_method = MINIMAX; // Which search method to use
 
-int iter_depth = 5;
+int iter_depth = 5;  // See search.cpp for usage
 
 /* random numbers used to compute hash; see set_hash() in board.c */
 hash_t hash_piece[2][6][64];  /* indexed by piece [color][type][square] */

@@ -3,6 +3,7 @@
  */
 
 #include "search.hpp"
+#include <pthread.h>
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
@@ -10,15 +11,6 @@
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
-/*
-const int zdepth = 2;
-const int N = 4;  // bits for bucket size
-const int M = 8;  // bits for table size N+M is total bits that can be indexed by transposition table
-const int bucket_size = 1<<N;//pow(2, N);
-const int table_size = 1<<M;//pow(2, M);
-*/
-
-//std::vector<bucket_t> hash_bucket;
 bucket_t hash_bucket[bucket_size];
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
@@ -59,7 +51,6 @@ int mtdf(const node_t& board,int f,int depth)
 // think() calls search() 
 int think(node_t& board)
 {
-  //hash_bucket = std::vector<bucket_t>(bucket_size, table_size);
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
@@ -81,7 +72,7 @@ int think(node_t& board)
         f = mtdf(board,f,d);
         d+=stepsize;
     }
-    std::cout << "f=" << f << std::endl;
+    //std::cout << "f=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
@@ -98,7 +89,7 @@ int think(node_t& board)
     {
       f = search_ab(board, i, alpha, beta);
 
-      if (i >= iter_depth)
+      if (i >= iter_depth)  // if our ply is greater than the iter_depth, then break
       {
         brk = true;
         break;
@@ -142,9 +133,6 @@ int search(const node_t& board, int depth)
 
   // loop through the moves
 
-#ifdef OPENMP_SUPPORT
-#pragma omp parallel for shared (max, workq) private(val)
-#endif
   for (int i = 0; i < workq.size(); i++) {
     node_t p_board = board;
 
@@ -157,23 +145,17 @@ int search(const node_t& board, int depth)
     val = -search(p_board, depth - 1); /* Recursively search this new board
                                           position for its score */
 
-
-#ifdef OPENMP_SUPPORT
-#pragma omp critical
-#endif
+    if (val > max)  // Is this value our maximum?
     {
-      if (val > max)  // Is this value our maximum?
-      {
-        max = val;
+      max = val;
 
-        max_moves.clear();
-        max_moves.push_back(g);
+      max_moves.clear();
+      max_moves.push_back(g);
 
-      }
-      else if (val == max)
-      {
-        max_moves.push_back(g);
-      }
+    }
+    else if (val == max)
+    {
+      max_moves.push_back(g);
     }
   }
 
@@ -256,12 +238,11 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
   gen(workq, board); // Generate the moves
 
-
-  // loop through the moves
-  int j;
-
   sort_pv(workq, board.ply); // Part of iterative deepening
-  for (j = 0; j < workq.size(); j++) {
+  // loop through the moves
+  for (int j = 0; j < workq.size(); j++) {
+    if(alpha >= beta)
+        continue; // use cut-off
     node_t p_board = board;
     move g = workq[j];
 
@@ -290,49 +271,6 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
 
     if (beta <= alpha) {
       return alpha; //beta cutoff
-    }
-    break;
-  }
-
-  // BEGIN OpenMP
-
-#ifdef OPENMP_SUPPORT
-#pragma omp parallel for shared (workq,alpha,beta)
-#endif
-  for (int i = j; i < workq.size(); i++) {
-    if(alpha >= beta)
-        continue; // use cut-off
-    node_t p_board = board;
-
-    move g = workq[i];
-
-    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-      continue;                    // legal, then go to the next one
-    }
-
-    int val = -search_ab(p_board, depth-1, -beta, -alpha);
-
-    if (val > alpha)
-    {
-#ifdef OPENMP_SUPPORT
-#pragma omp critical
-#endif
-      {
-        int b_index = get_bucket_index(board,depth);
-        hash_bucket[b_index].lock();
-        zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
-        z->hash = board.hash;
-        z->score = val;
-        z->depth = depth;
-        hash_bucket[b_index].unlock();
-        
-        alpha = val;
-        if (board.ply == 0)
-        {
-          move_to_make = g;
-        }
-        pv[board.ply] = g;
-      }
     }
   }
   return alpha;

@@ -28,7 +28,6 @@ extern int alpha[2];
 extern int beta[2];
 extern int output;
 extern int chosen_evaluator;
-extern int number_threads;
 extern int search_method;
 extern int iter_depth;
 

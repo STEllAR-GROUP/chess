@@ -8,17 +8,12 @@
 #include <signal.h>
 #include <fstream>
 #include <sys/time.h>
-#include <math.h>
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <sstream>
-#endif
-
-#ifdef OPENMP_SUPPORT
-#include <omp.h>
 #endif
 
 double sum_exec_times2 = 0;
@@ -52,11 +47,7 @@ int chx_main(int argc, char **argv)
   // If there were no command line arguments, display message
   if (!arguments) {
     std::cout << std::endl;
-#ifdef OPENMP_SUPPORT
-    std::cout << "Chess (CHX) OpenMP Minimax/Alpha-Beta Version" << std::endl;
-#else
-    std::cout << "Chess (CHX) Serial Minimax/Alpha-Beta Version" << std::endl;
-#endif
+    std::cout << "Chess (CHX)" << std::endl;
     std::cout << "Phillip LeBlanc - CCT" << std::endl;
     std::cout << std::endl;
     std::cout << "\"help\" displays a list of commands." << std::endl;
@@ -190,28 +181,6 @@ int chx_main(int argc, char **argv)
         std::cout << "Output is now off" << std::endl;
       continue;
     }
-#ifdef OPENMP_SUPPORT
-    std::string nt = "nt";
-    if (s == nt) {
-      int nt;
-      std::cout << "Set number of threads: ";
-      std::cin >> nt;
-      number_threads = nt;
-      omp_set_num_threads(nt);
-      continue;
-    }
-    if (s.compare(0,nt.length(),nt)==0) {
-      int nt;
-      std::istringstream iss(s);
-      std::string first;
-      iss >> first;
-
-      iss >> nt;
-      number_threads = nt;
-      omp_set_num_threads(nt);
-      continue;
-    }
-#endif
     if ((s == "exit")||(s == "quit")) {
       std::cout << "Thanks for using CHX!" << std::endl;
       break;
@@ -290,9 +259,6 @@ int chx_main(int argc, char **argv)
       std::cout << "d       - display the board" << std::endl;
       std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
       std::cout << "exit    - exit the program" << std::endl;
-#ifdef OPENMP_SUPPORT
-      std::cout << "nt      - sets the number of threads for parallel execution" << std::endl;
-#endif
       std::cout << std::endl;
       continue;
     }
@@ -305,9 +271,6 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-#ifdef OPENMP_SUPPORT
-  omp_set_num_threads(1);
-#endif
   int retcode = chx_main(argc, argv);
   return retcode;
 }
@@ -342,16 +305,10 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
   std::cout << "  ply level: " << ply_level << std::endl;
   std::cout << "  num runs: " << num_runs << std::endl;
-#ifdef OPENMP_SUPPORT
-  std::cout << "  num threads: " << number_threads << std::endl;
-#endif
 
   logfile << "Using benchmark file: '" << filename << "'" << std::endl;
   logfile << "  ply level: " << ply_level << std::endl;
   logfile << "  num runs: " << num_runs << std::endl;
-#ifdef OPENMP_SUPPORT
-  logfile << "  num threads: " << number_threads << std::endl;
-#endif
   if (chosen_evaluator == ORIGINAL) {
     std::cout << "  evaluator: original" << std::endl;
     logfile << "  evaluator: original" << std::endl;
@@ -496,8 +453,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
       logfile << "  Computer's move: " << move_str(move_to_make.b)
         << std::endl;
     }
-    std::cout << "Sleeping for twenty secs." << std::endl;
-    sleep(20);
+    //std::cout << "Sleeping for twenty secs." << std::endl;
+    //sleep(20);
   }
 
   for (int i = 0; i < num_runs; ++i)
@@ -700,14 +657,6 @@ int parseArgs(int argc, char **argv)
       printf("Command line options:\n");
       printf("-h          Displays this help message\n");
       printf("-s file     Uses the specified settings file instead of settings.ini\n");
-      printf("-w n        Sets the depth of the white side to n (default 3)\n");
-      printf("-b n        Sets the depth of the black side to n (default 3)\n");
-      printf("-e          Sets the evaluation method to simple material evaluation\n");
-      printf("-a          Sets the search method to be alpha-beta\n");
-#ifdef OPENMP_SUPPORT
-      printf("-t n        Sets the number of threads to n\n");
-#endif
-      printf("-o          Turns off all engine output\n");
       printf("\n");
       FreeOptList(thisOpt);
       exit(0);
@@ -715,48 +664,9 @@ int parseArgs(int argc, char **argv)
 
     switch (thisOpt->option)
     {
-      case 'w':
-        // white depth level
-        depth[LIGHT] = atoi(thisOpt->argument);
-        if (depth[LIGHT] <= 0)
-        {
-          fprintf(stderr, "Illegal depth given, setting depth to 1.\n");
-          depth[LIGHT] = 1;
-        }
-        flag = 1;
-        break;
-      case 'b':
-        // black depth level
-        depth[DARK] = atoi(thisOpt->argument);
-        if (depth[DARK] <= 0)
-        {
-          fprintf(stderr, "Illegal depth given, setting depth to 1.\n");
-          depth[DARK] = 1;
-        }
-        flag = 1;
-        break;
-      case 'o':
-        output = 0;
-        flag = 1;
-        break;
-      case 'a':
-        flag = 1;
-        search_method = ALPHABETA;
-        break;
-      case 'e':
-        flag = 1;
-        chosen_evaluator = SIMPLE;
-        break;
       case 's':
         parseIni(thisOpt->argument);
         break;
-#ifdef OPENMP_SUPPORT
-      case 't':
-        int nt = atoi(thisOpt->argument);
-        number_threads = nt;
-        omp_set_num_threads(nt);
-        break;
-#endif
     }
     free(thisOpt);
   }
@@ -823,11 +733,6 @@ bool parseIni(const char * filename)
 
   depth[LIGHT] = atoi(ini.GetValue("Depth", "white", "3"));
   depth[DARK]  = atoi(ini.GetValue("Depth", "black", "3"));
-
-#ifdef OPENMP_SUPPORT
-  number_threads = atoi(ini.GetValue("CHX Main", "num_threads", "1"));
-  omp_set_num_threads(number_threads);
-#endif
 
   s = std::string(ini.GetValue("CHX Main", "eval_method", "original"));
   if (s == "original")

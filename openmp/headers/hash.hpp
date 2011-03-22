@@ -9,8 +9,8 @@ typedef uint64_t hash_t;
 const int zdepth = 2;
 const int N = 8;  // bits for bucket size
 const int M = 8;  // bits for table size N+M is total bits that can be indexed by transposition table
-const int bucket_size = 1<<N;//pow(2, N);
-const int table_size = 1<<M;//pow(2, M);
+const int bucket_size = 1<<N;
+const int table_size = 1<<M;
 
 struct zkey_t {
   hash_t hash;

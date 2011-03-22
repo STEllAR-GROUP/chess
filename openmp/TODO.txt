@@ -1,7 +1,6 @@
 TODO list. Place to check off progress.
 
-1) Mtd-f
-2) Alpha-Beta with memory
-3) Full benchmark (run for 2 hours)
-4) MPI
-5) Sinch evaluator
+0) pthreads
+1) Full benchmark (run for 2 hours)
+2) MPI
+3) Sinch evaluator

@@ -1,3 +1,5 @@
+(c) Copyright 2011 Phillip LeBlanc. All Rights Reserved. 
+
 Thanks for getting CHX!
 
 To report any problems/bugs/comments with CHX please send an email to:
@@ -6,15 +8,11 @@ gopx@cct.lsu.edu
 ==================== COMPILING ====================
 
 To build CHX type these commands (requires CMake)
-Note: By default CHX will build with OpenMP support if your compiler supports it.
-  To disable OpenMP manually, run the command:
-		$ cmake . -DOPENMP=FALSE
-  otherwise run the following command.
 
  $ cmake .
  $ make
 
-If you are on a machine that has an intel compiler, use this command instead (if gcc doesn't compile successfully with OpenMP):
+If you are on a machine that has an intel compiler, use this command instead (if gcc doesn't compile successfully):
 
  $ cmake . -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc
  $ make
@@ -51,11 +49,3 @@ When the readline package is enabled, the user will be able to access command li
 Command line options:
 -h          Displays this help message
 -s file     Uses the specified settings file instead of settings.ini
--w n        Sets the depth of the white side to n (default 3)
--b n        Sets the depth of the black side to n (default 3)
--e          Sets the evaluation method to simple material evaluation
--a          Sets the search method to be alpha-beta
--t n        Sets the number of threads to n
--o          Turns off all engine output
-
-NOTE: Setting any command line parameters (except -s) will cause the engine to start making moves automatically. If you set output to off then it will appear as if the engine is hanging, but it simply not printing any output.
