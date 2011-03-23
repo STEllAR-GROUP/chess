@@ -8,6 +8,8 @@
 #include <math.h>
 #include <assert.h>
 
+pthread_mutex_t mutex;
+
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
@@ -56,6 +58,7 @@ int think(node_t& board)
   board.ply = 0;
 
   if (search_method == MINIMAX) {
+    pthread_mutex_init(&mutex, NULL);
     pthread_t mini;
     minimax_t info(&board, depth[board.side]);
     pthread_create(&mini, NULL, search, &info);
@@ -133,7 +136,9 @@ void* search(void* i)
     return info;
 
   std::vector<move> workq;
-
+  std::vector<pthread_t> children;
+  std::vector<minimax_t *> children_info;
+  std::vector<move> legalworkq;
   std::vector<move> max_moves; /* This is a vector of the moves that all have the same score and are the highest. 
                                   To be sorted by the hash value. */
   gen(workq, board); // Generate the moves
@@ -141,7 +146,6 @@ void* search(void* i)
   max = -10000; // Set the max score to -infinity
 
   // loop through the moves
-
   for (int i = 0; i < workq.size(); i++) {
     node_t p_board = board;
 
@@ -154,8 +158,20 @@ void* search(void* i)
     pthread_t child;
     minimax_t child_info(&p_board, depth - 1);
     pthread_create(&child, NULL, search, &child_info);
-    pthread_join(child, NULL);
-    val = -child_info.result;
+    children.push_back(child);
+    children_info.push_back(&child_info);
+    legalworkq.push_back(g);
+  }
+  
+  for(size_t i = 0; i < children.size() ; ++i)
+  {
+    pthread_join(children[i], NULL);
+  }
+  
+  for(size_t i = 0; i < children_info.size(); ++i)
+  {
+    move g = legalworkq[i];
+    val = -children_info[i]->result;
     //val = -search(p_board, depth - 1); 
 
     if (val > max)  // Is this value our maximum?
@@ -184,8 +200,10 @@ void* search(void* i)
   }
 
   if (board.ply == 0) {
+    pthread_mutex_lock(&mutex);
     sort(max_moves.begin(), max_moves.end(), compare_moves);
     move_to_make = *(max_moves.begin());
+    pthread_mutex_unlock(&mutex);
   }
 
   // fifty move draw rule
