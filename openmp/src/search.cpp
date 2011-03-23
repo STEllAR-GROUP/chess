@@ -56,7 +56,11 @@ int think(node_t& board)
   board.ply = 0;
 
   if (search_method == MINIMAX) {
-    search(board, depth[board.side]);
+    pthread_t mini;
+    minimax_t info(&board, depth[board.side]);
+    pthread_create(&mini, NULL, search, &info);
+    pthread_join(mini, NULL);
+    //search(board, depth[board.side]);
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
@@ -106,22 +110,27 @@ int think(node_t& board)
 }
 
 
-int search(const node_t& board, int depth)
+//int search(const node_t& board, int depth)
+void* search(void* i)
 {
+  minimax_t* info = (minimax_t*)i;
+  int depth = info->depth;
+  node_t& board = *info->board;
   int val, max;
 
   // if we are a leaf node, return the value from the eval() function
   if (!depth)
   {
     evaluator ev;
-    return ev.eval(board, chosen_evaluator);
+    info->result = ev.eval(board, chosen_evaluator);
+    return info;
   }
   /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
   if (board.ply && reps(board))
-    return 0;
+    return info;
 
   std::vector<move> workq;
 
@@ -142,8 +151,12 @@ int search(const node_t& board, int depth)
       continue;                    // legal, then go to the next one
     }
 
-    val = -search(p_board, depth - 1); /* Recursively search this new board
-                                          position for its score */
+    pthread_t child;
+    minimax_t child_info(&p_board, depth - 1);
+    pthread_create(&child, NULL, search, &child_info);
+    pthread_join(child, NULL);
+    val = -child_info.result;
+    //val = -search(p_board, depth - 1); 
 
     if (val > max)  // Is this value our maximum?
     {
@@ -162,9 +175,12 @@ int search(const node_t& board, int depth)
   // no legal moves? then we're in checkmate or stalemate
   if (max_moves.size() == 0) {
     if (in_check(board, board.side))
-      return -10000 + board.ply;
+    {
+      info->result = -10000 + board.ply;
+      return info;
+    }
     else
-      return 0;
+      return info;
   }
 
   if (board.ply == 0) {
@@ -174,9 +190,10 @@ int search(const node_t& board, int depth)
 
   // fifty move draw rule
   if (board.fifty >= 100)
-    return 0;
+    return info;
 
-  return max;
+  info->result = max;
+  return info;
 }
 
 /*

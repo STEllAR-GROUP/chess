@@ -11,9 +11,19 @@
 #include "eval.hpp"
 
 int think(node_t& board);
-int search(const node_t& board, int depth);
+//int search(const node_t& board, int depth);
+void* search(void* info);
 int search_ab(const node_t& board, int depth, int alpha, int beta);
 int reps(const node_t& board);
 bool compare_moves(move a, move b);
 void sort_pv(std::vector<move>& workq, int ply);
+
+struct minimax_t
+{
+  int result;
+  node_t* board;
+  int depth;
+  minimax_t(node_t* b, int d) : result(0), depth(d) { board = b; }
+}; 
+
 #endif
