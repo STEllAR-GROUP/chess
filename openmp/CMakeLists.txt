@@ -17,6 +17,6 @@ include_directories ("${PROJECT_SOURCE_DIR}/liboptlist")
 include_directories ("${PROJECT_SOURCE_DIR}/libini")
 add_subdirectory (liboptlist)
 add_subdirectory (libini)
-set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses ini)
+set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses ini pthread)
 
 add_subdirectory (src)
