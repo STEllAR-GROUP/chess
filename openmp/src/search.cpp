@@ -136,7 +136,7 @@ void* search(void* i)
     return info;
 
   std::vector<move> workq;
-  std::vector<pthread_t> children;
+  std::vector<pthread_t *> children;
   std::vector<minimax_t *> children_info;
   std::vector<move> legalworkq;
   std::vector<move> max_moves; /* This is a vector of the moves that all have the same score and are the highest. 
@@ -146,8 +146,9 @@ void* search(void* i)
   max = -10000; // Set the max score to -infinity
 
   // loop through the moves
+  node_t p_board;
   for (int i = 0; i < workq.size(); i++) {
-    node_t p_board = board;
+    p_board = board;
 
     move g = workq[i];
 
@@ -155,24 +156,27 @@ void* search(void* i)
       continue;                    // legal, then go to the next one
     }
 
-    pthread_t child;
-    minimax_t child_info(&p_board, depth - 1);
-    pthread_create(&child, NULL, search, &child_info);
+    pthread_t* child =  new pthread_t;
+    minimax_t* child_info = new minimax_t(&p_board, depth - 1);
+    pthread_create(child, NULL, search, child_info);
     children.push_back(child);
-    children_info.push_back(&child_info);
     legalworkq.push_back(g);
   }
   
   for(size_t i = 0; i < children.size() ; ++i)
   {
-    pthread_join(children[i], NULL);
+    minimax_t* child_info;
+    pthread_join(*children[i], (void **)&child_info);
+    children_info.push_back(child_info);
+    delete children[i];
   }
-  
+  //assert(children_info.size() == legalworkq.size());
   for(size_t i = 0; i < children_info.size(); ++i)
   {
     move g = legalworkq[i];
     val = -children_info[i]->result;
-    //val = -search(p_board, depth - 1); 
+    //printf("val=%d\n", val);
+    //val = -search(p_board, depth - 1);
 
     if (val > max)  // Is this value our maximum?
     {
