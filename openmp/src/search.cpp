@@ -8,6 +8,8 @@
 #include <math.h>
 #include <assert.h>
 
+worker workers[bucket_size];
+
 // Maximum number of pthreads we can create
 // Even on a two core machine we want 40 or 50
 // here to get the factor 2 speedup.
@@ -27,13 +29,6 @@ inline int max(int a,int b) { return a > b ? a : b; }
 
 bucket_t hash_bucket[bucket_size];
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
-
-inline int get_bucket_index(const node_t& board,int depth) {
-    return ((board.hash >> M) ^ depth) & ((1<<N)-1);
-}
-inline int get_entry_index(const node_t& board,int depth) {
-    return board.hash & ((1<<M)-1);
-}
 
 /** MTD-f */
 int mtdf(const node_t& board,int f,int depth)
@@ -68,9 +63,9 @@ int think(node_t& board)
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
+  para_depth = depth[board.side]-1;
 
   if (search_method == MINIMAX) {
-	para_depth = depth[board.side]-1;
     search(board, depth[board.side]);
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
@@ -151,62 +146,37 @@ int search(const node_t& board, int depth)
 
   max = -10000; // Set the max score to -infinity
 
-  // No sense in allocating more than max_pcount of them
-  const int num_infos = (depth == para_depth) ? min(max_pcount,workq.size()) : 0;
+  const int worksq = workq.size();
+  smart_ptr<task> tasks[worksq];
 
-  search_info infos[num_infos];
   int j=0;
-  for(;j < num_infos && j < workq.size(); j++) {
-    search_info *info = &infos[j];
-    info->board = board;
+  for(;depth == para_depth && j < workq.size(); j++) {
     move g = workq[j];
+    smart_ptr<search_info> info = new search_info(board);
 
     if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
-      info->contin = true;
-      continue;                    // legal, then go to the next one
+	  								   // legal, then go to the next one
+      continue;
     }
+	tasks[j] = new task;
 
-    // If we aren't continuing...
+	tasks[j]->info = info;
+
     info->depth = depth-1;
     info->result = 0;
-    info->parallel = false;
-    info->contin = false;
-
-    // We have to limit the number
-    // of pthreads we create
-    pthread_mutex_lock(&mutex);
-    if(pcount > 0) {
-        pcount--;
-        info->parallel = true;
-    }
-    pthread_mutex_unlock(&mutex);
-
-    if(info->parallel) {
-        //std::cout << "fork" << std::endl;
-        // Note that it's an error to use info here
-        pthread_create(&info->th,NULL,search_pt,&infos[j]);
-    }
+	tasks[j]->pfunc = search_pt;
+	workers[get_bucket_index(info->board,info->depth)].add(tasks[j]);
   }
 
   // loop through the moves
   for (int i = 0; i < workq.size(); i++) {
     move g = workq[i];
-    if(i < num_infos) {
-        search_info *info = &infos[i];
-        if(info->contin) {
-            continue;
-        } else if(info->parallel) {
-            //std::cout << "join" << std::endl;
-            pthread_join(info->th,NULL);
-
-            // Give one back to pcount now that we're done
-            pthread_mutex_lock(&mutex);
-            pcount++;
-            pthread_mutex_unlock(&mutex);
-        } else {
-            search_pt(info);
-        }
-        val = -info->result;
+    if(i < j) {
+		if(!tasks[i].valid())
+			continue;
+        smart_ptr<search_info> info = tasks[i]->info;
+		tasks[i]->join();
+        val = -tasks[i]->info->result;
     } else {
         node_t p_board = board;
 
@@ -394,4 +364,13 @@ void sort_pv(std::vector<move>& workq, int ply)
       break;
     }
   }
+}
+
+void *run_worker(void *vptr) {
+	worker *w = (worker *)vptr;
+	while(true) {
+		smart_ptr<task> pt = w->remove();
+		(*pt->pfunc)(pt->info.ptr());
+		pt->finish();
+	}
 }
