@@ -11,7 +11,10 @@
 // Maximum number of pthreads we can create
 // Even on a two core machine we want 40 or 50
 // here to get the factor 2 speedup.
-const int max_pcount = 40;
+const int max_pcount = 64;
+
+// Depth at which to spawn pthreads
+int para_depth;
 
 // Count of how many more threads we can create
 // when it reaches zero, we have to stop making them
@@ -67,7 +70,7 @@ int think(node_t& board)
   board.ply = 0;
 
   if (search_method == MINIMAX) {
-    pthread_mutex_init(&mutex, NULL);
+	para_depth = depth[board.side]-1;
     search(board, depth[board.side]);
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
@@ -149,7 +152,7 @@ int search(const node_t& board, int depth)
   max = -10000; // Set the max score to -infinity
 
   // No sense in allocating more than max_pcount of them
-  const int num_infos = (depth >= 3) ? max_pcount : 0;
+  const int num_infos = (depth == para_depth) ? min(max_pcount,workq.size()) : 0;
 
   search_info infos[num_infos];
   int j=0;
