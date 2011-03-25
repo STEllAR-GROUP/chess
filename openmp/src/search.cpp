@@ -68,11 +68,7 @@ int think(node_t& board)
 
   if (search_method == MINIMAX) {
     pthread_mutex_init(&mutex, NULL);
-    pthread_t mini;
-    minimax_t info(&board, depth[board.side]);
-    pthread_create(&mini, NULL, search, &info);
-    pthread_join(mini, NULL);
-    //search(board, depth[board.side]);
+    search(board, depth[board.side]);
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
@@ -127,33 +123,25 @@ void *search_pt(void *vptr) {
     return NULL;
 }
 
-//int search(const node_t& board, int depth)
-void* search(void* i)
+int search(const node_t& board, int depth)
 {
-  minimax_t* info = (minimax_t*)i;
-  int depth = info->depth;
-  node_t& board = *info->board;
   int val, max;
 
   // if we are a leaf node, return the value from the eval() function
   if (!depth)
   {
     evaluator ev;
-    info->result = ev.eval(board, chosen_evaluator);
-    return info;
+    return ev.eval(board, chosen_evaluator);
   }
   /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
   if (board.ply && reps(board)) {
-    return info;
+    return 0;
   }
 
   std::vector<move> workq;
-  std::vector<pthread_t *> children;
-  std::vector<minimax_t *> children_info;
-  std::vector<move> legalworkq;
   std::vector<move> max_moves; /* This is a vector of the moves that all have the same score and are the highest. 
                                   To be sorted by the hash value. */
   gen(workq, board); // Generate the moves
@@ -243,11 +231,10 @@ void* search(void* i)
   if (max_moves.size() == 0) {
     if (in_check(board, board.side))
     {
-      info->result = -10000 + board.ply;
-      return info;
+      return -10000 + board.ply;
     }
     else
-      return info;
+      return 0;
   }
 
   if (board.ply == 0) {
@@ -259,11 +246,10 @@ void* search(void* i)
 
   // fifty move draw rule
   if (board.fifty >= 100) {
-    return info;
+    return 0;
   }
 
-  info->result = max;
-  return info;
+  return max;
 }
 
 /*
