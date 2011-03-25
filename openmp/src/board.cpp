@@ -128,19 +128,22 @@ bool attack(const node_t& board, int sq, int s)
                         return true;
                 }
             }
-            else
-                for (j = 0; j < offsets[board.piece[i]]; ++j)
+            else {
+                int bp = board.piece[i];
+                for (j = 0; j < offsets[bp]; ++j) {
                     for (n = i;;) {
-                        n = mailbox[mailbox64[n] + offset[board.piece[i]][j]];
+                        n = mailbox[mailbox64[n] + offset[bp][j]];
                         if (n == -1)
                             break;
                         if (n == sq)
                             return true;
                         if (board.color[n] != EMPTY)
                             break;
-                        if (!slide[board.piece[i]])
+                        if (!slide[bp])
                             break;
                     }
+                }
+            }
         }
     return false;
 }
@@ -291,7 +294,7 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
 
-bool makemove(node_t& board, move_bytes m)
+bool makemove(node_t& board,const move_bytes m)
 {
     
     /* test to see if a castle move is legal and move the rook

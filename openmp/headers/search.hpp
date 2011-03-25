@@ -9,10 +9,21 @@
 #include "main.hpp"
 #include "board.hpp"
 #include "eval.hpp"
+#include <pthread.h>
+
+struct search_info {
+    int result;
+    int depth;
+    node_t board;
+    pthread_t th;
+    bool parallel;
+    bool contin;
+};
 
 int think(node_t& board);
 //int search(const node_t& board, int depth);
 void* search(void* info);
+void *search_pt(void *);
 int search_ab(const node_t& board, int depth, int alpha, int beta);
 int reps(const node_t& board);
 bool compare_moves(move a, move b);

@@ -8,7 +8,16 @@
 #include <math.h>
 #include <assert.h>
 
-pthread_mutex_t mutex;
+// Maximum number of pthreads we can create
+// Even on a two core machine we want 40 or 50
+// here to get the factor 2 speedup.
+const int max_pcount = 40;
+
+// Count of how many more threads we can create
+// when it reaches zero, we have to stop making them
+int pcount = max_pcount;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
@@ -112,6 +121,11 @@ int think(node_t& board)
   return 1;
 }
 
+void *search_pt(void *vptr) {
+    search_info *info = (search_info *)vptr;
+    info->result = search(info->board,info->depth);
+    return NULL;
+}
 
 //int search(const node_t& board, int depth)
 void* search(void* i)
@@ -132,8 +146,9 @@ void* search(void* i)
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
-  if (board.ply && reps(board))
+  if (board.ply && reps(board)) {
     return info;
+  }
 
   std::vector<move> workq;
   std::vector<pthread_t *> children;
@@ -145,38 +160,71 @@ void* search(void* i)
 
   max = -10000; // Set the max score to -infinity
 
-  // loop through the moves
-  node_t p_board;
-  for (int i = 0; i < workq.size(); i++) {
-    p_board = board;
+  // No sense in allocating more than max_pcount of them
+  const int num_infos = (depth >= 3) ? max_pcount : 0;
 
-    move g = workq[i];
+  search_info infos[num_infos];
+  int j=0;
+  for(;j < num_infos && j < workq.size(); j++) {
+    search_info *info = &infos[j];
+    info->board = board;
+    move g = workq[j];
 
-    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+    if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
+      info->contin = true;
       continue;                    // legal, then go to the next one
     }
 
-    pthread_t* child =  new pthread_t;
-    minimax_t* child_info = new minimax_t(&p_board, depth - 1);
-    pthread_create(child, NULL, search, child_info);
-    children.push_back(child);
-    legalworkq.push_back(g);
+    // If we aren't continuing...
+    info->depth = depth-1;
+    info->result = 0;
+    info->parallel = false;
+    info->contin = false;
+
+    // We have to limit the number
+    // of pthreads we create
+    pthread_mutex_lock(&mutex);
+    if(pcount > 0) {
+        pcount--;
+        info->parallel = true;
+    }
+    pthread_mutex_unlock(&mutex);
+
+    if(info->parallel) {
+        //std::cout << "fork" << std::endl;
+        // Note that it's an error to use info here
+        pthread_create(&info->th,NULL,search_pt,&infos[j]);
+    }
   }
-  
-  for(size_t i = 0; i < children.size() ; ++i)
-  {
-    minimax_t* child_info;
-    pthread_join(*children[i], (void **)&child_info);
-    children_info.push_back(child_info);
-    delete children[i];
-  }
-  //assert(children_info.size() == legalworkq.size());
-  for(size_t i = 0; i < children_info.size(); ++i)
-  {
-    move g = legalworkq[i];
-    val = -children_info[i]->result;
-    //printf("val=%d\n", val);
-    //val = -search(p_board, depth - 1);
+
+  // loop through the moves
+  for (int i = 0; i < workq.size(); i++) {
+    move g = workq[i];
+    if(i < num_infos) {
+        search_info *info = &infos[i];
+        if(info->contin) {
+            continue;
+        } else if(info->parallel) {
+            //std::cout << "join" << std::endl;
+            pthread_join(info->th,NULL);
+
+            // Give one back to pcount now that we're done
+            pthread_mutex_lock(&mutex);
+            pcount++;
+            pthread_mutex_unlock(&mutex);
+        } else {
+            search_pt(info);
+        }
+        val = -info->result;
+    } else {
+        node_t p_board = board;
+
+        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+            continue;                    // legal, then go to the next one
+        }
+
+        val = -search(p_board, depth - 1); 
+    }
 
     if (val > max)  // Is this value our maximum?
     {
@@ -184,7 +232,6 @@ void* search(void* i)
 
       max_moves.clear();
       max_moves.push_back(g);
-
     }
     else if (val == max)
     {
@@ -211,8 +258,9 @@ void* search(void* i)
   }
 
   // fifty move draw rule
-  if (board.fifty >= 100)
+  if (board.fifty >= 100) {
     return info;
+  }
 
   info->result = max;
   return info;
