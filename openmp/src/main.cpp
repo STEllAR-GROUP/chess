@@ -334,12 +334,19 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   {
     getline (benchfile,line);
     line_num++;
-    //Each line has 8 characters
-    if(line.length()!=8)
-      break;
-    for (int i = 0; i < 8; i++)
+    int i = -1;
+    for (int j = 0; j < line.size(); j++)
     {
-      c = line.at(i);
+      c = line.at(j);
+      if (j == 0 && c == '#') {
+        line_num--; break;
+        break;
+      }
+      if (c == ' ')
+        continue;
+      i++;
+      if(i >= 8)
+        break;
       spot = line_num*8+i;
       if (c == '.')
       {
@@ -403,7 +410,12 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
         }
       }
     }
+    if(i >= 0 && i < 7) {
+        throw i;
+    }
   }
+  if(line_num != 8)
+      throw line_num;
   benchfile.close();
 
   board.side = LIGHT;
