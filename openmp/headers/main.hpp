@@ -9,6 +9,8 @@
 #include "data.hpp"
 #include "search.hpp"
 
+int parseArgs(int, char**);
+bool parseIni(const char * filename);
 int main(int argc, char *argv[]);
 int parse_move(std::vector<move>& workq, const char *s);
 char *move_str(move_bytes m);

@@ -30,34 +30,8 @@ inline int max(int a,int b) { return a > b ? a : b; }
 bucket_t hash_bucket[bucket_size];
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
-/** MTD-f */
-int mtdf(const node_t& board,int f,int depth)
-{
-    int g = f;
-    int upper =  10000;
-    int lower = -10000;
-    // Technically, MTD-f uses "zero-width" searches
-    // However, Aske Plaat points out that it performs
-    // better with a coarser evaluation function. Since
-    // this maps readily onto a wider, non-zero width
-    // we provide a width setting for optimization.
-    int width = 5;
-    while(lower < upper) {
-        int alpha = max(lower,g-1-width/2);
-        int beta = alpha+width+1;
-        g = search_ab(board,depth,alpha,beta);
-        if(g < beta) {
-            if(g > alpha)
-                break;
-            upper = g;
-        } else {
-            lower = g;
-        }
-    }
-    return g;
-}
 
-// think() calls search() 
+// think() calls a search function 
 int think(node_t& board)
 {
   for(int i=0;i<bucket_size;i++)
@@ -113,6 +87,40 @@ int think(node_t& board)
   }
 
   return 1;
+}
+
+#if 0
+#pragma mark -
+#pragma mark Search functions
+#endif
+
+
+
+/** MTD-f */
+int mtdf(const node_t& board,int f,int depth)
+{
+    int g = f;
+    int upper =  10000;
+    int lower = -10000;
+    // Technically, MTD-f uses "zero-width" searches
+    // However, Aske Plaat points out that it performs
+    // better with a coarser evaluation function. Since
+    // this maps readily onto a wider, non-zero width
+    // we provide a width setting for optimization.
+    int width = 5;
+    while(lower < upper) {
+        int alpha = max(lower,g-1-width/2);
+        int beta = alpha+width+1;
+        g = search_ab(board,depth,alpha,beta);
+        if(g < beta) {
+            if(g > alpha)
+                break;
+            upper = g;
+        } else {
+            lower = g;
+        }
+    }
+    return g;
 }
 
 void *search_pt(void *vptr) {
@@ -363,6 +371,12 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   }
   return alpha;
 }
+
+#if 0
+#pragma mark -
+#pragma mark Helper functions
+#endif
+
 
 
 /* reps() returns the number of times the current position

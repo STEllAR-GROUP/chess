@@ -20,9 +20,6 @@ double sum_exec_times2 = 0;
 double sum_exec_times = 0;
 int count_exec_times;
 
-int parseArgs(int, char**);
-bool parseIni(const char * filename);
-
 /* main() is basically an infinite loop that either calls
    think() when it's the computer's turn to move or prompts
    the user for a command (and deciphers it). */
@@ -275,6 +272,11 @@ int main(int argc, char *argv[])
   return retcode;
 }
 
+#if 0
+#pragma mark -
+#pragma mark Benchmark
+#endif
+
 void start_benchmark(std::string filename, int ply_level, int num_runs)
 {
   std::ifstream benchfile(filename.c_str());
@@ -493,6 +495,10 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 
 }
 
+#if 0
+#pragma mark -
+#pragma mark Parsing move notation
+#endif
 
 /* parse the move s (in coordinate notation) and return the move's
    int value, or -1 if the move is illegal */
@@ -578,6 +584,11 @@ char *move_str(move_bytes m)
 }
 
 
+#if 0
+#pragma mark -
+#pragma mark Printing functions
+#endif
+
 // print_board() prints the board
 
 void print_board(node_t& board, std::ostream& out)
@@ -643,6 +654,13 @@ int print_result(std::vector<move>& workq, node_t& board)
   return 1;
 }
 
+#if 0
+#pragma mark -
+#pragma mark Argument Parsing
+#endif
+
+
+
 int parseArgs(int argc, char **argv)
 {
   if (argc == 1)
@@ -680,6 +698,11 @@ int parseArgs(int argc, char **argv)
   }
   return flag;
 }
+
+#if 0
+#pragma mark -
+#pragma mark Helper functions
+#endif
 
 // get_ms() gets the current time in milliseconds
 
@@ -721,6 +744,11 @@ std::string get_log_name()
 
   return logfilename;
 }
+
+#if 0
+#pragma mark -
+#pragma mark INI Parsing
+#endif
 
 bool parseIni(const char * filename)
 {
