@@ -17,6 +17,8 @@
 struct search_info {
     int result;
     int depth;
+    int alpha;
+    int beta;
     node_t board;
 	search_info(const node_t& board_) : board(board_) {}
 };
@@ -53,9 +55,11 @@ struct task {
 };
 
 int think(node_t& board);
+int mtdf(const node_t& board,int f,int depth);
 int search(const node_t& board, int depth);
 void *search_pt(void *);
 int search_ab(const node_t& board, int depth, int alpha, int beta);
+void *search_ab_pt(void *);
 int reps(const node_t& board);
 bool compare_moves(move a, move b);
 void sort_pv(std::vector<move>& workq, int ply);

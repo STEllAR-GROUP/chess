@@ -455,7 +455,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 
     if (move_to_make.u == 0) {
       std::cout << "(no legal moves)" << std::endl;
-      logfile << "time: " << t[i] << " ms" << std::endl;
+      logfile << "(no legal moves)" << std::endl;
     }
     else
     {
@@ -651,11 +651,7 @@ int parseArgs(int argc, char **argv)
   }
   option_t *optList, *thisOpt;
   optList = NULL;
-#ifdef OPENMP_SUPPORT
-  optList = GetOptList(argc, argv,"w:b:oheas:t:?");
-#else
-  optList = GetOptList(argc, argv,"w:b:oheas:?");
-#endif
+  optList = GetOptList(argc, argv,"hs:?");
   int flag = 0;
 
   while (optList != NULL)
@@ -741,7 +737,7 @@ bool parseIni(const char * filename)
   else if (s == "mtd-f")
     search_method = MTDF;
   else
-    std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" or \"alphabeta\" " << std::endl;
+    std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" ,\"alphabeta\" or \"mtd-f\" " << std::endl;
 
   depth[LIGHT] = atoi(ini.GetValue("Depth", "white", "3"));
   depth[DARK]  = atoi(ini.GetValue("Depth", "black", "3"));
@@ -787,6 +783,8 @@ bool parseIni(const char * filename)
     std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
 
   iter_depth = atoi(ini.GetValue("CHX Main", "iter_depth", "5"));
+  
+  mpi_depth = atoi(ini.GetValue("CHX Main", "mpi_depth", "4"));
 
   return true;
 }

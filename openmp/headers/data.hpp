@@ -24,12 +24,11 @@ extern char piece_char[6];
 extern int init_color[64];
 extern int init_piece[64];
 extern int depth[2];
-extern int alpha[2];
-extern int beta[2];
 extern int output;
 extern int chosen_evaluator;
 extern int search_method;
 extern int iter_depth;
+extern int mpi_depth;
 
 ////////////////////////////////////////////////////////////////////////////
 //State Information -- The global variables this program uses and modifies//

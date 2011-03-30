@@ -172,11 +172,11 @@ int search(const node_t& board, int depth)
   for (int i = 0; i < workq.size(); i++) {
     move g = workq[i];
     if(i < j) {
-		if(!tasks[i].valid())
-			continue;
-        smart_ptr<search_info> info = tasks[i]->info;
-		tasks[i]->join();
-        val = -tasks[i]->info->result;
+		  if(!tasks[i].valid())
+			  continue;
+      smart_ptr<search_info> info = tasks[i]->info;
+		  tasks[i]->join();
+      val = -tasks[i]->info->result;
     } else {
         node_t p_board = board;
 
@@ -244,6 +244,13 @@ int search(const node_t& board, int depth)
    When beta becomes less than alpha, it means that the current position cannot 
    be the result of best play by both players and hence need not be explored further.
  */
+ 
+void *search_ab_pt(void *vptr)
+{
+  search_info *info = (search_info *)vptr;
+  info->result = search_ab(info->board,info->depth, info->alpha, info->beta);
+  return NULL;
+}
 
 int search_ab(const node_t& board, int depth, int alpha, int beta)
 {
@@ -285,18 +292,53 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   gen(workq, board); // Generate the moves
 
   sort_pv(workq, board.ply); // Part of iterative deepening
+  
+  const int worksq = workq.size();
+  smart_ptr<task> tasks[worksq];
+  
+  int j=0;
+  int val;
+  
   // loop through the moves
-  for (int j = 0; j < workq.size(); j++) {
+  for (; depth == para_depth && j < worksq; j++) {
+    move g = workq[j];
+    smart_ptr<search_info> info = new search_info(board);
+    
+    if (!makemove(info->board, g.b))
+      continue;
+    
+    tasks[j] = new task;
+    
+    tasks[j]->info = info;
+    info->depth = depth-1;
+    info->alpha = alpha;
+    info->beta = beta;
+    info->result = 0;
+    tasks[j]->pfunc = search_ab_pt;
+    workers[get_bucket_index(info->board, info->depth)].add(tasks[j]);
+  }
+  
+  
+  for (int i = 0; i < worksq; i++) {  
     if(alpha >= beta)
         continue; // use cut-off
-    node_t p_board = board;
-    move g = workq[j];
+    
+    move g = workq[i];
+    if (i < j) {
+      if (!tasks[i].valid())
+        continue;
+      smart_ptr<search_info> info = tasks[i]->info;
+      tasks[i]->join();
+      val = -tasks[i]->info->result;
+    } else {
+      node_t p_board = board;
 
-    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-      continue;                    // legal, then go to the next one
+      if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+        continue;                    // legal, then go to the next one
+      }
+
+      val = -search_ab(p_board, depth-1, -beta, -alpha);
     }
-
-    int val = -search_ab(p_board, depth-1, -beta, -alpha);
 
     if (val > alpha)
     {
@@ -308,7 +350,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
       z->score = val;
       z->depth = depth;
       hash_bucket[b_index].unlock();
-      
+    
       alpha = val;
       if (board.ply == 0)
         move_to_make = g;
