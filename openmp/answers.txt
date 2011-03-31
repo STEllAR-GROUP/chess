@@ -1,0 +1,11 @@
+Answer key:
+
+board2
+ply | answer
+====+=======
+  7 |   d1b3
+  6 |   c1d2
+  5 |   c1d2
+  4 |   a2a3
+  3 |   c1d2
+  2 |   e2e4
