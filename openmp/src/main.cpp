@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <fstream>
 #include <sys/time.h>
+#include "mpi.h"
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
@@ -27,12 +28,32 @@ int count_exec_times;
 int auto_move = 0;
 int computer_side;
 
+int do_bench = 0;
+int max_ply, num_runs;
+std::string bench_file("null");
+
 int chx_main(int argc, char **argv)
 {
   int arguments = 0;
   std::string s("settings.ini");
   parseIni(s.c_str());
   arguments = parseArgs(argc,argv);
+  init_hash();  /* Init hash sets up the hashing function
+                   which is used for determining repeated moves */
+  
+  MPI_Bcast(&search_method, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(depth, 2, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&chosen_evaluator, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&do_bench, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (do_bench)
+  {
+    MPI_Bcast(&max_ply, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&num_runs, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&mpi_depth, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    start_benchmark(bench_file, max_ply, num_runs);
+    MPI_Finalize();
+    exit(0);
+  }
 
   int m;
 #ifdef READLINE_SUPPORT
@@ -42,7 +63,7 @@ int chx_main(int argc, char **argv)
 #endif
 
   // If there were no command line arguments, display message
-  if (!arguments) {
+  if (!arguments && mpi_rank == 0) {
     std::cout << std::endl;
     std::cout << "Chess (CHX)" << std::endl;
     std::cout << "Phillip LeBlanc - CCT" << std::endl;
@@ -58,8 +79,6 @@ int chx_main(int argc, char **argv)
   }
   node_t board;  // The board state is represented in the node_t struct
 
-  init_hash();  /* Init hash sets up the hashing function
-                   which is used for determining repeated moves */
   init_board(board);  // Initialize the board to its default state
   std::vector<move> workq;  /* workq is a standard vector which contains
                                all possible psuedo-legal moves for the
@@ -73,12 +92,12 @@ int chx_main(int argc, char **argv)
 
       // think about the move and make it
       think(board);
-      if (move_to_make.u == 0) {
+      if (move_to_make.u == 0 && mpi_rank == 0) {
         std::cout << "(no legal moves)" << std::endl;
         computer_side = EMPTY;
         continue;
       }
-      if (output)
+      if (output && mpi_rank == 0)
         std::cout << "Computer's move: " << move_str(move_to_make.b)
           << std::endl;
       makemove(board, move_to_make.b); // Make the move for our master board
@@ -268,7 +287,11 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
   int retcode = chx_main(argc, argv);
+  MPI_Finalize ();
   return retcode;
 }
 
@@ -279,146 +302,153 @@ int main(int argc, char *argv[])
 
 void start_benchmark(std::string filename, int ply_level, int num_runs)
 {
-  std::ifstream benchfile(filename.c_str());
-
-  if (!benchfile.is_open())
-  {
-    std::cerr << "Unable to open file" << std::endl;
-    return;
-  }
-
   depth[LIGHT] = ply_level;
   depth[DARK]  = ply_level;
 
   node_t board;
-
   init_board(board);
-
-  int line_num = -1;
-  char c;
-  int spot;
-
-  // Logging to file code
-  std::string logfilename = get_log_name();
-
   std::ofstream logfile;
-  logfile.open(logfilename.c_str());
-
-  std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
-  std::cout << "  ply level: " << ply_level << std::endl;
-  std::cout << "  num runs: " << num_runs << std::endl;
-
-  logfile << "Using benchmark file: '" << filename << "'" << std::endl;
-  logfile << "  ply level: " << ply_level << std::endl;
-  logfile << "  num runs: " << num_runs << std::endl;
-  if (chosen_evaluator == ORIGINAL) {
-    std::cout << "  evaluator: original" << std::endl;
-    logfile << "  evaluator: original" << std::endl;
-  } else if (chosen_evaluator == SIMPLE) {
-    std::cout << "  evaluator: simple" << std::endl;
-    logfile << "  evaluator: simple" << std::endl;
-  }
-
-  if (search_method == MINIMAX) {
-    std::cout << "  search method: minimax" << std::endl;
-    logfile << "  search method: minimax" << std::endl;
-  } else if (search_method == ALPHABETA) {
-    std::cout << "  search method: alpha-beta" << std::endl;
-    logfile << "  search method: alpha-beta" << std::endl;
-  } else if (search_method == MTDF) {
-    std::cout << "  search method: MTD-f" << std::endl;
-    logfile << "  search method: MTD-f" << std::endl;
-  }
-
-  // reading board configuration
-  std::string line;
-  while ( benchfile.good() )
+  
+  if (mpi_rank == 0)
   {
-    getline (benchfile,line);
-    line_num++;
-    int i = -1;
-    for (int j = 0; j < line.size(); j++)
+    std::ifstream benchfile(filename.c_str());
+
+    if (!benchfile.is_open())
     {
-      c = line.at(j);
-      if (j == 0 && c == '#') {
-        line_num--; break;
-        break;
-      }
-      if (c == ' ')
-        continue;
-      i++;
-      if(i >= 8)
-        break;
-      spot = line_num*8+i;
-      if (c == '.')
+      std::cerr << "Unable to open file" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, 1);
+      MPI_Finalize();
+      return;
+    }
+
+    int line_num = -1;
+    char c;
+    int spot;
+
+    // Logging to file code
+    std::string logfilename = get_log_name();
+
+    logfile.open(logfilename.c_str());
+
+    std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
+    std::cout << "  ply level: " << ply_level << std::endl;
+    std::cout << "  num runs: " << num_runs << std::endl;
+
+    logfile << "Using benchmark file: '" << filename << "'" << std::endl;
+    logfile << "  ply level: " << ply_level << std::endl;
+    logfile << "  num runs: " << num_runs << std::endl;
+    if (chosen_evaluator == ORIGINAL) {
+      std::cout << "  evaluator: original" << std::endl;
+      logfile << "  evaluator: original" << std::endl;
+    } else if (chosen_evaluator == SIMPLE) {
+      std::cout << "  evaluator: simple" << std::endl;
+      logfile << "  evaluator: simple" << std::endl;
+    }
+
+    if (search_method == MINIMAX) {
+      std::cout << "  search method: minimax" << std::endl;
+      logfile << "  search method: minimax" << std::endl;
+    } else if (search_method == ALPHABETA) {
+      std::cout << "  search method: alpha-beta" << std::endl;
+      logfile << "  search method: alpha-beta" << std::endl;
+    } else if (search_method == MTDF) {
+      std::cout << "  search method: MTD-f" << std::endl;
+      logfile << "  search method: MTD-f" << std::endl;
+    }
+
+    // reading board configuration
+    std::string line;
+    while ( benchfile.good() )
+    {
+      getline (benchfile,line);
+      line_num++;
+      int i = -1;
+      for (int j = 0; j < line.size(); j++)
       {
-        board.color[spot] = 6;
-        board.piece[spot] = 6;
-      }
-      else if(islower(c))
-      {
-        board.color[spot] = 1;
-        switch (c)
+        c = line.at(j);
+        if (j == 0 && c == '#') {
+          line_num--; break;
+          break;
+        }
+        if (c == ' ')
+          continue;
+        i++;
+        if(i >= 8)
+          break;
+        spot = line_num*8+i;
+        if (c == '.')
         {
-          case 'k':
-            board.piece[spot] = 5;
-            break;
-          case 'q':
-            board.piece[spot] = 4;
-            break;
-          case 'r':
-            board.piece[spot] = 3;
-            break;
-          case 'b':
-            board.piece[spot] = 2;
-            break;
-          case 'n':
-            board.piece[spot] = 1;
-            break;
-          case 'p':
-            board.piece[spot] = 0;
-            break;
-          default:
-            //error
-            break;
+          board.color[spot] = 6;
+          board.piece[spot] = 6;
+        }
+        else if(islower(c))
+        {
+          board.color[spot] = 1;
+          switch (c)
+          {
+            case 'k':
+              board.piece[spot] = 5;
+              break;
+            case 'q':
+              board.piece[spot] = 4;
+              break;
+            case 'r':
+              board.piece[spot] = 3;
+              break;
+            case 'b':
+              board.piece[spot] = 2;
+              break;
+            case 'n':
+              board.piece[spot] = 1;
+              break;
+            case 'p':
+              board.piece[spot] = 0;
+              break;
+            default:
+              //error
+              break;
+          }
+        }
+        else if(isupper(c))
+        {
+          board.color[spot] = 0;
+          switch (c)
+          {
+            case 'K':
+              board.piece[spot] = 5;
+              break;
+            case 'Q':
+              board.piece[spot] = 4;
+              break;
+            case 'R':
+              board.piece[spot] = 3;
+              break;
+            case 'B':
+              board.piece[spot] = 2;
+              break;
+            case 'N':
+              board.piece[spot] = 1;
+              break;
+            case 'P':
+              board.piece[spot] = 0;
+              break;
+            default:
+              //error
+              break;
+          }
         }
       }
-      else if(isupper(c))
-      {
-        board.color[spot] = 0;
-        switch (c)
-        {
-          case 'K':
-            board.piece[spot] = 5;
-            break;
-          case 'Q':
-            board.piece[spot] = 4;
-            break;
-          case 'R':
-            board.piece[spot] = 3;
-            break;
-          case 'B':
-            board.piece[spot] = 2;
-            break;
-          case 'N':
-            board.piece[spot] = 1;
-            break;
-          case 'P':
-            board.piece[spot] = 0;
-            break;
-          default:
-            //error
-            break;
-        }
+      if(i >= 0 && i < 7) {
+          throw i;
       }
     }
-    if(i >= 0 && i < 7) {
-        throw i;
-    }
+    if(line_num != 8)
+        throw line_num;
+    benchfile.close();
   }
-  if(line_num != 8)
-      throw line_num;
-  benchfile.close();
+  
+  MPI_Bcast(board.piece, 64, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast(board.color, 64, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   board.side = LIGHT;
   board.castle = 15;
@@ -442,35 +472,42 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
 
   for (int i = 0; i < num_runs; ++i)
   {
-    std::cout << "Run " << i+1 << " ";
-    logfile << "Run " << i+1 << " ";
-    fflush(stdout);
-    start_time = get_ms();          // Start the clock
+    if (mpi_rank == 0) {
+      std::cout << "Run " << i+1 << " ";
+      logfile << "Run " << i+1 << " ";
+      fflush(stdout);
+      start_time = get_ms();          // Start the clock
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
     think(board);                   // Do the processing
-    t[i] = get_ms() - start_time;   // Measure the time
-    if (i == 0)
-      best_time = t[0];
-    else if (t[i] < best_time)
-      best_time = t[i];
-    std::cout << "time: " << t[i] << " ms" << std::endl;
-    logfile << "time: " << t[i] << " ms" << std::endl;
+    if (mpi_rank == 0) t[i] = get_ms() - start_time;   // Measure the time
+    if (mpi_rank == 0) {
+      if (i == 0)
+        best_time = t[0];
+      else if (t[i] < best_time)
+        best_time = t[i];
+      std::cout << "time: " << t[i] << " ms" << std::endl;
+      logfile << "time: " << t[i] << " ms" << std::endl;
+      
+      if (move_to_make.u == 0) {
+        std::cout << "(no legal moves)" << std::endl;
+        logfile << "(no legal moves)" << std::endl;
+      }
+      else
+      {
+        std::cout << "  Computer's move: " << move_str(move_to_make.b)
+          << std::endl;
 
-    if (move_to_make.u == 0) {
-      std::cout << "(no legal moves)" << std::endl;
-      logfile << "(no legal moves)" << std::endl;
+        logfile << "  Computer's move: " << move_str(move_to_make.b)
+          << std::endl;
+      }
     }
-    else
-    {
-      std::cout << "  Computer's move: " << move_str(move_to_make.b)
-        << std::endl;
 
-      logfile << "  Computer's move: " << move_str(move_to_make.b)
-        << std::endl;
-    }
-    //std::cout << "Sleeping for twenty secs." << std::endl;
-    //sleep(20);
   }
 
+  if (mpi_rank != 0)
+    return;
+    
   for (int i = 0; i < num_runs; ++i)
   {
     average_time += t[i];
@@ -593,6 +630,8 @@ char *move_str(move_bytes m)
 
 void print_board(node_t& board, std::ostream& out)
 {
+  if (mpi_rank != 0)
+    return;
   int i;
 
   out << std::endl << "8 ";
@@ -632,23 +671,25 @@ int print_result(std::vector<move>& workq, node_t& board)
   }
   if (i == workq.size()) {
     if (in_check(board, board.side)) {
-      if (board.side == LIGHT)
+      if (board.side == LIGHT && mpi_rank == 0)
         std::cout << "0-1 {Black mates}" << std::endl;
-      else
+      else if (mpi_rank == 0)
         std::cout << "1-0 {White mates}" << std::endl;
     }
-    else
+    else if (mpi_rank == 0)
       std::cout << "1/2-1/2 {Stalemate}" << std::endl;
     return 0;
   }
   else if (reps(board) == 3)
   {
-    std::cout << "1/2-1/2 {Draw by repetition}" << std::endl;
+    if (mpi_rank == 0)
+      std::cout << "1/2-1/2 {Draw by repetition}" << std::endl;
     return 0;
   }
   else if (board.fifty >= 100)
   {
-    std::cout << "1/2-1/2 {Draw by fifty move rule}" << std::endl;
+    if (mpi_rank == 0)
+      std::cout << "1/2-1/2 {Draw by fifty move rule}" << std::endl;
     return 0;
   }
   return 1;
@@ -792,20 +833,19 @@ bool parseIni(const char * filename)
   s = std::string(ini.GetValue("Benchmark", "mode", "false"));
   if (s == "true")
   {
-    s = std::string(ini.GetValue("Benchmark", "file", "ERROR"));
+    bench_file = std::string(ini.GetValue("Benchmark", "file", "ERROR"));
 
-    if (s == "ERROR")
+    if (bench_file == "ERROR")
     {
       std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -1);
+      MPI_Finalize();
       exit(-1);
     }
 
-    int max_ply = atoi(ini.GetValue("Benchmark", "max_ply", "3"));
-    int num_runs  = atoi(ini.GetValue("Benchmark", "num_runs", "1"));
-
-    init_hash();
-    start_benchmark(s, max_ply, num_runs);
-    exit(0);
+    max_ply = atoi(ini.GetValue("Benchmark", "max_ply", "3"));
+    num_runs  = atoi(ini.GetValue("Benchmark", "num_runs", "1"));
+    do_bench = 1;
   }
   else if (s != "false")
     std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
