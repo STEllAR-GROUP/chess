@@ -29,8 +29,6 @@ extern int chosen_evaluator;
 extern int search_method;
 extern int iter_depth;
 extern int mpi_depth;
-extern int mpi_rank;
-extern int mpi_size;
 
 ////////////////////////////////////////////////////////////////////////////
 //State Information -- The global variables this program uses and modifies//

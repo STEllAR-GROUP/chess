@@ -19,7 +19,6 @@ int search_method = MINIMAX; // Which search method to use
 int iter_depth = 5;  // See search.cpp for usage
 
 int mpi_depth = 4;
-int mpi_rank, mpi_size;
 
 /* random numbers used to compute hash; see set_hash() in board.c */
 hash_t hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
