@@ -15,19 +15,19 @@ ply | answer
 ====+=======
   7 |   d1b3
   6 |   c1d2
-  5 |   c1d2
-  4 |   a2a3
+  5 |   c1g5
+  4 |   c1g5
   3 |   c1d2
   2 |   e2e4
 
 board3
 ply | answer
 ====+=======
-  7 |   f5h6
+  7 |   f5h7
   6 |   f5g7
-  5 |   f5g7
-  4 |   f3g4
-  3 |   g5g6
+  5 |   f5h6
+  4 |   f5g7
+  3 |   f3b3
   2 |   b2b3
 
 board4
