@@ -1,5 +1,15 @@
 Answer key:
 
+board1
+ply | answer
+====+=======
+  7 |   e2e4
+  6 |   b1c3
+  5 |   b2b4
+  4 |   g1f3
+  3 |   g1f3
+  2 |   d2d4
+
 board2
 ply | answer
 ====+=======
@@ -9,3 +19,23 @@ ply | answer
   4 |   a2a3
   3 |   c1d2
   2 |   e2e4
+
+board3
+ply | answer
+====+=======
+  7 |   f5h6
+  6 |   f5g7
+  5 |   f5g7
+  4 |   f3g4
+  3 |   g5g6
+  2 |   b2b3
+
+board4
+ply | answer
+====+=======
+  7 |   e5f5
+  6 |   e5e3
+  5 |   h5h6
+  4 |   e5e3
+  3 |   e5b5
+  2 |   e5e3
