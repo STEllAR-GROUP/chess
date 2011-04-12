@@ -37,10 +37,11 @@ int think(node_t& board)
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
-  para_depth = depth[board.side]-1;
+  para_depth = -1;//depth[board.side]-1;
 
   if (search_method == MINIMAX) {
-    search(board, depth[board.side]);
+    int f = search(board, depth[board.side]);
+    std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
@@ -56,7 +57,7 @@ int think(node_t& board)
         f = mtdf(board,f,d);
         d+=stepsize;
     }
-    //std::cout << "f=" << f << std::endl;
+    std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
@@ -83,7 +84,7 @@ int think(node_t& board)
     if (brk)
       f=search_ab(board, depth[board.side], alpha, beta);
     pv.clear();
-    //std::cout << "f=" << f << std::endl;
+    std::cout << "SCORE=" << f << std::endl;
   }
 
   return 1;
