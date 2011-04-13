@@ -320,7 +320,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     
     tasks[j]->info = info;
     info->depth = depth-1;
-    info->alpha = beta;
+    info->alpha = -beta;
     info->beta = -alpha;
     info->result = 0;
     tasks[j]->pfunc = search_ab_pt;
