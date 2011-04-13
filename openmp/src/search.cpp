@@ -220,8 +220,8 @@ int search(const node_t& board, int depth)
   }
 
   if (board.ply == 0) {
-    pthread_mutex_lock(&mutex);
     sort(max_moves.begin(), max_moves.end(), compare_moves);
+    pthread_mutex_lock(&mutex);
     move_to_make = *(max_moves.begin());
     pthread_mutex_unlock(&mutex);
   }
@@ -297,6 +297,8 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   }
 
   std::vector<move> workq;
+  move max_move;
+  max_move.u = INVALID_MOVE; 
 
   gen(workq, board); // Generate the moves
 
@@ -307,6 +309,53 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   
   int j=0;
   int val;
+  
+  /**
+   * This loop will execute once and it will do it
+   * sequentially. This should produce good cut-offs.
+   * It is a 'Younger Brothers Wait' strategy.
+   **/
+  for(;j < workq.size();j++) {
+    move g = workq[j];
+    if(alpha > beta)
+      continue;
+    node_t p_board = board;
+
+    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+      continue;                    // legal, then go to the next one
+    }
+
+    /*
+     * If the scores are equal, we differentiate which
+     * move is greater according to compare_moves. In
+     * effect, this makes the move a part of the score.
+     **/
+    if(board.ply == 0 && compare_moves(g,max_move))
+      val = -search_ab(p_board, depth-1, -beta, -alpha+1);
+    else
+      val = -search_ab(p_board, depth-1, -beta, -alpha);
+
+    if (val > alpha)
+    {
+      int b_index = get_bucket_index(board,depth);
+      hash_bucket[b_index].lock();
+      zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
+
+      z->hash = board.hash;
+      z->score = val;
+      z->depth = depth;
+      hash_bucket[b_index].unlock();
+    
+      alpha = val;
+      pv[board.ply] = g;
+      max_move = g;
+    } else if(val == alpha) {
+      if(compare_moves(g,max_move))
+        max_move = g;
+    }
+    j++;
+    break;
+  }
   
   // loop through the moves
   for (; depth == para_depth && j < worksq; j++) {
@@ -327,11 +376,9 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     workers[get_bucket_index(info->board, info->depth)].add(tasks[j]);
   }
   
-  
   for (int i = 0; i < worksq; i++) {  
     if(alpha >= beta)
-        continue; // use cut-off
-    
+      break;
     move g = workq[i];
     if (i < j) {
       if (!tasks[i].valid())
@@ -346,7 +393,15 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
         continue;                    // legal, then go to the next one
       }
 
-      val = -search_ab(p_board, depth-1, -beta, -alpha);
+      /*
+       * If the scores are equal, we differentiate which
+       * move is greater according to compare_moves. In
+       * effect, this makes the move a part of the score.
+       **/
+      if(board.ply == 0)
+        val = -search_ab(p_board, depth-1, -beta, -alpha+1);
+      else
+        val = -search_ab(p_board, depth-1, -beta, -alpha);
     }
 
     if (val > alpha)
@@ -361,15 +416,25 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
       hash_bucket[b_index].unlock();
     
       alpha = val;
-      if (board.ply == 0)
-        move_to_make = g;
       pv[board.ply] = g;
-    }
-
-    if (beta <= alpha) {
-      return alpha; //beta cutoff
+      max_move = g;
+    } else if(val == alpha) {
+      if(compare_moves(g,max_move))
+        max_move = g;
     }
   }
+
+  /**
+   * If we're doing mtd-f, it's possible that all
+   * the moves were cut off. Thus we need to check
+   * for INVALID_MOVE
+   **/
+  if (board.ply == 0 && max_move.u != INVALID_MOVE) {
+    pthread_mutex_lock(&mutex);
+    move_to_make = max_move;
+    pthread_mutex_unlock(&mutex);
+  }
+
   return alpha;
 }
 
@@ -397,6 +462,8 @@ int reps(const node_t& board)
 
 bool compare_moves(move a, move b)
 {
+  if (a.u == INVALID_MOVE) false;
+  if (b.u == INVALID_MOVE) true;
   if (a.b.from == b.b.from) 
   {
     if (a.b.to == b.b.to)

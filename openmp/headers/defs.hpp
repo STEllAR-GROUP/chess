@@ -74,4 +74,6 @@ typedef union {
     int u;
 } move;
 
+const int INVALID_MOVE = 0xFFFFFFFF;
+
 #endif

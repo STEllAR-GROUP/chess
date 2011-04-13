@@ -71,7 +71,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
         for(my $ply=2;$ply<=4;$ply++) {
             genbench($sm,$b,$ply);
             my $fd = new FileHandle;
-            open($fd,"./src/chx -s .bench.ini|");
+            open($fd,"./src/chx -s .bench.ini 2>/dev/null|");
             my $ans = "";
             my $score = -666;
             while(<$fd>) {
@@ -99,7 +99,10 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 $scoretab->{$b}->{$ply} = $score;
             }
             printf("%10s, %4d, %4d, %5d, %s, %s\n",$sm,$b,$ply,$score,$ans,$st);
-            close($fd);
+            my $ret=close($fd);
+            unless($ret) {
+                die "error code returned";
+            }
         }
     }
 }
