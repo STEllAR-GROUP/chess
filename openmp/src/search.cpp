@@ -315,10 +315,10 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
    * sequentially. This should produce good cut-offs.
    * It is a 'Younger Brothers Wait' strategy.
    **/
-  for(;j < workq.size();j++) {
-    move g = workq[j];
+  for(;j < worksq;j++) {
     if(alpha > beta)
       continue;
+    move g = workq[j];
     node_t p_board = board;
 
     if (!makemove(p_board, g.b)) { // Make the move, if it isn't 

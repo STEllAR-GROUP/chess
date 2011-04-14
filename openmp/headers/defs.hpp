@@ -1,6 +1,8 @@
 /*
  *  DEFS.H
  */
+#include <stdint.h>
+ 
 #ifndef DEFS_H
 #define DEFS_H
 
@@ -63,15 +65,15 @@
    be compared with each other. */
 
 typedef struct {
-    char from;
-    char to;
-    char promote;
-    char bits;
+  int8_t from;
+  int8_t to;
+  int8_t promote;
+  int8_t bits;
 } move_bytes;
 
 typedef union {
-    move_bytes b;
-    int u;
+  move_bytes b;
+  int32_t u;
 } move;
 
 const int INVALID_MOVE = 0xFFFFFFFF;

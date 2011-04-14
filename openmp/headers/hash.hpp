@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-typedef uint64_t hash_t;
+typedef uint32_t hash_t;
 
 const int zdepth = 2;
 const int N = 8;  // bits for bucket size
