@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "defs.hpp"
-#include "hash.hpp"
+#include "zkey.hpp"
 
 struct hist_t {
     move m;

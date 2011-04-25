@@ -17,7 +17,7 @@ my $scoretab = {};
 #  2 |   d2d4
 
 $anskey->{1}->{2} = "e2e4";
-$anskey->{1}->{3} = "e2e4";
+$anskey->{1}->{3} = "d2d4";
 $anskey->{1}->{4} = "g1f3";
 $anskey->{1}->{5} = "e2e4";
 $anskey->{1}->{6} = "b1c3";
@@ -64,10 +64,10 @@ $anskey->{3}->{6} = "f5g7";
 #  3 |   e5b5
 #  2 |   e5e3
 
-$anskey->{4}->{2} = "e5e1";
+$anskey->{4}->{2} = "e5e2";
 $anskey->{4}->{3} = "g5f7";
-$anskey->{4}->{4} = "e5e1";
-$anskey->{4}->{5} = "e5f6";
+$anskey->{4}->{4} = "e5e2";
+$anskey->{4}->{5} = "e5f5";
 $anskey->{4}->{6} = "e5e3";
 
 my $bad_score = -6666;
@@ -78,7 +78,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             # It takes too long for minimax above ply 4
             # So I ran it once at 5 to verify the answer
             # and then introduced this next.
-            if($sm eq "minimax" and $ply >= 5) {
+            if($sm eq "minimax" and $ply >= 4) {
                 next;
             }
             genbench($sm,$b,$ply);

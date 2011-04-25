@@ -40,19 +40,21 @@ int think(node_t& board)
   para_depth = -1;//depth[board.side]-1;
 
   if (search_method == MINIMAX) {
-    int f = search(board, depth[board.side]);
+    score_t f = search(board, depth[board.side]);
     std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
         pv[i].u = 0;
-    int alpha = -10000;
-    int beta = 10000;
+    //score_t alpha(-10000,board.hash);
+    //score_t beta(10000,board.hash);
+    DECL_SCORE(alpha,-10000,board.hash);
+    DECL_SCORE(beta,10000,board.hash);
     int stepsize = 2;
     int d = depth[board.side] % stepsize;
     if(d == 0)
         d = stepsize;
-    int f = search_ab(board,d,alpha,beta);
+    score_t f(search_ab(board,d,alpha,beta));
     while(d <= depth[board.side]) {
         f = mtdf(board,f,d);
         d+=stepsize;
@@ -61,9 +63,11 @@ int think(node_t& board)
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
-    int f;
-    int alpha = -10000;
-    int beta = 10000;
+    score_t f;
+    //score_t alpha(-10000,board.hash);
+    //score_t beta(10000,board.hash);
+    DECL_SCORE(alpha,-10000,board.hash);
+    DECL_SCORE(beta,10000,board.hash);
     bool brk = false;  /* Indicates whether we broke away from iterative deepening 
                           and need to call search on the actual ply */
 
@@ -98,11 +102,13 @@ int think(node_t& board)
 
 
 /** MTD-f */
-int mtdf(const node_t& board,int f,int depth)
+score_t mtdf(const node_t& board,score_t f,int depth)
 {
-    int g = f;
-    int upper =  10000;
-    int lower = -10000;
+    score_t g = f;
+    //score_t upper(10000,board.hash);
+    //score_t lower(-10000,board.hash);
+    DECL_SCORE(upper,10000,board.hash);
+    DECL_SCORE(lower,-10000,board.hash);
     // Technically, MTD-f uses "zero-width" searches
     // However, Aske Plaat points out that it performs
     // better with a coarser evaluation function. Since
@@ -110,9 +116,10 @@ int mtdf(const node_t& board,int f,int depth)
     // we provide a width setting for optimization.
     int width = 5;
     while(lower < upper) {
-        int alpha = max(lower,g-1-width/2);
-        int beta = alpha+width+1;
+        score_t alpha(max(lower,ADD_SCORE(g,-(1+width/2))));
+        score_t beta(ADD_SCORE(alpha,(width+1)));
         g = search_ab(board,depth,alpha,beta);
+        std::cout << "alpha=" << alpha << " g=" << g << " beta=" << beta << std::endl;
         if(g < beta) {
             if(g > alpha)
                 break;
@@ -130,22 +137,24 @@ void *search_pt(void *vptr) {
     return NULL;
 }
 
-int search(const node_t& board, int depth)
+score_t search(const node_t& board, int depth)
 {
-  int val, max;
+  score_t val, max;
 
   // if we are a leaf node, return the value from the eval() function
   if (!depth)
   {
     evaluator ev;
-    return ev.eval(board, chosen_evaluator);
+    DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
+    return s;
   }
   /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
   if (board.ply && reps(board)) {
-    return 0;
+    DECL_SCORE(s,0,board.hash);
+    return s;
   }
 
   std::vector<move> workq;
@@ -153,7 +162,8 @@ int search(const node_t& board, int depth)
                                   To be sorted by the hash value. */
   gen(workq, board); // Generate the moves
 
-  max = -10000; // Set the max score to -infinity
+  DECL_SCORE(minf,-10000,board.hash);
+  max = minf; // Set the max score to -infinity
 
   const int worksq = workq.size();
   smart_ptr<task> tasks[worksq];
@@ -171,8 +181,9 @@ int search(const node_t& board, int depth)
 
 	tasks[j]->info = info;
 
+    DECL_SCORE(z,0,board.hash);
     info->depth = depth-1;
-    info->result = 0;
+    info->result = z;
 	tasks[j]->pfunc = search_pt;
 	workers[get_bucket_index(info->board,info->depth)].add(tasks[j]);
   }
@@ -213,14 +224,18 @@ int search(const node_t& board, int depth)
   if (max_moves.size() == 0) {
     if (in_check(board, board.side))
     {
-      return -10000 + board.ply;
+      DECL_SCORE(s,-10000 + board.ply,board.hash);
+      return s;
     }
     else
-      return 0;
+    {
+      DECL_SCORE(z,0,board.hash);
+      return z;
+    }
   }
 
   if (board.ply == 0) {
-    sort(max_moves.begin(), max_moves.end(), compare_moves);
+    //sort(max_moves.begin(), max_moves.end(), compare_moves);
     pthread_mutex_lock(&mutex);
     move_to_make = *(max_moves.begin());
     pthread_mutex_unlock(&mutex);
@@ -228,7 +243,8 @@ int search(const node_t& board, int depth)
 
   // fifty move draw rule
   if (board.fifty >= 100) {
-    return 0;
+    DECL_SCORE(z,0,board.hash);
+    return z;
   }
 
   return max;
@@ -261,24 +277,29 @@ void *search_ab_pt(void *vptr)
   return NULL;
 }
 
-int search_ab(const node_t& board, int depth, int alpha, int beta)
+score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 {
   // if we are a leaf node, return the value from the eval() function
   if (!depth)
   {
     evaluator ev;
-    return ev.eval(board, chosen_evaluator);
+    DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
+    return s;
   }
   /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
-  if (board.ply && reps(board))
-    return 0;
+  if (board.ply && reps(board)) {
+    DECL_SCORE(z,0,board.hash);
+    return z;
+  }
 
   // fifty move draw rule
-  if (board.fifty >= 100)
-    return 0;
+  if (board.fifty >= 100) {
+    DECL_SCORE(z,0,board.hash);
+    return z;
+  }
 
   if(depth >= zdepth) {
     int b_index = get_bucket_index(board,depth);
@@ -287,7 +308,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     if ((z->hash == board.hash)&&(z->depth == depth)) {
         if(z->score >= beta)
         {
-          int zscore = z->score;
+          score_t zscore = z->score;
           hash_bucket[b_index].unlock();
           return zscore;
         }
@@ -308,7 +329,7 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   smart_ptr<task> tasks[worksq];
   
   int j=0;
-  int val;
+  score_t val;
   
   /**
    * This loop will execute once and it will do it
@@ -330,9 +351,11 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
      * move is greater according to compare_moves. In
      * effect, this makes the move a part of the score.
      **/
+    /*
     if(board.ply == 0 && compare_moves(g,max_move))
       val = -search_ab(p_board, depth-1, -beta, -alpha+1);
     else
+    */
       val = -search_ab(p_board, depth-1, -beta, -alpha);
 
     if (val > alpha)
@@ -350,8 +373,8 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
       pv[board.ply] = g;
       max_move = g;
     } else if(val == alpha) {
-      if(compare_moves(g,max_move))
-        max_move = g;
+      //if(compare_moves(g,max_move))
+        //max_move = g;
     }
     j++;
     break;
@@ -371,7 +394,8 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
     info->depth = depth-1;
     info->alpha = -beta;
     info->beta = -alpha;
-    info->result = 0;
+    DECL_SCORE(z,0,board.hash);
+    info->result = z;
     tasks[j]->pfunc = search_ab_pt;
     workers[get_bucket_index(info->board, info->depth)].add(tasks[j]);
   }
@@ -398,9 +422,11 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
        * move is greater according to compare_moves. In
        * effect, this makes the move a part of the score.
        **/
+      /*
       if(board.ply == 0)
         val = -search_ab(p_board, depth-1, -beta, -alpha+1);
       else
+      */
         val = -search_ab(p_board, depth-1, -beta, -alpha);
     }
 
@@ -419,8 +445,8 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
       pv[board.ply] = g;
       max_move = g;
     } else if(val == alpha) {
-      if(compare_moves(g,max_move))
-        max_move = g;
+      //if(compare_moves(g,max_move))
+        //max_move = g;
     }
   }
 
@@ -438,13 +464,6 @@ int search_ab(const node_t& board, int depth, int alpha, int beta)
   return alpha;
 }
 
-#if 0
-#pragma mark -
-#pragma mark Helper functions
-#endif
-
-
-
 /* reps() returns the number of times the current position
    has been repeated. It compares the current value of hash
    to previous values. */
@@ -460,6 +479,7 @@ int reps(const node_t& board)
   return r;
 }
 
+/*
 bool compare_moves(move a, move b)
 {
   if (a.u == INVALID_MOVE) false;
@@ -473,6 +493,7 @@ bool compare_moves(move a, move b)
   else
     return (a.b.from) > (b.b.from);
 }
+*/
 
 void sort_pv(std::vector<move>& workq, int ply)
 {
