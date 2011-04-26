@@ -78,7 +78,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             # It takes too long for minimax above ply 4
             # So I ran it once at 5 to verify the answer
             # and then introduced this next.
-            if($sm eq "minimax" and $ply >= 4) {
+            if($sm eq "minimax" and $ply >= 5) {
                 next;
             }
             genbench($sm,$b,$ply);

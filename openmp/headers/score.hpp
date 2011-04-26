@@ -11,13 +11,21 @@
 
 #if SCORE_TYPE == CLASS_SCORE
 /**
- * For some reason, the score_t class does not work properly
+ * This doesn't work exactly the same as the
+ * official version, LONG_SCORE, but it
+ * is close.
  **/
+const uint32_t BITS = 16L;
+const uint32_t MASK = (1L<<(BITS+1))-1L;
 struct score_t {
-    int base;
-    hash_t hash;
-    score_t(int b,hash_t h) : base(b), hash(h) {}
-    score_t(const score_t& sc) : base(sc.base), hash(sc.hash) {}
+    signed long base;
+    signed long hash;
+    score_t(int b,hash_t h) : base(b), hash(h) {
+        hash &= MASK;
+    }
+    score_t(const score_t& sc) : base(sc.base), hash(sc.hash) {
+        hash &= MASK;
+    }
     inline void operator=(const score_t& s) {
         base = s.base;
         hash = s.hash;
@@ -50,22 +58,21 @@ inline bool operator!=(const score_t& a,const score_t& b) {
     return a.base != b.base || a.hash != b.hash;
 }
 inline score_t operator-(const score_t& a,int b) {
-    score_t s(a);
-    s.base -= b;
+    score_t s(a.base-b,a.hash);
     return s;
 }
 inline score_t operator-(const score_t& a) {
     score_t s(a);
     s.base *= -1;
+    s.hash *= -1;
     return s;
 }
 inline score_t operator+(const score_t& a,int b) {
-    score_t s(a);
-    s.base += b;
+    score_t s(a.base+b,a.hash);
     return s;
 }
 inline const score_t& max(const score_t& a,const score_t& b) {
-    if(a <= b)
+    if(a >= b)
         return a;
     else
         return b;
@@ -75,11 +82,11 @@ inline const score_t& max(const score_t& a,const score_t& b) {
 #endif
 
 #if SCORE_TYPE == LONG_SCORE
-#define BITS 16L
-#define MASK ((1L<<(BITS+1))-1L)
 typedef signed long score_t;
-#define DECL_SCORE(name,val,hcode) score_t name = (((signed long)(val))<<BITS) | (hcode & MASK) ;
-#define ADD_SCORE(var,val) var + (((signed long)(val)<<BITS))
+const uint32_t BITS = 16L;
+const uint32_t MASK = (1L<<(BITS+1))-1L;
+#define DECL_SCORE(name,val,hcode) score_t name = (score_t(val)<<BITS) | (hcode & MASK);
+#define ADD_SCORE(var,val) var + (score_t(val)<<BITS)
 #endif
 
 #if SCORE_TYPE == SHORT_SCORE

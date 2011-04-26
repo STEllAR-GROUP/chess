@@ -37,7 +37,7 @@ int think(node_t& board)
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
-  para_depth = -1;//depth[board.side]-1;
+  para_depth = depth[board.side]-1;
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
@@ -46,8 +46,6 @@ int think(node_t& board)
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
         pv[i].u = 0;
-    //score_t alpha(-10000,board.hash);
-    //score_t beta(10000,board.hash);
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
     int stepsize = 2;
@@ -64,8 +62,6 @@ int think(node_t& board)
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
     score_t f;
-    //score_t alpha(-10000,board.hash);
-    //score_t beta(10000,board.hash);
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
     bool brk = false;  /* Indicates whether we broke away from iterative deepening 
@@ -105,8 +101,6 @@ int think(node_t& board)
 score_t mtdf(const node_t& board,score_t f,int depth)
 {
     score_t g = f;
-    //score_t upper(10000,board.hash);
-    //score_t lower(-10000,board.hash);
     DECL_SCORE(upper,10000,board.hash);
     DECL_SCORE(lower,-10000,board.hash);
     // Technically, MTD-f uses "zero-width" searches
@@ -119,7 +113,6 @@ score_t mtdf(const node_t& board,score_t f,int depth)
         score_t alpha(max(lower,ADD_SCORE(g,-(1+width/2))));
         score_t beta(ADD_SCORE(alpha,(width+1)));
         g = search_ab(board,depth,alpha,beta);
-        std::cout << "alpha=" << alpha << " g=" << g << " beta=" << beta << std::endl;
         if(g < beta) {
             if(g > alpha)
                 break;
@@ -346,17 +339,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       continue;                    // legal, then go to the next one
     }
 
-    /*
-     * If the scores are equal, we differentiate which
-     * move is greater according to compare_moves. In
-     * effect, this makes the move a part of the score.
-     **/
-    /*
-    if(board.ply == 0 && compare_moves(g,max_move))
-      val = -search_ab(p_board, depth-1, -beta, -alpha+1);
-    else
-    */
-      val = -search_ab(p_board, depth-1, -beta, -alpha);
+    val = -search_ab(p_board, depth-1, -beta, -alpha);
 
     if (val > alpha)
     {
@@ -372,9 +355,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       alpha = val;
       pv[board.ply] = g;
       max_move = g;
-    } else if(val == alpha) {
-      //if(compare_moves(g,max_move))
-        //max_move = g;
     }
     j++;
     break;
@@ -417,17 +397,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
         continue;                    // legal, then go to the next one
       }
 
-      /*
-       * If the scores are equal, we differentiate which
-       * move is greater according to compare_moves. In
-       * effect, this makes the move a part of the score.
-       **/
-      /*
-      if(board.ply == 0)
-        val = -search_ab(p_board, depth-1, -beta, -alpha+1);
-      else
-      */
-        val = -search_ab(p_board, depth-1, -beta, -alpha);
+      val = -search_ab(p_board, depth-1, -beta, -alpha);
     }
 
     if (val > alpha)
@@ -444,9 +414,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       alpha = val;
       pv[board.ply] = g;
       max_move = g;
-    } else if(val == alpha) {
-      //if(compare_moves(g,max_move))
-        //max_move = g;
     }
   }
 
