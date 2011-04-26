@@ -33,7 +33,6 @@ void init_hash()
 {
     int i, j, k;
 
-    srand(0);
     for (i = 0; i < 2; ++i)
         for (j = 0; j < 6; ++j)
             for (k = 0; k < 64; ++k)
@@ -42,22 +41,12 @@ void init_hash()
     for (i = 0; i < 64; ++i)
         hash_ep[i] = hash_rand();
 }
-
-
-/* hash_rand() XORs some shifted random numbers together to make sure
-   we have good coverage of all 32 bits. (rand() returns 16-bit numbers
-   on some systems.) */
+   
+static int hash_index = 0;
 
 hash_t hash_rand()
 {
-    int i;
-    hash_t r(0);
-
-    for (i = 0; i < 32; ++i) {
-        hash_t v(rand());
-        r ^= v << i;
-    }
-    return r;
+    return rnum[hash_index++];
 }
 
 

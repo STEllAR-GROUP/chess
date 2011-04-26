@@ -811,8 +811,6 @@ bool parseIni(const char * filename)
     std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
 
   iter_depth = atoi(ini.GetValue("CHX Main", "iter_depth", "5"));
-  
-  mpi_depth = atoi(ini.GetValue("CHX Main", "mpi_depth", "4"));
 
   return true;
 }
