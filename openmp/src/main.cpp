@@ -45,7 +45,7 @@ int chx_main(int argc, char **argv)
   if (!arguments) {
     std::cout << std::endl;
     std::cout << "Chess (CHX)" << std::endl;
-    std::cout << "Phillip LeBlanc - CCT" << std::endl;
+    std::cout << "Phillip LeBlanc and Steve Brandt - CCT" << std::endl;
     std::cout << std::endl;
     std::cout << "\"help\" displays a list of commands." << std::endl;
     std::cout << std::endl;
@@ -256,11 +256,23 @@ int chx_main(int argc, char **argv)
       std::cout << "d       - display the board" << std::endl;
       std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
       std::cout << "exit    - exit the program" << std::endl;
+      std::cout << "Enter moves in coordinate notation, e.g., e2e4, e7e8Q" << std::endl;
       std::cout << std::endl;
       continue;
     }
-
-    std::cout << "Illegal command." << std::endl;
+    
+    int m;
+    m = parse_move(workq, s.c_str());
+    move mov;
+    mov.u = m;
+    if (m == -1 || !makemove(board, mov.b))
+			std::cout << "Illegal move or command." << std::endl;
+		else {
+			board.ply = 0;
+			workq.clear();
+      gen(workq, board);
+			print_result(workq, board);
+		}
   }
 
   return 0;
