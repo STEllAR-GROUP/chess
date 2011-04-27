@@ -269,6 +269,7 @@ int chx_main(int argc, char **argv)
     if (m == -1 || !makemove(newboard, mov.b))
 			std::cout << "Illegal move or command." << std::endl;
 		else {
+      makemove(board, mov.b);
 			board.ply = 0;
 			workq.clear();
       gen(workq, board);
