@@ -265,7 +265,8 @@ int chx_main(int argc, char **argv)
     m = parse_move(workq, s.c_str());
     move mov;
     mov.u = m;
-    if (m == -1 || !makemove(board, mov.b))
+    node_t newboard = board;
+    if (m == -1 || !makemove(newboard, mov.b))
 			std::cout << "Illegal move or command." << std::endl;
 		else {
 			board.ply = 0;
