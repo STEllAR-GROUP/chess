@@ -139,8 +139,10 @@ int init_piece[64] = {
     3, 1, 2, 4, 5, 2, 1, 3
 };
 
-// Most epic array of all time. Instead of generating random numbers which change based on the system in use,
-// we will just use these.
+// Most epic array of all time. Instead of generating random numbers
+// which change based on the system in use,
+// we will just use these. See http://xkcd.com/221/
+// This allows us to have a more deterministic value to the Zobrist hash
 
 hash_t rnum[833] = {-1375691353, -815332770, 1270435042, -815154522, -1828625225, 1123318779, 1586732881, 857454044, 1654565544, -1990485649, 2106160544, 184179035, 1209203939,
  1483071411, -2091589446, 2093958737, -773212423, -1271181000, 2015271137, -1746164393, -1500599766, 746565161, -1144048956, 1075289478, -709069829, -727667196,
