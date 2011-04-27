@@ -41,7 +41,8 @@ int think(node_t& board)
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
-    std::cout << "SCORE=" << f << std::endl;
+    if (bench_mode)
+      std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
@@ -57,7 +58,8 @@ int think(node_t& board)
         f = mtdf(board,f,d);
         d+=stepsize;
     }
-    std::cout << "SCORE=" << f << std::endl;
+    if (bench_mode)
+      std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
     pv.resize(depth[board.side]);
@@ -84,7 +86,8 @@ int think(node_t& board)
     if (brk)
       f=search_ab(board, depth[board.side], alpha, beta);
     pv.clear();
-    std::cout << "SCORE=" << f << std::endl;
+    if (bench_mode)
+      std::cout << "SCORE=" << f << std::endl;
   }
 
   return 1;

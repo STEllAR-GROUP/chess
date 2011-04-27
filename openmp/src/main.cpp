@@ -806,6 +806,7 @@ bool parseIni(const char * filename)
   s = std::string(ini.GetValue("Benchmark", "mode", "false"));
   if (s == "true")
   {
+    bench_mode = true;
     s = std::string(ini.GetValue("Benchmark", "file", "ERROR"));
 
     if (s == "ERROR")

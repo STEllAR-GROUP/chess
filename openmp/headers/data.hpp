@@ -29,6 +29,7 @@ extern int chosen_evaluator;
 extern int search_method;
 extern int iter_depth;
 extern int rnum[833];
+extern bool bench_mode;
 
 ////////////////////////////////////////////////////////////////////////////
 //State Information -- The global variables this program uses and modifies//
