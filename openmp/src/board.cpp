@@ -428,7 +428,10 @@ bool makemove(node_t& board,const move_bytes m)
         return false;
     }
     board.hash = updated_hash;
-    //if (updated_hash == set_hash(board))
-      //std::cerr << "updated_hash == " << updated_hash << " :: set_hash == " << set_hash << std::endl;
+    hash_t sh = set_hash(board);
+    if (updated_hash != sh) {
+      std::cerr << "updated_hash == " << updated_hash << " :: set_hash == " << sh << std::endl;
+      exit(3);
+    }
     return true;
 }
