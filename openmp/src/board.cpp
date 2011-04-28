@@ -96,7 +96,8 @@ hash_t update_hash(node_t& board, const move_bytes m)
      m.b.to contains the location of the 'pawn'
      hash_piece[][][] is indexed by piece [color][type][square] */
   hash_t hash(board.hash);
-  hash ^= hash_piece[board.color[m.to]][board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square
+  if (board.color[m.to] != EMPTY)
+    hash ^= hash_piece[board.color[m.to]][board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square (or skip if empty)
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
   
@@ -427,5 +428,7 @@ bool makemove(node_t& board,const move_bytes m)
         return false;
     }
     board.hash = updated_hash;
+    //if (updated_hash == set_hash(board))
+      //std::cerr << "updated_hash == " << updated_hash << " :: set_hash == " << set_hash << std::endl;
     return true;
 }
