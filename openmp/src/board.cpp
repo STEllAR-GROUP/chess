@@ -78,6 +78,33 @@ hash_t set_hash(node_t& board)
     return hash;
 }
 
+/*  
+    This is the function for updating the hash instead of recomputing it based on a move.
+
+    For instance, if a pawn on a chessboard square is replaced by a rook from another square, 
+    the resulting position would be produced by XORing the existing hash like this:
+       0) XOR out the pawn at the destination square
+       1) XOR in the rook at the destination square
+       2) XOR out the rook from the source square
+    
+    Also because the move changes the side of the player, we will XOR the hash_side.
+    This function is called at the beginning of makemove()
+*/
+hash_t update_hash(node_t& board, const move_bytes m)
+{
+  /* m.b.from contains the location of the 'rook'
+     m.b.to contains the location of the 'pawn'
+     hash_piece[][][] is indexed by piece [color][type][square] */
+  hash_t hash(board.hash);
+  hash ^= hash_piece[board.color[m.to]][board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square
+  hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
+  hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
+  
+  board.hash ^= hash_side;
+  
+  return hash;
+}
+
 
 /* in_check() returns TRUE if side s is in check and FALSE
    otherwise. It just scans the board to find side s's king
@@ -285,7 +312,7 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 
 bool makemove(node_t& board,const move_bytes m)
 {
-    
+    hash_t updated_hash = update_hash(board, m);
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
     if (m.bits & 2) {
@@ -353,9 +380,15 @@ bool makemove(node_t& board,const move_bytes m)
     board.castle &= castle_mask[(int)m.from] & castle_mask[(int)m.to];
     if (m.bits & 8) {
         if (board.side == LIGHT)
+        {
             board.ep = m.to + 8;
+            updated_hash ^= hash_ep[board.ep];
+        }
         else
+        {
             board.ep = m.to - 8;
+            updated_hash ^= hash_ep[board.ep];
+        }
     }
     else
         board.ep = -1;
@@ -393,6 +426,6 @@ bool makemove(node_t& board,const move_bytes m)
     if (in_check(board, board.side ^ 1)) {
         return false;
     }
-    board.hash = set_hash(board);
+    board.hash = updated_hash;
     return true;
 }
