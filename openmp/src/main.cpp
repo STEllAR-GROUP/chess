@@ -440,7 +440,6 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   board.fifty = 0;
   board.ply = 0;
   board.hply = 0;
-  board.hist_dat.resize(10);
   board.hash = set_hash(board);
   //At this point we have the board position configured to the file specification
   print_board(board, std::cout);

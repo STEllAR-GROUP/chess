@@ -445,7 +445,7 @@ int reps(const node_t& board)
   int r = 0;
 
   for (i = board.hply - board.fifty; i < board.hply; ++i)
-    if (board.hist_dat[i].hash == board.hash)
+    if (board.hist_dat[i] == board.hash)
       ++r;
   return r;
 }

@@ -7,17 +7,8 @@
 #include "defs.hpp"
 #include "zkey.hpp"
 
-struct hist_t {
-    move m;
-    int capture;
-    int castle;
-    int ep;
-    int fifty;
-    hash_t hash;
-};
-
 struct node_t { 
-    std::vector<hist_t> hist_dat;
+    std::vector<hash_t> hist_dat;
     hash_t hash;
     char color[64];
     char piece[64];

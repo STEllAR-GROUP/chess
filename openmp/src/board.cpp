@@ -313,7 +313,7 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 
 bool makemove(node_t& board,const move_bytes m)
 {
-    hash_t updated_hash = update_hash(board, m);
+    board.hash = update_hash(board, m);
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
     if (m.bits & 2) {
@@ -361,18 +361,7 @@ bool makemove(node_t& board,const move_bytes m)
         board.piece[from] = EMPTY;
     }
 
-    // back up information so we can take the move back later.
-
-    if (board.hply >= board.hist_dat.size())
-    {
-        board.hist_dat.resize(board.hist_dat.size() + 10);
-    }
-    board.hist_dat[board.hply].m.b = m;
-    board.hist_dat[board.hply].capture = board.piece[(int)m.to];
-    board.hist_dat[board.hply].castle = board.castle;
-    board.hist_dat[board.hply].ep = board.ep;
-    board.hist_dat[board.hply].fifty = board.fifty;
-    board.hist_dat[board.hply].hash = board.hash;
+    board.hist_dat.push_back(board.hash);
     board.ply++;
     board.hply++;
 
@@ -383,12 +372,12 @@ bool makemove(node_t& board,const move_bytes m)
         if (board.side == LIGHT)
         {
             board.ep = m.to + 8;
-            updated_hash ^= hash_ep[board.ep];
+            board.hash = set_hash(board);
         }
         else
         {
             board.ep = m.to - 8;
-            updated_hash ^= hash_ep[board.ep];
+            board.hash = set_hash(board);
         }
     }
     else
@@ -427,10 +416,9 @@ bool makemove(node_t& board,const move_bytes m)
     if (in_check(board, board.side ^ 1)) {
         return false;
     }
-    board.hash = updated_hash;
     hash_t sh = set_hash(board);
-    if (updated_hash != sh) {
-      std::cerr << "updated_hash == " << updated_hash << " :: set_hash == " << sh << std::endl;
+    if (board.hash != sh) {
+      std::cerr << "board.hash == " << board.hash << " :: set_hash == " << sh << std::endl;
       exit(3);
     }
     return true;
