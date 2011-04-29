@@ -316,7 +316,10 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   std::string logfilename = get_log_name();
 
   std::ofstream logfile;
-  logfile.open(logfilename.c_str());
+  if (logging_enabled)
+    logfile.open(logfilename.c_str());
+  else
+    logfile.open("/dev/null");
 
   std::cout << "Using benchmark file: '" << filename << "'" << std::endl;
   std::cout << "  ply level: " << ply_level << std::endl;
@@ -825,6 +828,10 @@ bool parseIni(const char * filename)
     std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
 
   iter_depth = atoi(ini.GetValue("CHX Main", "iter_depth", "5"));
+  
+  s = std::string(ini.GetValue("CHX Main", "logging", "false"));
+  if (s == "true")
+    logging_enabled = true;
 
   return true;
 }

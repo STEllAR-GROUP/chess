@@ -22,6 +22,8 @@ int mpi_depth = 4;
 
 bool bench_mode = false;
 
+bool logging_enabled = false;
+
 /* random numbers used to compute hash; see set_hash() in board.c */
 hash_t hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
 hash_t hash_side;

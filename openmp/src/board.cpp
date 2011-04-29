@@ -5,6 +5,8 @@
 
 #include "board.hpp"
 
+static int count, count2;
+
 // init_board() sets the board to the initial game state.
 
 void init_board(node_t& board)
@@ -92,8 +94,8 @@ hash_t set_hash(node_t& board)
 */
 hash_t update_hash(node_t& board, const move_bytes m)
 {
-  /* m.b.from contains the location of the 'rook'
-     m.b.to contains the location of the 'pawn'
+  /* m.from contains the location of the 'rook'
+     m.to contains the location of the 'pawn'
      hash_piece[][][] is indexed by piece [color][type][square] */
   hash_t hash(board.hash);
   if (board.color[m.to] != EMPTY)
@@ -314,10 +316,12 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 bool makemove(node_t& board,const move_bytes m)
 {
     board.hash = update_hash(board, m);
+    bool needs_set_hash = false;
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
     if (m.bits & 2) {
         int from, to;
+        needs_set_hash = true;
 
         if (in_check(board, board.side))
             return false;
@@ -372,12 +376,12 @@ bool makemove(node_t& board,const move_bytes m)
         if (board.side == LIGHT)
         {
             board.ep = m.to + 8;
-            board.hash = set_hash(board);
+            needs_set_hash = true;
         }
         else
         {
             board.ep = m.to - 8;
-            board.hash = set_hash(board);
+            needs_set_hash = true;
         }
     }
     else
@@ -390,7 +394,10 @@ bool makemove(node_t& board,const move_bytes m)
     /* move the piece */
     board.color[(int)m.to] = board.side;
     if (m.bits & 32)
+    {
         board.piece[(int)m.to] = m.promote;
+        needs_set_hash = true;
+    }
     else
         board.piece[(int)m.to] = board.piece[(int)m.from];
     board.color[(int)m.from] = EMPTY;
@@ -401,10 +408,12 @@ bool makemove(node_t& board,const move_bytes m)
         if (board.side == LIGHT) {
             board.color[m.to + 8] = EMPTY;
             board.piece[m.to + 8] = EMPTY;
+            needs_set_hash = true;
         }
         else {
             board.color[m.to - 8] = EMPTY;
             board.piece[m.to - 8] = EMPTY;
+            needs_set_hash = true;
         }
     }
 
@@ -416,9 +425,19 @@ bool makemove(node_t& board,const move_bytes m)
     if (in_check(board, board.side ^ 1)) {
         return false;
     }
+    if (needs_set_hash)
+    {
+      board.hash = set_hash(board);
+      count2++;
+    }
     hash_t sh = set_hash(board);
+    
+    if (board.hash == sh)
+      count++;
     if (board.hash != sh) {
       std::cerr << "board.hash == " << board.hash << " :: set_hash == " << sh << std::endl;
+      std::cerr << "Number of times board.hash == sh: " << count << std::endl;
+      std::cerr << "Number of times set_hash was called: " << count2 << std::endl;
       exit(3);
     }
     return true;

@@ -37,8 +37,8 @@ int think(node_t& board)
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
-  para_depth = depth[board.side]-1;
-  //para_depth = -1;
+  //para_depth = depth[board.side]-1;
+  para_depth = -1;
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
