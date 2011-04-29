@@ -101,7 +101,7 @@ hash_t update_hash(node_t& board, const move_bytes m)
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
   
-  board.hash ^= hash_side;
+  hash ^= hash_side;
   
   return hash;
 }
