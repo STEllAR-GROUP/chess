@@ -315,8 +315,10 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 
 bool makemove(node_t& board,const move_bytes m)
 {
-    board.hash = update_hash(board, m);
     bool needs_set_hash = false;
+    if(board.ep != -1)
+        needs_set_hash = true;
+    board.hash = update_hash(board, m);
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
     if (m.bits & 2) {
