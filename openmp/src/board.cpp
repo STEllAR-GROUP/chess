@@ -317,7 +317,7 @@ bool makemove(node_t& board,const move_bytes m)
 {
     bool needs_set_hash = false;
     if(board.ep != -1)
-        needs_set_hash = true;
+        board.hash ^= hash_ep[board.ep];
     board.hash = update_hash(board, m);
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
@@ -378,12 +378,12 @@ bool makemove(node_t& board,const move_bytes m)
         if (board.side == LIGHT)
         {
             board.ep = m.to + 8;
-            needs_set_hash = true;
+            board.hash ^= hash_ep[board.ep];
         }
         else
         {
             board.ep = m.to - 8;
-            needs_set_hash = true;
+            board.hash ^= hash_ep[board.ep];
         }
     }
     else
@@ -432,8 +432,10 @@ bool makemove(node_t& board,const move_bytes m)
       board.hash = set_hash(board);
       count2++;
     }
+// This could debugs update_hash(), making sure it's consistent
+// with set_hash()
+#if 0
     hash_t sh = set_hash(board);
-    
     if (board.hash == sh)
       count++;
     if (board.hash != sh) {
@@ -442,5 +444,6 @@ bool makemove(node_t& board,const move_bytes m)
       std::cerr << "Number of times set_hash was called: " << count2 << std::endl;
       exit(3);
     }
+#endif
     return true;
 }
