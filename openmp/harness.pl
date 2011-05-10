@@ -3,6 +3,7 @@ use FileHandle;
 
 my $anskey = {};
 my $scoretab = {};
+my $speedtab = {};
 
 #Answer key:
 
@@ -89,6 +90,8 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             my $score = $bad_score;
 
             my $st = "OK ";
+            my $tm = 0;
+            my $speedup = 1;
             while(<$fd>) {
                 if(/Computer's move: ([a-h][1-8][a-h][1-8])/) {
                     if($ans ne "" and $ans ne $1) {
@@ -103,6 +106,9 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                         last;
                     }
                     $score=$1;
+                }
+                if(/Average time for run: (\d+) ms/) {
+                    $tm = $1*1.0e-3;
                 }
             }
             if(defined($anskey->{$b}->{$ply})) {
@@ -120,7 +126,11 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             if($st eq "OK ") {
                 $scoretab->{$b}->{$ply} = $score;
             }
-            printf("%10s, %4d, %4d, %5d, %s, %s\n",$sm,$b,$ply,$score,$ans,$st);
+            if(defined($speedtab->{$b}->{$ply})) {
+                $speedup = $speedtab->{$b}->{$ply}/$tm;
+            }
+            $speedtab->{$b}->{$ply} = $tm;
+            printf("%10s, %4d, %4d, %5d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
             my $ret=close($fd);
             unless($ret) {
                 die "error code returned";
