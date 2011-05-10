@@ -489,4 +489,5 @@ void *run_worker(void *vptr) {
 		(*pt->pfunc)(pt->info.ptr());
 		pt->finish();
 	}
+	return 0;
 }
