@@ -9,6 +9,9 @@
 #include <fstream>
 #include <sys/time.h>
 
+#include "mpi_support.hpp"
+int mpi_size=1, mpi_rank=0;
+
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
 #include <readline/readline.h>
@@ -26,6 +29,36 @@ int count_exec_times;
 
 int auto_move = 0;
 int computer_side;
+
+void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
+	int data[] = {filename.size(), ply_level, num_runs };
+	MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
+	start_benchmark(filename,ply_level,num_runs);
+}
+
+void mpi_terminate() {
+	if(mpi_rank == 0) {
+		int data[] = {-1,0,0};
+		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+	}
+	MPI_Finalize();
+}
+
+void mpi_bench_call() {
+	while(true) {
+		int data[3];
+		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+		if(data[0] == -1 && data[1] == 0 && data[2] == 0) {
+			break;
+		}
+		char *fn = new char[data[0]+1];
+		MPI_Bcast(fn,data[0]+1,MPI_CHAR,0,MPI_COMM_WORLD);
+		std::string filename = fn;
+		start_benchmark(fn,data[1],data[2]);
+		delete[] fn;
+	}
+}
 
 int chx_main(int argc, char **argv)
 {
@@ -202,7 +235,7 @@ int chx_main(int argc, char **argv)
       std::cout << "Number of runs: ";
       std::cin >> num_runs;
       std::cout << std::endl;
-      start_benchmark(filename, ply_level, num_runs);
+      mpi_start_benchmark(filename, ply_level, num_runs);
       continue;
     }
     if(s.compare(0,bench.length(),bench)==0) {
@@ -282,7 +315,20 @@ int chx_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
-  int retcode = chx_main(argc, argv);
+  int retcode = 0;
+#ifdef MPI_SUPPORT
+  MPI_Init(&argc,&argv);
+  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
+#endif
+  if(mpi_rank==0) {
+	retcode = chx_main(argc, argv);
+  } else {
+	mpi_bench_call();
+  }
+#ifdef MPI_SUPPORT
+  mpi_terminate();
+#endif
   return retcode;
 }
 
@@ -701,6 +747,7 @@ int parseArgs(int argc, char **argv)
       printf("-s file     Uses the specified settings file instead of settings.ini\n");
       printf("\n");
       FreeOptList(thisOpt);
+      mpi_terminate();
       exit(0);
     }
 
@@ -814,6 +861,7 @@ bool parseIni(const char * filename)
     if (s == "ERROR")
     {
       std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
+      mpi_terminate();
       exit(-1);
     }
 
@@ -822,6 +870,7 @@ bool parseIni(const char * filename)
 
     init_hash();
     start_benchmark(s, max_ply, num_runs);
+    mpi_terminate();
     exit(0);
   }
   else if (s != "false")

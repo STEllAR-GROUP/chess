@@ -18,7 +18,7 @@ int search_method = MINIMAX; // Which search method to use
 
 int iter_depth = 5;  // See search.cpp for usage
 
-int mpi_depth = 4;
+int mpi_depth = -1;
 
 bool bench_mode = false;
 
