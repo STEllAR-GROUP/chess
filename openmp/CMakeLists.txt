@@ -4,7 +4,7 @@ SET (CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(Readline)
-find_package(MPI)
+#find_package(MPI)
 
 IF (MPI_FOUND)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D MPI_SUPPORT")

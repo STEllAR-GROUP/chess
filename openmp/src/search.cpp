@@ -7,7 +7,44 @@
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
-
+/*
+ * Parallelism in chess:
+ * We want to have pseudo-futures
+ * Objects that live in a distributed space
+ * and can be updated, always being the
+ * maximum value computed so far but
+ * also having a "done" value.
+ * In a distributed setting, give each
+ * score a locality and send updates
+ * to that locality.
+ *
+ * Remote methods:
+ * future_value: [hash,value,set/request]
+ * shut down
+ */
+/*
+struct ScoreFuture {
+	score_t value;
+	bool has_value;
+};
+struct RemoteFuture {
+	int rank;
+};
+struct ScoreManager {
+	std::vector<ScoreFuture> futures;
+	score_t current_score;
+	score_t current_value() {
+		std::vector<ScoreFuture>::iterator i = futures.start(), e = futures.end();
+		for(;i != e;++i) {
+			if(i->has_value) {
+				current_score = max(current_score,i->value);
+				i=futures.erase(i);
+			}
+		}
+		return current_value;
+	}
+};
+*/
 worker workers[bucket_size];
 
 // Maximum number of pthreads we can create
@@ -45,6 +82,7 @@ int think(node_t& board)
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
+	board.hash = set_hash(board);
     pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
         pv[i].u = 0;
@@ -54,10 +92,10 @@ int think(node_t& board)
     int d = depth[board.side] % stepsize;
     if(d == 0)
         d = stepsize;
-    score_t f(search_ab(board,d,alpha,beta));
-    while(d <= depth[board.side]) {
-        f = mtdf(board,f,d);
+    score_t f = search_ab(board,d,alpha,beta);
+    while(d < depth[board.side]) {
         d+=stepsize;
+        f = mtdf(board,f,d);
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
@@ -112,18 +150,34 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     // better with a coarser evaluation function. Since
     // this maps readily onto a wider, non-zero width
     // we provide a width setting for optimization.
-    int width = 5;
+    const int start_width = 5;
+    // Sometimes MTD-f gets stuck and makes very little
+    // progress. This slows the code a lot. Maxtries
+    // provides an escape hatch if things aren't going well.
+    const int max_tries = 4;
+    // Heuristic to widen the search on each miss.
+    const int grow_width = 3;
+
+    const int max_width = start_width+grow_width*max_tries;
+    int width = start_width;
+    score_t alpha=lower,beta=upper;
     while(lower < upper) {
-        score_t alpha(max(lower,ADD_SCORE(g,-(1+width/2))));
-        score_t beta(ADD_SCORE(alpha,(width+1)));
-        g = search_ab(board,depth,alpha,beta);
-        if(g < beta) {
+    	if(width >= max_width) {
+    		g = search_ab(board,depth,lower,upper);
+    		break;
+    	} else {
+    		alpha=(max(lower,ADD_SCORE(g,-(1+width/2))));
+    		beta=(min(upper,ADD_SCORE(alpha,(width+1))));
+    		g = search_ab(board,depth,alpha,beta);
+    	}
+    	if(g < beta) {
             if(g > alpha)
                 break;
             upper = g;
         } else {
             lower = g;
         }
+    	width += grow_width;
     }
     return g;
 }
@@ -167,10 +221,11 @@ score_t search(const node_t& board, int depth)
 
   int j=0;
   for(;depth == para_depth && j < workq.size(); j++) {
+	bool capture = false;
     move g = workq[j];
     smart_ptr<search_info> info = new search_info(board);
 
-    if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
+    if (!makemove(info->board, g.b, capture)) { // Make the move, if it isn't
 	  								   // legal, then go to the next one
       continue;
     }
@@ -187,6 +242,7 @@ score_t search(const node_t& board, int depth)
 
   // loop through the moves
   for (int i = 0; i < workq.size(); i++) {
+	bool capture = false;
     move g = workq[i];
     if(i < j) {
 		  if(!tasks[i].valid())
@@ -197,7 +253,7 @@ score_t search(const node_t& board, int depth)
     } else {
         node_t p_board = board;
 
-        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+        if (!makemove(p_board, g.b,capture)) { // Make the move, if it isn't
             continue;                    // legal, then go to the next one
         }
 
@@ -336,10 +392,11 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
   for(;j < worksq;j++) {
     if(alpha > beta)
       continue;
+    bool capture = false;
     move g = workq[j];
     node_t p_board = board;
 
-    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+    if (!makemove(p_board, g.b, capture)) { // Make the move, if it isn't
       continue;                    // legal, then go to the next one
     }
 
@@ -363,19 +420,57 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     j++;
     break;
   }
-  
+
+  /*
+  int cmd[2];
+  MPI_Status status;
+  score_t results[worksq];
+  if(mpi_rank == 0) {
+	  for(; depth == mpi_depth && j < worksq; j++) {
+		  MPI_Recv(cmd,2,MPI_INT,MPI_ANY_SOURCE,ch,MPI_COMM_WORLD,&status);
+		  if(cmd[1] == have_result) {
+			  results[status.MPI_SOURCE] = cmd[0];
+		  }
+		  cmd[0] = j;
+		  cmd[1] = assign_work;
+		  MPI_Send(cmd,2,MPI_INT,status.MPI_SOURCE,ch,MPI_COMM_WORLD);
+	  }
+	  for(int i=1;i<mpi_size;i++) {
+		  cmd[0] = worksq;
+		  cmd[1] = work_done;
+		  MPI_Send(cmd,2,MPI_INT,i,ch,MPI_COMM_WORLD);
+	  }
+  } else {
+  	  while(true) {
+		  cmd[1] = need_work;
+		  cmd[0] = i;
+		  MPI_Send(cmd,2,MPI_INT,0,ch,MPI_COMM_WORLD);
+		  MPI_Recv(cmd,2,MPI_INT,0,ch,MPI_COMM_WORLD,&status);
+		  if(cmd[1] == work_done)
+			  break;
+		  int i = cmd[0];
+		  // Do iter i
+		  cmd[1] = have_result;
+		  cmd[0] = val;
+	  }
+  }
+  MPI_Bcast(results,worksq,MPI_INT,0,ch,MPI_COMM_WORLD);
+*/
   // loop through the moves
   for (; depth == para_depth && j < worksq; j++) {
+	bool capture = false;
     move g = workq[j];
     smart_ptr<search_info> info = new search_info(board);
     
-    if (!makemove(info->board, g.b))
+    if (!makemove(info->board, g.b, capture))
       continue;
     
     tasks[j] = new task;
     
     tasks[j]->info = info;
     info->depth = depth-1;
+    if(capture && depth==1)
+    	;// quiescent info->depth = 1;
     info->alpha = -beta;
     info->beta = -alpha;
     DECL_SCORE(z,0,board.hash);
@@ -387,6 +482,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
   for (int i = 0; i < worksq; i++) {  
     if(alpha >= beta)
       break;
+    bool capture = false;
     move g = workq[i];
     if (i < j) {
       if (!tasks[i].valid())
@@ -397,11 +493,15 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     } else {
       node_t p_board = board;
 
-      if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+      if (!makemove(p_board, g.b, capture)) { // Make the move, if it isn't
         continue;                    // legal, then go to the next one
       }
 
-      val = -search_ab(p_board, depth-1, -beta, -alpha);
+      if(capture && depth == 1) {// quiescent search
+    	  p_board.ply--;
+    	  val = -search_ab(p_board, depth, -beta, -alpha);
+      } else
+          val = -search_ab(p_board, depth-1, -beta, -alpha);
     }
 
     if (val > alpha)
@@ -416,7 +516,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       hash_bucket[b_index].unlock();
     
       alpha = val;
+      pthread_mutex_lock(&mutex);
       pv[board.ply] = g;
+      pthread_mutex_unlock(&mutex);
       max_move = g;
     }
   }

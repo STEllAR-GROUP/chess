@@ -1,6 +1,11 @@
 use strict;
 use FileHandle;
 
+my $fsup = 0;
+my $asup = 0;
+my $nsup = 0;
+my $msup = 1;
+
 my $anskey = {};
 my $scoretab = {};
 my $speedtab = {};
@@ -84,13 +89,16 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             }
             genbench($sm,$b,$ply);
             my $fd = new FileHandle;
-            open($fd,"./src/chx -s .bench.ini 2>/dev/null|");
+            if($sm eq "mtd-f") {
+                #sleep(1);
+            }
+            open($fd,"mpirun -np 1 ./src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
 
             my $st = "OK ";
-            my $tm = 0;
+            my $tm = 1e-6;
             my $speedup = 1;
             while(<$fd>) {
                 if(/Computer's move: ([a-h][1-8][a-h][1-8])/) {
@@ -109,6 +117,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 }
                 if(/Average time for run: (\d+) ms/) {
                     $tm = $1*1.0e-3;
+                    $tm = 1.0e-3 if($tm < 1.0e-3);
                 }
             }
             if(defined($anskey->{$b}->{$ply})) {
@@ -130,14 +139,23 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 $speedup = $speedtab->{$b}->{$ply}/$tm;
             }
             $speedtab->{$b}->{$ply} = $tm;
-            printf("%10s, %4d, %4d, %5d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
+            printf("%10s, %4d, %4d, %9d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
+            if($sm eq "mtd-f") {
+                $fsup += 1 if($speedup > 1);
+                $fsup += 0.5 if($speedup == 1);
+                $asup += $speedup;
+                $nsup += 1;
+                $msup *= $speedup;
+            }
             my $ret=close($fd);
             unless($ret) {
-                die "error code returned";
+                die "error code returned r=($ret)";
             }
         }
     }
 }
+
+printf("mtd-f over alpha speedup: avg=%3.2f geomtric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
 
 sub genbench {
     my $sm = shift;

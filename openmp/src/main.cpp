@@ -31,21 +31,26 @@ int auto_move = 0;
 int computer_side;
 
 void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
+#ifdef MPI_SUPPORT
 	int data[] = {filename.size(), ply_level, num_runs };
 	MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
+#endif
 	start_benchmark(filename,ply_level,num_runs);
 }
 
 void mpi_terminate() {
+#ifdef MPI_SUPPORT
 	if(mpi_rank == 0) {
 		int data[] = {-1,0,0};
 		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
 	}
 	MPI_Finalize();
+#endif
 }
 
 void mpi_bench_call() {
+#ifdef MPI_SUPPORT
 	while(true) {
 		int data[3];
 		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
@@ -58,6 +63,7 @@ void mpi_bench_call() {
 		start_benchmark(fn,data[1],data[2]);
 		delete[] fn;
 	}
+#endif
 }
 
 int chx_main(int argc, char **argv)
@@ -114,7 +120,8 @@ int chx_main(int argc, char **argv)
       if (output)
         std::cout << "Computer's move: " << move_str(move_to_make.b)
           << std::endl;
-      makemove(board, move_to_make.b); // Make the move for our master board
+      bool capture;
+      makemove(board, move_to_make.b, capture); // Make the move for our master board
       board.ply = 0; // Reset the board ply to 0
 
       workq.clear(); // Clear the work queue in preparation for next move
@@ -299,10 +306,11 @@ int chx_main(int argc, char **argv)
     move mov;
     mov.u = m;
     node_t newboard = board;
-    if (m == -1 || !makemove(newboard, mov.b))
+    bool capture;
+    if (m == -1 || !makemove(newboard, mov.b, capture))
 			std::cout << "Illegal move or command." << std::endl;
 		else {
-      makemove(board, mov.b);
+      makemove(board, mov.b, capture);
 			board.ply = 0;
 			workq.clear();
       gen(workq, board);
@@ -684,11 +692,12 @@ void print_board(node_t& board, std::ostream& out)
 int print_result(std::vector<move>& workq, node_t& board)
 {
   int i;
+  bool capture;
 
   // is there a legal move?
   for (i = 0; i < workq.size() ; ++i) { 
     node_t p_board = board;
-    if (makemove(p_board, workq[i].b)) {
+    if (makemove(p_board, workq[i].b,capture)) {
       break;
     }
   }
