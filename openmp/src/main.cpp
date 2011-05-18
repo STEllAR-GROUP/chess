@@ -31,8 +31,8 @@ int auto_move = 0;
 int computer_side;
 
 void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
-#ifdef MPI_SUPPORT
 	int data[] = {filename.size(), ply_level, num_runs };
+#ifdef MPI_SUPPORT
 	MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
 #endif
@@ -40,7 +40,7 @@ void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
 }
 
 void mpi_terminate() {
-#ifdef MPI_SUPPORT
+#ifdef MPI_SPPORT
 	if(mpi_rank == 0) {
 		int data[] = {-1,0,0};
 		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
@@ -50,20 +50,22 @@ void mpi_terminate() {
 }
 
 void mpi_bench_call() {
-#ifdef MPI_SUPPORT
 	while(true) {
 		int data[3];
+#ifdef MPI_SPPORT
 		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+#endif
 		if(data[0] == -1 && data[1] == 0 && data[2] == 0) {
 			break;
 		}
 		char *fn = new char[data[0]+1];
+#ifdef MPI_SUPPORT
 		MPI_Bcast(fn,data[0]+1,MPI_CHAR,0,MPI_COMM_WORLD);
+#endif
 		std::string filename = fn;
 		start_benchmark(fn,data[1],data[2]);
 		delete[] fn;
 	}
-#endif
 }
 
 int chx_main(int argc, char **argv)
@@ -120,8 +122,7 @@ int chx_main(int argc, char **argv)
       if (output)
         std::cout << "Computer's move: " << move_str(move_to_make.b)
           << std::endl;
-      bool capture;
-      makemove(board, move_to_make.b, capture); // Make the move for our master board
+      makemove(board, move_to_make.b); // Make the move for our master board
       board.ply = 0; // Reset the board ply to 0
 
       workq.clear(); // Clear the work queue in preparation for next move
@@ -306,11 +307,10 @@ int chx_main(int argc, char **argv)
     move mov;
     mov.u = m;
     node_t newboard = board;
-    bool capture;
-    if (m == -1 || !makemove(newboard, mov.b, capture))
+    if (m == -1 || !makemove(newboard, mov.b))
 			std::cout << "Illegal move or command." << std::endl;
 		else {
-      makemove(board, mov.b, capture);
+      makemove(board, mov.b);
 			board.ply = 0;
 			workq.clear();
       gen(workq, board);
@@ -692,12 +692,11 @@ void print_board(node_t& board, std::ostream& out)
 int print_result(std::vector<move>& workq, node_t& board)
 {
   int i;
-  bool capture;
 
   // is there a legal move?
   for (i = 0; i < workq.size() ; ++i) { 
     node_t p_board = board;
-    if (makemove(p_board, workq[i].b,capture)) {
+    if (makemove(p_board, workq[i].b)) {
       break;
     }
   }

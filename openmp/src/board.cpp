@@ -92,16 +92,14 @@ hash_t set_hash(node_t& board)
     Also because the move changes the side of the player, we will XOR the hash_side.
     This function is called at the beginning of makemove()
 */
-hash_t update_hash(node_t& board, const move_bytes m,bool& capture)
+hash_t update_hash(node_t& board, const move_bytes m)
 {
   /* m.from contains the location of the 'rook'
      m.to contains the location of the 'pawn'
      hash_piece[][][] is indexed by piece [color][type][square] */
   hash_t hash(board.hash);
-  if (board.color[m.to] != EMPTY) {
-	capture = true;
+  if (board.color[m.to] != EMPTY)
     hash ^= hash_piece[board.color[m.to]][board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square (or skip if empty)
-  }
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
   hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
   
@@ -315,12 +313,12 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
 
-bool makemove(node_t& board,const move_bytes m,bool& capture)
+bool makemove(node_t& board,const move_bytes m)
 {
     bool needs_set_hash = false;
     if(board.ep != -1)
         board.hash ^= hash_ep[board.ep];
-    board.hash = update_hash(board, m, capture);
+    board.hash = update_hash(board, m);
     /* test to see if a castle move is legal and move the rook
        (the king is moved with the usual move code later) */
     if (m.bits & 2) {

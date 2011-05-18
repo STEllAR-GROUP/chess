@@ -23,10 +23,9 @@ my $speedtab = {};
 #  2 |   d2d4
 
 $anskey->{1}->{2} = "e2e4";
-$anskey->{1}->{3} = "d2d4";
-$anskey->{1}->{4} = "g1f3";
-$anskey->{1}->{5} = "e2e4";
-$anskey->{1}->{6} = "b1c3";
+$anskey->{1}->{3} = "e2e4";
+$anskey->{1}->{4} = "d2d4";
+$anskey->{1}->{5} = "g1f3";
 
 #board2
 #ply | answer
@@ -39,10 +38,9 @@ $anskey->{1}->{6} = "b1c3";
 #  2 |   e2e4
 
 $anskey->{2}->{2} = "e2e4";
-$anskey->{2}->{3} = "c1d2";
-$anskey->{2}->{4} = "c1g5";
+$anskey->{2}->{3} = "e1d2";
+$anskey->{2}->{4} = "c1d2";
 $anskey->{2}->{5} = "c1g5";
-$anskey->{2}->{6} = "c1d2";
 
 #board3
 #ply | answer
@@ -54,11 +52,10 @@ $anskey->{2}->{6} = "c1d2";
 #  3 |   f3b3
 #  2 |   b2b3
 
-$anskey->{3}->{2} = "b2b3";
-$anskey->{3}->{3} = "f3b3";
-$anskey->{3}->{4} = "f5g7";
-$anskey->{3}->{5} = "f5h6";
-$anskey->{3}->{6} = "f5g7";
+$anskey->{3}->{2} = "f5g7";
+$anskey->{3}->{3} = "b2b3";
+$anskey->{3}->{4} = "f3h5";
+$anskey->{3}->{5} = "g5g6";
 
 #board4
 #ply | answer
@@ -70,11 +67,10 @@ $anskey->{3}->{6} = "f5g7";
 #  3 |   e5b5
 #  2 |   e5e3
 
-$anskey->{4}->{2} = "e5e2";
+$anskey->{4}->{2} = "e5a5";
 $anskey->{4}->{3} = "g5f7";
-$anskey->{4}->{4} = "e5e2";
-$anskey->{4}->{5} = "e5f5";
-$anskey->{4}->{6} = "e5e3";
+$anskey->{4}->{4} = "g5f7";
+$anskey->{4}->{5} = "g5f7";
 
 my $bad_score = -6666;
 
@@ -92,7 +88,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             if($sm eq "mtd-f") {
                 #sleep(1);
             }
-            open($fd,"mpirun -np 1 ./src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"./src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
@@ -100,18 +96,20 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             my $st = "OK ";
             my $tm = 1e-6;
             my $speedup = 1;
+            my $doc = "";
             while(<$fd>) {
+                $doc .= $_;
                 if(/Computer's move: ([a-h][1-8][a-h][1-8])/) {
                     if($ans ne "" and $ans ne $1) {
                         $st = "VARIABLE($ans != $1) ";
-                        last;
+                        #last;
                     }
                     $ans = $1;
                 }
                 if(/SCORE=(-?\d+)/) {
                     if($score != $bad_score and $score != $1) {
                         $st = "VARIABLE($score != $1) ";
-                        last;
+                        #last;
                     }
                     $score=$1;
                 }
@@ -149,6 +147,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             }
             my $ret=close($fd);
             unless($ret) {
+                print $doc;
                 die "error code returned r=($ret)";
             }
         }

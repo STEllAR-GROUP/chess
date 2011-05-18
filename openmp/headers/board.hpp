@@ -16,6 +16,6 @@ void gen(std::vector<move>& workq, const node_t& board);
 void gen_caps(std::vector<move>& workq, const node_t& board);
 void gen_push(std::vector<move>& workq, const node_t& board, int from, int to, int bits);
 void gen_promote(std::vector<move>& workq, int from, int to, int bits);
-bool makemove(node_t& board, const move_bytes m,bool& capture);
+bool makemove(node_t& board, const move_bytes m);
 void takeback(node_t& board);
 #endif
