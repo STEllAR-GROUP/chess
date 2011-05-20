@@ -31,313 +31,313 @@ int auto_move = 0;
 int computer_side;
 
 void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
-	int data[] = {filename.size(), ply_level, num_runs };
+    int data[] = {filename.size(), ply_level, num_runs };
 #ifdef MPI_SUPPORT
-	MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
+    MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
 #endif
-	start_benchmark(filename,ply_level,num_runs);
+    start_benchmark(filename,ply_level,num_runs);
 }
 
 void mpi_terminate() {
 #ifdef MPI_SPPORT
-	if(mpi_rank == 0) {
-		int data[] = {-1,0,0};
-		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
-	}
-	MPI_Finalize();
+    if(mpi_rank == 0) {
+        int data[] = {-1,0,0};
+        MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+    }
+    MPI_Finalize();
 #endif
 }
 
 void mpi_bench_call() {
-	while(true) {
-		int data[3];
+    while(true) {
+        int data[3];
 #ifdef MPI_SPPORT
-		MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
+        MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
 #endif
-		if(data[0] == -1 && data[1] == 0 && data[2] == 0) {
-			break;
-		}
-		char *fn = new char[data[0]+1];
+        if(data[0] == -1 && data[1] == 0 && data[2] == 0) {
+            break;
+        }
+        char *fn = new char[data[0]+1];
 #ifdef MPI_SUPPORT
-		MPI_Bcast(fn,data[0]+1,MPI_CHAR,0,MPI_COMM_WORLD);
+        MPI_Bcast(fn,data[0]+1,MPI_CHAR,0,MPI_COMM_WORLD);
 #endif
-		std::string filename = fn;
-		start_benchmark(fn,data[1],data[2]);
-		delete[] fn;
-	}
+        std::string filename = fn;
+        start_benchmark(fn,data[1],data[2]);
+        delete[] fn;
+    }
 }
 
 int chx_main(int argc, char **argv)
 {
-  int arguments = 0;
-  std::string s("settings.ini");
-  parseIni(s.c_str());
-  arguments = parseArgs(argc,argv);
+    int arguments = 0;
+    std::string s("settings.ini");
+    parseIni(s.c_str());
+    arguments = parseArgs(argc,argv);
 
-  int m;
-#ifdef READLINE_SUPPORT
-  char *buf;
-#else
-  std::string s;
-#endif
-
-  // If there were no command line arguments, display message
-  if (!arguments) {
-    std::cout << std::endl;
-    std::cout << "Chess (CHX)" << std::endl;
-    std::cout << "Phillip LeBlanc and Steve Brandt - CCT" << std::endl;
-    std::cout << std::endl;
-    std::cout << "\"help\" displays a list of commands." << std::endl;
-    std::cout << std::endl;
-    computer_side = EMPTY;
-  }
-  else  // Else we start making moves
-  {
-    computer_side = LIGHT;
-    auto_move = 1;
-  }
-  node_t board;  // The board state is represented in the node_t struct
-
-  init_hash();  /* Init hash sets up the hashing function
-                   which is used for determining repeated moves */
-  init_board(board);  // Initialize the board to its default state
-  std::vector<move> workq;  /* workq is a standard vector which contains
-                               all possible psuedo-legal moves for the
-                               current board position */
-  gen(workq, board);  /* gen() takes the current board position and
-                         puts all of the psuedo-legal moves for the
-                         position inside of the workq vector. */
-
-  for (;;) {
-    if (board.side == computer_side) {  // computer's turn
-
-      // think about the move and make it
-      think(board);
-      if (move_to_make.u == 0) {
-        std::cout << "(no legal moves)" << std::endl;
-        computer_side = EMPTY;
-        continue;
-      }
-      if (output)
-        std::cout << "Computer's move: " << move_str(move_to_make.b)
-          << std::endl;
-      makemove(board, move_to_make.b); // Make the move for our master board
-      board.ply = 0; // Reset the board ply to 0
-
-      workq.clear(); // Clear the work queue in preparation for next move
-      gen(workq, board); /* Populate the work queue with the moves for
-                            the next board position */
-
-      if (output)
-        print_board(board, std::cout);
-      if (auto_move)
-        auto_move = print_result(workq, board);
-      else
-        print_result(workq, board);
-
-      move_to_make.u = 0; // Reset the move to make
-
-      continue;
-    }
-
-    if (auto_move)
-    {
-      computer_side = board.side;
-      continue;
-    }
-    if (!auto_move && arguments)
-    {
-      break;
-    }
-
-    // get user input
-
-#ifdef READLINE_SUPPORT
-    buf = readline("chx> ");
-    std::string s(buf);
-    free(buf);
-    if (s != "")
-      add_history(s.c_str());
-#else
-    std::cout << "chx> ";
-    std::cin >> s;
-#endif
-
-    if (s.empty())
-      return 0;
-
-    if (s == "go") {
-      computer_side = board.side;
-      auto_move = 0;
-      continue;
-    }
-    if (s == "auto") {
-      computer_side = board.side;
-      auto_move = 1;
-      auto_move = print_result(workq, board);
-      continue;
-    }
-    if (s == "new") {
-      computer_side = EMPTY;
-      init_board(board);
-      workq.clear();
-      gen(workq, board);
-      continue;
-    }
-    if (s == "wd") {
-      std::cout << "Set depth of white player: ";
-      std::cin >> depth[LIGHT];
-      if (depth[LIGHT] <= 0)
-      {
-        std::cerr << "Illegal depth given, setting depth to 1." 
-          << std::endl;
-        depth[LIGHT] = 1;
-      }
-      continue;
-    }
-    if (s == "bd") {
-      std::cout << "Set depth of black player: ";
-      std::cin >> depth[DARK];
-      if (depth[DARK] <= 0)
-      {
-        std::cerr << "Illegal depth given, setting depth to 1." 
-          << std::endl;
-        depth[DARK] = 1;
-      }
-      continue;
-    }
-    if (s == "d") {
-      print_board(board, std::cout);
-      continue;
-    }
-    if (s == "o") {
-      output ^= 1;
-      if (output == 1)
-        std::cout << "Output is now on" << std::endl;
-      else
-        std::cout << "Output is now off" << std::endl;
-      continue;
-    }
-    if ((s == "exit")||(s == "quit")) {
-      std::cout << "Thanks for using CHX!" << std::endl;
-      break;
-    }
-    std::string bench = "bench";
-    if (s == bench) {
-      int ply_level;
-      int num_runs;
-
-#ifdef READLINE_SUPPORT
-      buf = readline("Name of file:  ");
-      std::string filename(buf);
-      free(buf);
-#else
-      std::string filename;
-      std::cout << "Name of file: ";
-      std::cin >> filename;
-#endif
-
-      std::cout << "Search depth (ply): ";
-      std::cin >> ply_level;
-      std::cout << "Number of runs: ";
-      std::cin >> num_runs;
-      std::cout << std::endl;
-      mpi_start_benchmark(filename, ply_level, num_runs);
-      continue;
-    }
-    if(s.compare(0,bench.length(),bench)==0) {
-      int ply_level;
-      int num_runs;
-      std::istringstream iss(s);
-      std::string first;
-      iss >> first;
-
-      std::string filename;
-      iss >> filename;
-
-      iss >> ply_level;
-      iss >> num_runs;
-      std::cout << std::endl;
-      start_benchmark(filename, ply_level, num_runs);
-      continue;
-    }
-    if (s == "eval") {
-      if (chosen_evaluator == ORIGINAL) {
-        std::cout << "Switching evaluator to simple material evaluator" << std::endl;
-        chosen_evaluator = SIMPLE;
-      } else if (chosen_evaluator == SIMPLE) {
-        std::cout << "Switching evaluator to original evaluator" << std::endl;
-        chosen_evaluator = ORIGINAL;
-      }
-      continue;
-    }
-    if (s == "search") {
-      if (search_method == MINIMAX) {
-        std::cout << "Alpha Beta search method now in use" << std::endl;
-        search_method = ALPHABETA;
-      } else if (search_method == ALPHABETA) {
-        std::cout << "MTD-f search method now in use" << std::endl;
-        search_method = MTDF;
-      } else if (search_method == MTDF) {
-        std::cout << "Minimax search method now in use" << std::endl;
-        search_method = MINIMAX;
-      }
-      continue;
-    }
-    if (s == "help") {
-      std::cout << "bench   - starts the benchmark" << std::endl;
-      std::cout << "eval    - switches the current move evaluator in use (default original)" << std::endl;
-      std::cout << "search  - switches the current search method in use (default minimax)" << std::endl;
-      std::cout << "go      - computer makes a move" << std::endl;
-      std::cout << "auto    - computer will continue to make moves until game is over" << std::endl;
-      std::cout << "new     - starts a new game" << std::endl;
-      std::cout << "wd      - sets white search depth (default 3)" << std::endl;
-      std::cout << "bd      - sets black search depth (default 3)" << std::endl;
-      std::cout << "d       - display the board" << std::endl;
-      std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
-      std::cout << "exit    - exit the program" << std::endl;
-      std::cout << "Enter moves in coordinate notation, e.g., e2e4, e7e8Q" << std::endl;
-      std::cout << std::endl;
-      continue;
-    }
-    
     int m;
-    m = parse_move(workq, s.c_str());
-    move mov;
-    mov.u = m;
-    node_t newboard = board;
-    if (m == -1 || !makemove(newboard, mov.b))
-			std::cout << "Illegal move or command." << std::endl;
-		else {
-      makemove(board, mov.b);
-			board.ply = 0;
-			workq.clear();
-      gen(workq, board);
-			print_result(workq, board);
-		}
-  }
+#ifdef READLINE_SUPPORT
+    char *buf;
+#else
+    std::string s;
+#endif
 
-  return 0;
+    // If there were no command line arguments, display message
+    if (!arguments) {
+        std::cout << std::endl;
+        std::cout << "Chess (CHX)" << std::endl;
+        std::cout << "Phillip LeBlanc and Steve Brandt - CCT" << std::endl;
+        std::cout << std::endl;
+        std::cout << "\"help\" displays a list of commands." << std::endl;
+        std::cout << std::endl;
+        computer_side = EMPTY;
+    }
+    else  // Else we start making moves
+    {
+        computer_side = LIGHT;
+        auto_move = 1;
+    }
+    node_t board;  // The board state is represented in the node_t struct
+
+    init_hash();  /* Init hash sets up the hashing function
+                     which is used for determining repeated moves */
+    init_board(board);  // Initialize the board to its default state
+    std::vector<move> workq;  /* workq is a standard vector which contains
+                                 all possible psuedo-legal moves for the
+                                 current board position */
+    gen(workq, board);  /* gen() takes the current board position and
+                           puts all of the psuedo-legal moves for the
+                           position inside of the workq vector. */
+
+    for (;;) {
+        if (board.side == computer_side) {  // computer's turn
+
+            // think about the move and make it
+            think(board);
+            if (move_to_make.u == 0) {
+                std::cout << "(no legal moves)" << std::endl;
+                computer_side = EMPTY;
+                continue;
+            }
+            if (output)
+                std::cout << "Computer's move: " << move_str(move_to_make.b)
+                    << std::endl;
+            makemove(board, move_to_make.b); // Make the move for our master board
+            board.ply = 0; // Reset the board ply to 0
+
+            workq.clear(); // Clear the work queue in preparation for next move
+            gen(workq, board); /* Populate the work queue with the moves for
+                                  the next board position */
+
+            if (output)
+                print_board(board, std::cout);
+            if (auto_move)
+                auto_move = print_result(workq, board);
+            else
+                print_result(workq, board);
+
+            move_to_make.u = 0; // Reset the move to make
+
+            continue;
+        }
+
+        if (auto_move)
+        {
+            computer_side = board.side;
+            continue;
+        }
+        if (!auto_move && arguments)
+        {
+            break;
+        }
+
+        // get user input
+
+#ifdef READLINE_SUPPORT
+        buf = readline("chx> ");
+        std::string s(buf);
+        free(buf);
+        if (s != "")
+            add_history(s.c_str());
+#else
+        std::cout << "chx> ";
+        std::cin >> s;
+#endif
+
+        if (s.empty())
+            return 0;
+
+        if (s == "go") {
+            computer_side = board.side;
+            auto_move = 0;
+            continue;
+        }
+        if (s == "auto") {
+            computer_side = board.side;
+            auto_move = 1;
+            auto_move = print_result(workq, board);
+            continue;
+        }
+        if (s == "new") {
+            computer_side = EMPTY;
+            init_board(board);
+            workq.clear();
+            gen(workq, board);
+            continue;
+        }
+        if (s == "wd") {
+            std::cout << "Set depth of white player: ";
+            std::cin >> depth[LIGHT];
+            if (depth[LIGHT] <= 0)
+            {
+                std::cerr << "Illegal depth given, setting depth to 1." 
+                    << std::endl;
+                depth[LIGHT] = 1;
+            }
+            continue;
+        }
+        if (s == "bd") {
+            std::cout << "Set depth of black player: ";
+            std::cin >> depth[DARK];
+            if (depth[DARK] <= 0)
+            {
+                std::cerr << "Illegal depth given, setting depth to 1." 
+                    << std::endl;
+                depth[DARK] = 1;
+            }
+            continue;
+        }
+        if (s == "d") {
+            print_board(board, std::cout);
+            continue;
+        }
+        if (s == "o") {
+            output ^= 1;
+            if (output == 1)
+                std::cout << "Output is now on" << std::endl;
+            else
+                std::cout << "Output is now off" << std::endl;
+            continue;
+        }
+        if ((s == "exit")||(s == "quit")) {
+            std::cout << "Thanks for using CHX!" << std::endl;
+            break;
+        }
+        std::string bench = "bench";
+        if (s == bench) {
+            int ply_level;
+            int num_runs;
+
+#ifdef READLINE_SUPPORT
+            buf = readline("Name of file:  ");
+            std::string filename(buf);
+            free(buf);
+#else
+            std::string filename;
+            std::cout << "Name of file: ";
+            std::cin >> filename;
+#endif
+
+            std::cout << "Search depth (ply): ";
+            std::cin >> ply_level;
+            std::cout << "Number of runs: ";
+            std::cin >> num_runs;
+            std::cout << std::endl;
+            mpi_start_benchmark(filename, ply_level, num_runs);
+            continue;
+        }
+        if(s.compare(0,bench.length(),bench)==0) {
+            int ply_level;
+            int num_runs;
+            std::istringstream iss(s);
+            std::string first;
+            iss >> first;
+
+            std::string filename;
+            iss >> filename;
+
+            iss >> ply_level;
+            iss >> num_runs;
+            std::cout << std::endl;
+            start_benchmark(filename, ply_level, num_runs);
+            continue;
+        }
+        if (s == "eval") {
+            if (chosen_evaluator == ORIGINAL) {
+                std::cout << "Switching evaluator to simple material evaluator" << std::endl;
+                chosen_evaluator = SIMPLE;
+            } else if (chosen_evaluator == SIMPLE) {
+                std::cout << "Switching evaluator to original evaluator" << std::endl;
+                chosen_evaluator = ORIGINAL;
+            }
+            continue;
+        }
+        if (s == "search") {
+            if (search_method == MINIMAX) {
+                std::cout << "Alpha Beta search method now in use" << std::endl;
+                search_method = ALPHABETA;
+            } else if (search_method == ALPHABETA) {
+                std::cout << "MTD-f search method now in use" << std::endl;
+                search_method = MTDF;
+            } else if (search_method == MTDF) {
+                std::cout << "Minimax search method now in use" << std::endl;
+                search_method = MINIMAX;
+            }
+            continue;
+        }
+        if (s == "help") {
+            std::cout << "bench   - starts the benchmark" << std::endl;
+            std::cout << "eval    - switches the current move evaluator in use (default original)" << std::endl;
+            std::cout << "search  - switches the current search method in use (default minimax)" << std::endl;
+            std::cout << "go      - computer makes a move" << std::endl;
+            std::cout << "auto    - computer will continue to make moves until game is over" << std::endl;
+            std::cout << "new     - starts a new game" << std::endl;
+            std::cout << "wd      - sets white search depth (default 3)" << std::endl;
+            std::cout << "bd      - sets black search depth (default 3)" << std::endl;
+            std::cout << "d       - display the board" << std::endl;
+            std::cout << "o       - toggles engine output on or off (default on)" << std::endl;
+            std::cout << "exit    - exit the program" << std::endl;
+            std::cout << "Enter moves in coordinate notation, e.g., e2e4, e7e8Q" << std::endl;
+            std::cout << std::endl;
+            continue;
+        }
+
+        int m;
+        m = parse_move(workq, s.c_str());
+        move mov;
+        mov.u = m;
+        node_t newboard = board;
+        if (m == -1 || !makemove(newboard, mov.b))
+            std::cout << "Illegal move or command." << std::endl;
+        else {
+            makemove(board, mov.b);
+            board.ply = 0;
+            workq.clear();
+            gen(workq, board);
+            print_result(workq, board);
+        }
+    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
 {
-  int retcode = 0;
+    int retcode = 0;
 #ifdef MPI_SUPPORT
-  MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
+    MPI_Init(&argc,&argv);
+    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
 #endif
-  if(mpi_rank==0) {
-	retcode = chx_main(argc, argv);
-  } else {
-	mpi_bench_call();
-  }
+    if(mpi_rank==0) {
+        retcode = chx_main(argc, argv);
+    } else {
+        mpi_bench_call();
+    }
 #ifdef MPI_SUPPORT
-  mpi_terminate();
+    mpi_terminate();
 #endif
-  return retcode;
+    return retcode;
 }
 
 #if 0

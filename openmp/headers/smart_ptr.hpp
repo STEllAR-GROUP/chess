@@ -5,29 +5,29 @@
 
 template<typename T>
 class smart_ptr_guts {
-	pthread_mutex_t mut;
+    pthread_mutex_t mut;
     int ref_count;
-public:
+    public:
     T *ptr;
     smart_ptr_guts(int rc,T *p) : ref_count(rc), ptr(p) {
-		pthread_mutex_init(&mut,NULL);
-	}
+        pthread_mutex_init(&mut,NULL);
+    }
     ~smart_ptr_guts() {
         delete ptr;
     }
-	void inc() {
-		pthread_mutex_lock(&mut);
-		ref_count++;
-		pthread_mutex_unlock(&mut);
-	}
-	bool dec() {
-		pthread_mutex_lock(&mut);
-		int r = ref_count;
-		if(ref_count>0)
-			ref_count--;
-		pthread_mutex_unlock(&mut);
-		return r==1;
-	}
+    void inc() {
+        pthread_mutex_lock(&mut);
+        ref_count++;
+        pthread_mutex_unlock(&mut);
+    }
+    bool dec() {
+        pthread_mutex_lock(&mut);
+        int r = ref_count;
+        if(ref_count>0)
+            ref_count--;
+        pthread_mutex_unlock(&mut);
+        return r==1;
+    }
 };
 
 // Count references to an object in a thread-safe
@@ -40,7 +40,7 @@ class smart_ptr {
             delete guts;
         }
     }
-public:
+    public:
     smart_ptr(T *ptr) : guts(new smart_ptr_guts<T>(1,ptr)) {
     }
     smart_ptr(const smart_ptr<T> &sm) : guts(sm.guts) {
@@ -72,13 +72,13 @@ public:
         else
             return guts->ptr;
     }
-	T *ptr() {
+    T *ptr() {
         assert(guts != 0);
         assert(guts->ptr != 0);
         return guts->ptr;
-	}
-	bool valid() {
-		return guts != 0 && guts->ptr != 0;
-	}
+    }
+    bool valid() {
+        return guts != 0 && guts->ptr != 0;
+    }
 };
 #endif

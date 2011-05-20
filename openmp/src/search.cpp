@@ -167,15 +167,15 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     // better with a coarser evaluation function. Since
     // this maps readily onto a wider, non-zero width
     // we provide a width setting for optimization.
-    const int start_width = 3;
+    const int start_width = 5;
     // Sometimes MTD-f gets stuck and can try many
     // times without finding an answer. If this happens
     // we want to set a threshold for bailing out.
-    const int max_tries = 5;
+    const int max_tries = 4;
     // If our first guess isn't right, chances are
     // we want to search a little wider the next try
     // to improve our odds.
-    const int grow_width = 2;
+    const int grow_width = 5;
     int width = start_width;
     const int max_width = start_width+grow_width*max_tries;
     score_t alpha = lower, beta = upper;
@@ -208,156 +208,156 @@ void *search_pt(void *vptr) {
 
 score_t search(const node_t& board, int depth)
 {
-  score_t val, max;
+    score_t val, max;
 
-  // if we are a leaf node, return the value from the eval() function
-  if (!depth)
-  {
-    evaluator ev;
-    DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
-    return s;
-  }
-  /* if this isn't the root of the search tree (where we have
-     to pick a move and can't simply return 0) then check to
-     see if the position is a repeat. if so, we can assume that
-     this line is a draw and return 0. */
-  if (board.ply && reps(board)) {
-    DECL_SCORE(s,0,board.hash);
-    return s;
-  }
-
-  std::vector<move> workq;
-  move max_move;
-  max_move.u = INVALID_MOVE;
-
-  gen(workq, board); // Generate the moves
-
-  DECL_SCORE(minf,-10000,board.hash);
-  max = minf; // Set the max score to -infinity
-
-  const int worksq = workq.size();
-  smart_ptr<task> tasks[worksq];
-
-  int j=0;
-  for(;depth == para_depth && j < workq.size(); j++) {
-    move g = workq[j];
-    smart_ptr<search_info> info = new search_info(board);
-
-    if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
-	  								   // legal, then go to the next one
-      continue;
-    }
-	tasks[j] = new task;
-
-	tasks[j]->info = info;
-
-    DECL_SCORE(z,0,board.hash);
-    info->depth = depth-1;
-    info->result = z;
-	tasks[j]->pfunc = search_pt;
-	workers[get_bucket_index(info->board,info->depth)].add(tasks[j]);
-  }
-
-  // loop through the moves
-  // We do this twice. The first time we skip
-  // quiescent searches, the second time we
-  // do the quiescent search. By doing this
-  // we get the best value of beta to produce
-  // cutoffs within the quiescent search routine.
-  // Without doing this, minimax runs extremely
-  // slowly.
-  for (int i = 0; i < workq.size(); i++) {
-    move g = workq[i];
-    if(i < j) {
-        assert(false);
-		  if(!tasks[i].valid())
-			  continue;
-      smart_ptr<search_info> info = tasks[i]->info;
-		  tasks[i]->join();
-      val = -tasks[i]->info->result;
-    } else {
-        node_t p_board = board;
-
-        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-            continue;                    // legal, then go to the next one
-        }
-
-        if(depth == 1 && capture(board,g)) {
-            //DECL_SCORE(lower,-10000,board.hash);
-            //val = -qeval(p_board,lower,-max); 
-            continue;
-        } else {
-            val = -search(p_board, depth - 1); 
-        }
-    }
-
-    if (val > max)  // Is this value our maximum?
+    // if we are a leaf node, return the value from the eval() function
+    if (!depth)
     {
-      max = val;
-
-      max_move = g;
+        evaluator ev;
+        DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
+        return s;
     }
-  }
-  for (int i = 0; i < workq.size(); i++) {
-    move g = workq[i];
-    if(i < j) {
-        assert(false);
-		  if(!tasks[i].valid())
-			  continue;
-      smart_ptr<search_info> info = tasks[i]->info;
-		  tasks[i]->join();
-      val = -tasks[i]->info->result;
-    } else {
-        node_t p_board = board;
+    /* if this isn't the root of the search tree (where we have
+       to pick a move and can't simply return 0) then check to
+       see if the position is a repeat. if so, we can assume that
+       this line is a draw and return 0. */
+    if (board.ply && reps(board)) {
+        DECL_SCORE(s,0,board.hash);
+        return s;
+    }
 
-        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-            continue;                    // legal, then go to the next one
-        }
+    std::vector<move> workq;
+    move max_move;
+    max_move.u = INVALID_MOVE;
 
-        if(depth == 1 && capture(board,g)) {
-            DECL_SCORE(lower,-10000,board.hash);
-            val = -qeval(p_board,lower,-max); 
-        } else {
-            //val = -search(p_board, depth - 1); 
+    gen(workq, board); // Generate the moves
+
+    DECL_SCORE(minf,-10000,board.hash);
+    max = minf; // Set the max score to -infinity
+
+    const int worksq = workq.size();
+    smart_ptr<task> tasks[worksq];
+
+    int j=0;
+    for(;depth == para_depth && j < workq.size(); j++) {
+        move g = workq[j];
+        smart_ptr<search_info> info = new search_info(board);
+
+        if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
+            // legal, then go to the next one
             continue;
         }
+        tasks[j] = new task;
+
+        tasks[j]->info = info;
+
+        DECL_SCORE(z,0,board.hash);
+        info->depth = depth-1;
+        info->result = z;
+        tasks[j]->pfunc = search_pt;
+        workers[get_bucket_index(info->board,info->depth)].add(tasks[j]);
     }
 
-    if (val > max)  // Is this value our maximum?
-    {
-      max = val;
+    // loop through the moves
+    // We do this twice. The first time we skip
+    // quiescent searches, the second time we
+    // do the quiescent search. By doing this
+    // we get the best value of beta to produce
+    // cutoffs within the quiescent search routine.
+    // Without doing this, minimax runs extremely
+    // slowly.
+    for (int i = 0; i < workq.size(); i++) {
+        move g = workq[i];
+        if(i < j) {
+            assert(false);
+            if(!tasks[i].valid())
+                continue;
+            smart_ptr<search_info> info = tasks[i]->info;
+            tasks[i]->join();
+            val = -tasks[i]->info->result;
+        } else {
+            node_t p_board = board;
 
-      max_move = g;
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                    // legal, then go to the next one
+            }
+
+            if(depth == 1 && capture(board,g)) {
+                //DECL_SCORE(lower,-10000,board.hash);
+                //val = -qeval(p_board,lower,-max); 
+                continue;
+            } else {
+                val = -search(p_board, depth - 1); 
+            }
+        }
+
+        if (val > max)  // Is this value our maximum?
+        {
+            max = val;
+
+            max_move = g;
+        }
     }
-  }
+    for (int i = 0; i < workq.size(); i++) {
+        move g = workq[i];
+        if(i < j) {
+            assert(false);
+            if(!tasks[i].valid())
+                continue;
+            smart_ptr<search_info> info = tasks[i]->info;
+            tasks[i]->join();
+            val = -tasks[i]->info->result;
+        } else {
+            node_t p_board = board;
 
-  // no legal moves? then we're in checkmate or stalemate
-  if (max_move.u == INVALID_MOVE) {
-    if (in_check(board, board.side))
-    {
-      DECL_SCORE(s,-10000 + board.ply,board.hash);
-      return s;
+            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+                continue;                    // legal, then go to the next one
+            }
+
+            if(depth == 1 && capture(board,g)) {
+                DECL_SCORE(lower,-10000,board.hash);
+                val = -qeval(p_board,lower,-max); 
+            } else {
+                //val = -search(p_board, depth - 1); 
+                continue;
+            }
+        }
+
+        if (val > max)  // Is this value our maximum?
+        {
+            max = val;
+
+            max_move = g;
+        }
     }
-    else
-    {
-      DECL_SCORE(z,0,board.hash);
-      return z;
+
+    // no legal moves? then we're in checkmate or stalemate
+    if (max_move.u == INVALID_MOVE) {
+        if (in_check(board, board.side))
+        {
+            DECL_SCORE(s,-10000 + board.ply,board.hash);
+            return s;
+        }
+        else
+        {
+            DECL_SCORE(z,0,board.hash);
+            return z;
+        }
     }
-  }
 
-  if (board.ply == 0) {
-    pthread_mutex_lock(&mutex);
-    move_to_make = max_move;
-    pthread_mutex_unlock(&mutex);
-  }
+    if (board.ply == 0) {
+        pthread_mutex_lock(&mutex);
+        move_to_make = max_move;
+        pthread_mutex_unlock(&mutex);
+    }
 
-  // fifty move draw rule
-  if (board.fifty >= 100) {
-    DECL_SCORE(z,0,board.hash);
-    return z;
-  }
+    // fifty move draw rule
+    if (board.fifty >= 100) {
+        DECL_SCORE(z,0,board.hash);
+        return z;
+    }
 
-  return max;
+    return max;
 }
 
 /*
@@ -605,11 +605,11 @@ void sort_pv(std::vector<move>& workq, int ply)
 }
 
 void *run_worker(void *vptr) {
-	worker *w = (worker *)vptr;
-	while(true) {
-		smart_ptr<task> pt = w->remove();
-		(*pt->pfunc)(pt->info.ptr());
-		pt->finish();
-	}
-	return 0;
+    worker *w = (worker *)vptr;
+    while(true) {
+        smart_ptr<task> pt = w->remove();
+        (*pt->pfunc)(pt->info.ptr());
+        pt->finish();
+    }
+    return 0;
 }

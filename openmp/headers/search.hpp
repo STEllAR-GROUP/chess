@@ -21,38 +21,38 @@ struct search_info {
     score_t alpha;
     score_t beta;
     node_t board;
-	search_info(const node_t& board_) : board(board_) {}
+    search_info(const node_t& board_) : board(board_) {}
 };
 
 typedef void *(*pthread_func_t)(void*);
 
 struct task {
-	pthread_func_t pfunc;
-	smart_ptr<search_info> info;
-	pthread_mutex_t lock;
-	pthread_cond_t cond;
-	bool done;
-	task() : done(true) {
-		pthread_mutex_init(&lock,NULL);
-		pthread_cond_init(&cond,NULL);
-	}
-	void start() {
-		pthread_mutex_lock(&lock);
-		done = false;
-		pthread_mutex_unlock(&lock);
-	}
-	void finish() {
-		pthread_mutex_lock(&lock);
-		done = true;
-		pthread_cond_signal(&cond);
-		pthread_mutex_unlock(&lock);
-	}
-	void join() {
-		pthread_mutex_lock(&lock);
-		while(!done)
-			pthread_cond_wait(&cond,&lock);
-		pthread_mutex_unlock(&lock);
-	}
+    pthread_func_t pfunc;
+    smart_ptr<search_info> info;
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+    bool done;
+    task() : done(true) {
+        pthread_mutex_init(&lock,NULL);
+        pthread_cond_init(&cond,NULL);
+    }
+    void start() {
+        pthread_mutex_lock(&lock);
+        done = false;
+        pthread_mutex_unlock(&lock);
+    }
+    void finish() {
+        pthread_mutex_lock(&lock);
+        done = true;
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&lock);
+    }
+    void join() {
+        pthread_mutex_lock(&lock);
+        while(!done)
+            pthread_cond_wait(&cond,&lock);
+        pthread_mutex_unlock(&lock);
+    }
 };
 
 int think(node_t& board);
@@ -72,34 +72,34 @@ void *run_worker(void*);
     too many pthreads and is also a first step toward an MPI version
     (which also has a fixed number of workers).*/
 struct worker {
-	pthread_t th;
-	pthread_mutex_t lock;
-	pthread_cond_t cond;
-	std::list<smart_ptr<task> >  queue;
-	/** initialize a worker thread */
-	worker() {
-		pthread_mutex_init(&lock,NULL);
-		pthread_cond_init(&cond,NULL);
-		pthread_create(&th,NULL,run_worker,this);
-	}
-	/** Thread safe addition of a task to a work queue */
-	void add(smart_ptr<task> t) {
-		t->start();
-		pthread_mutex_lock(&lock);
-		queue.push_back(t);
-		pthread_cond_signal(&cond);
-		pthread_mutex_unlock(&lock);
-	}
-	/** Thread safe removal of a task from a work queue. */
-	smart_ptr<task> remove() {
-		pthread_mutex_lock(&lock);
-		while(queue.size()==0)
-			pthread_cond_wait(&cond,&lock);
-		smart_ptr<task> t = queue.back();
-		queue.pop_back();
-		pthread_mutex_unlock(&lock);
-		return t;
-	}
+    pthread_t th;
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+    std::list<smart_ptr<task> >  queue;
+    /** initialize a worker thread */
+    worker() {
+        pthread_mutex_init(&lock,NULL);
+        pthread_cond_init(&cond,NULL);
+        pthread_create(&th,NULL,run_worker,this);
+    }
+    /** Thread safe addition of a task to a work queue */
+    void add(smart_ptr<task> t) {
+        t->start();
+        pthread_mutex_lock(&lock);
+        queue.push_back(t);
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&lock);
+    }
+    /** Thread safe removal of a task from a work queue. */
+    smart_ptr<task> remove() {
+        pthread_mutex_lock(&lock);
+        while(queue.size()==0)
+            pthread_cond_wait(&cond,&lock);
+        smart_ptr<task> t = queue.back();
+        queue.pop_back();
+        pthread_mutex_unlock(&lock);
+        return t;
+    }
 };
 
 /**
