@@ -167,7 +167,7 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     // better with a coarser evaluation function. Since
     // this maps readily onto a wider, non-zero width
     // we provide a width setting for optimization.
-    const int start_width = 5;
+    const int start_width = 8;
     // Sometimes MTD-f gets stuck and can try many
     // times without finding an answer. If this happens
     // we want to set a threshold for bailing out.
@@ -175,7 +175,7 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     // If our first guess isn't right, chances are
     // we want to search a little wider the next try
     // to improve our odds.
-    const int grow_width = 5;
+    const int grow_width = 4;
     int width = start_width;
     const int max_width = start_width+grow_width*max_tries;
     score_t alpha = lower, beta = upper;
@@ -411,7 +411,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     return z;
   }
 
-  /*
   if(depth >= zdepth) {
     int b_index = get_bucket_index(board,depth);
     hash_bucket[b_index].lock();
@@ -427,7 +426,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     }
     hash_bucket[b_index].unlock();
   }
-  */
 
   std::vector<move> workq;
   move max_move;
