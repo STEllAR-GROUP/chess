@@ -318,6 +318,8 @@ int chx_main(int argc, char **argv)
         }
     }
 
+    shutdown();
+
     return 0;
 }
 
@@ -756,6 +758,7 @@ int parseArgs(int argc, char **argv)
       printf("\n");
       FreeOptList(thisOpt);
       mpi_terminate();
+      shutdown();
       exit(0);
     }
 
@@ -870,6 +873,7 @@ bool parseIni(const char * filename)
     {
       std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
       mpi_terminate();
+      shutdown();
       exit(-1);
     }
 
@@ -879,6 +883,7 @@ bool parseIni(const char * filename)
     init_hash();
     start_benchmark(s, max_ply, num_runs);
     mpi_terminate();
+    shutdown();
     exit(0);
   }
   else if (s != "false")

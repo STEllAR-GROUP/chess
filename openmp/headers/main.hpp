@@ -9,6 +9,7 @@
 #include "data.hpp"
 #include "search.hpp"
 
+void shutdown();
 int parseArgs(int, char**);
 bool parseIni(const char * filename);
 int main(int argc, char *argv[]);

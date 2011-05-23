@@ -15,6 +15,8 @@
 #include "hash.hpp"
 #include "score.hpp"
 
+#define DONE "DONE"
+
 struct search_info {
     score_t result;
     int depth;
@@ -22,6 +24,7 @@ struct search_info {
     score_t beta;
     node_t board;
     search_info(const node_t& board_) : board(board_) {}
+    search_info() {}
 };
 
 typedef void *(*pthread_func_t)(void*);

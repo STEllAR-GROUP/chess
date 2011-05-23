@@ -92,8 +92,9 @@ int think(node_t& board)
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
-  //para_depth = depth[board.side]-1;
-  para_depth = -1;
+  para_depth = depth[board.side]-1;
+  if(para_depth == 1)
+    para_depth = -1;
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
@@ -606,8 +607,26 @@ void *run_worker(void *vptr) {
     worker *w = (worker *)vptr;
     while(true) {
         smart_ptr<task> pt = w->remove();
-        (*pt->pfunc)(pt->info.ptr());
+        void *v = (*pt->pfunc)(pt->info.ptr());
         pt->finish();
+        if(v == DONE)
+            return 0;
     }
     return 0;
+}
+
+void *stop_worker(void *) {
+    return (void *)DONE;
+}
+void shutdown() {
+    std::cout << "Shutting down" << std::endl;
+    for(int i=0;i<bucket_size;i++) {
+        smart_ptr<task> t = new task;
+        smart_ptr<search_info> info = new search_info;
+        t->info = info;
+        t->pfunc = stop_worker;
+        worker *w = workers+i;
+        w->add(t);
+        t->join();
+    }
 }
