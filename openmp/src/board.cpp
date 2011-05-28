@@ -147,7 +147,7 @@ bool attack(const node_t& board, int sq, int s)
                         return true;
                 }
             }
-            else {
+            else if(board.piece[i] != EMPTY) {
                 int bp = board.piece[i];
                 for (j = 0; j < offsets[bp]; ++j) {
                     for (n = i;;) {
@@ -206,7 +206,7 @@ void gen(std::vector<move>& workq, const node_t& board)
                     }
                 }
             }
-            else
+            else if(board.piece[i] != EMPTY)
                 for (j = 0; j < offsets[board.piece[i]]; ++j)
                     for (n = i;;) {
                         n = mailbox[mailbox64[n] + offset[board.piece[i]][j]];
