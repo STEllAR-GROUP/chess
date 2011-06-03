@@ -17,8 +17,8 @@ std::vector<pcounter> mpi_task_array;
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <sstream>
 #endif
+#include <sstream>
 
 double sum_exec_times2 = 0;
 double sum_exec_times = 0;
@@ -62,7 +62,7 @@ int chx_main(int argc, char **argv)
 #ifdef READLINE_SUPPORT
     char *buf;
 #else
-    std::string s;
+    std::string buf;
 #endif
 
     // If there were no command line arguments, display message

@@ -5,7 +5,6 @@
 #include "here.hpp"
 #include <iostream>
 #include <stdlib.h>
-#include "Fixed.hpp"
 /*
  *  data.hpp
  */
@@ -20,10 +19,10 @@
 extern hash_t hash_piece[2][6][64];
 extern hash_t hash_side;
 extern hash_t hash_ep[64];
-extern FixedArray<int,120> mailbox;
-extern FixedArray<int,64> mailbox64;
+extern int mailbox[120];
+extern int mailbox64[64];
 extern bool slide[6];
-extern FixedArray<int,6> offsets;
+extern int offsets[6];
 extern int offset[6][8];
 extern int castle_mask[64];
 extern char piece_char[6];

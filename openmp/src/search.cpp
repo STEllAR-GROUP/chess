@@ -893,9 +893,9 @@ void *mpi_worker(void *)
         MPI_Thread mpi_threads[MPI_Thread_count];
         while(true)
         {
-            FixedArray<int,mpi_ints> mpi_data;//[mpi_ints];
+            int mpi_data[mpi_ints];
             MPI_Status status;
-            int err = MPI_Recv(mpi_data.ptr(),mpi_ints,MPI_INT,
+            int err = MPI_Recv(mpi_data,mpi_ints,MPI_INT,
                     0,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD,&status);
             assert(err == MPI_SUCCESS);
             int n = 0;

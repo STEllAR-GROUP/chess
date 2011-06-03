@@ -18,7 +18,6 @@
 #ifdef MPI_SUPPORT
 #include "mpi.h"
 #endif
-#include "Fixed.hpp"
 
 #define DONE "DONE"
 
@@ -186,7 +185,7 @@ struct mpi_task : public task {
     virtual ~mpi_task() {
         join();
     }
-    FixedArray<int,mpi_ints> mpi_data;
+    int mpi_data[mpi_ints];
     virtual void start() {
 #ifdef MPI_SUPPORT
         //int mpi_data[mpi_ints];
@@ -226,7 +225,7 @@ struct mpi_task : public task {
         //results[info->board.hash][info->depth].clear_result();
 
         assert(info->board.depth >= 0);
-        MPI_Send(mpi_data.ptr(),mpi_ints,MPI_INT,
+        MPI_Send(mpi_data,mpi_ints,MPI_INT,
             dest,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD);
         /*
         int fifty_n = info->board.hply;

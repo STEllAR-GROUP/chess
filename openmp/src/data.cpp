@@ -42,7 +42,7 @@ hash_t hash_ep[64];
    bounds and we can forget it. You can see how mailbox[] is used
    in attack() in board.cpp. */
 
-int _mailbox[120]={
+int mailbox[120]={
      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
      -1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
@@ -56,9 +56,8 @@ int _mailbox[120]={
      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
-FixedArray<int,120> mailbox = _mailbox;
 
-int _mailbox64[64] = {
+int mailbox64[64] = {
     21, 22, 23, 24, 25, 26, 27, 28,
     31, 32, 33, 34, 35, 36, 37, 38,
     41, 42, 43, 44, 45, 46, 47, 48,
@@ -68,8 +67,6 @@ int _mailbox64[64] = {
     81, 82, 83, 84, 85, 86, 87, 88,
     91, 92, 93, 94, 95, 96, 97, 98
 };
-FixedArray<int,64> mailbox64 = _mailbox64;
-
 
 /* slide, offsets, and offset are basically the vectors that
    pieces can move in. If slide for the piece is FALSE, it can
@@ -81,10 +78,9 @@ bool slide[6] = {
     false, false, true, true, true, false
 };
 
-int _offsets[6] = {
+int offsets[6] = {
     0, 8, 4, 4, 8, 8
 };
-FixedArray<int,6> offsets = _offsets;
 
 int offset[6][8] = {
     { 0, 0, 0, 0, 0, 0, 0, 0 },
