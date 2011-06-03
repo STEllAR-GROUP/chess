@@ -80,7 +80,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             # It takes too long for minimax above ply 4
             # So I ran it once at 5 to verify the answer
             # and then introduced this next.
-            if($sm eq "minimax" and $ply >= 1) {
+            if($sm eq "minimax" and $ply >= 0) {
                 next;
             }
             genbench($sm,$b,$ply);
@@ -88,7 +88,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             if($sm eq "mtd-f") {
                 #sleep(1);
             }
-            open($fd,"./src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"mpiexec -np 3 ./src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
@@ -218,6 +218,8 @@ mode=true
 file=inputs/board$b
 
 max_ply=$ply
+
+parallel=true
 
 num_runs=$runs
 };

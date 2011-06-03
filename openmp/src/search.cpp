@@ -2,13 +2,18 @@
  *  search.cpp
  */
 
+#include "parallel_support.hpp"
 #include "search.hpp"
 #include <pthread.h>
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
+#include "mpi_support.hpp"
+#include "here.hpp"
 
 worker workers[bucket_size];
+void capture_last(const node_t& board,std::vector<move>& workq);
+score_t multistrike(const node_t& board,score_t f,int depth);
 
 // Maximum number of pthreads we can create
 // Even on a two core machine we want 40 or 50
@@ -16,13 +21,15 @@ worker workers[bucket_size];
 const int max_pcount = 64;
 
 // Depth at which to spawn pthreads
-int para_depth;
+int para_depth_lo, para_depth_hi;
 
 // Count of how many more threads we can create
 // when it reaches zero, we have to stop making them
 int pcount = max_pcount;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+bool chx_abort = false;
+bool multistrike_on = false;
 
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
@@ -55,6 +62,8 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper)
     s = max(lower,s);
     std::vector<move> workq;
     gen(workq, board); // Generate the moves
+    if(chx_abort)
+        return s;
     for(int j=0;j < workq.size(); j++) {
         move g = workq[j];
         node_t p_board = board;
@@ -85,23 +94,67 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper)
     }
     return s;
 }
+ 
+void *qeval_pt(void *vptr)
+{
+  search_info *info = (search_info *)vptr;
+  info->result = qeval(info->board,info->alpha, info->beta);
+  return NULL;
+}
+
+smart_ptr<task> parallel_task(bool parx) {
+    if(mpi_rank != 0){// || !parx) {
+        smart_ptr<task> t = new task;
+        return t;
+    }
+    bool par = mpi_task_array[0].dec();
+    if(par) {
+        smart_ptr<task> t = new pthread_task;
+        return t;
+    } else {
+        for(int i=1;i<mpi_size;i++) {
+            if(mpi_task_array[i].dec()) {
+                smart_ptr<task> t = new mpi_task(i);
+                return t;
+            }
+        }
+    }
+    smart_ptr<task> t = new task;
+    return t;
+}
+
+void *strike(void *vptr) {
+  search_info *info = (search_info *)vptr;
+  info->result = search_ab(info->board,info->depth,info->alpha,info->beta);
+  if(info->alpha < info->result && info->result < info->beta) {
+    std::cout << "FOUND: " << VAR(info->result) << std::endl;
+    chx_abort = true;
+  }
+  return NULL;
+}
 
 // think() calls a search function 
-int think(node_t& board)
+int think(node_t& board,bool parallel)
 {
+  multistrike_on = false;
+  chx_abort = false;
   for(int i=0;i<bucket_size;i++)
     hash_bucket[i].init();
   board.ply = 0;
-  para_depth = depth[board.side]-1;
-  if(para_depth == 1)
-    para_depth = -1;
+  if(parallel) {
+    para_depth_lo = 3;
+    para_depth_hi = 5;
+  } else {
+    para_depth_lo = -1;
+    para_depth_hi = -1;
+  }
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
-    pv.resize(depth[board.side]);
+    //pv.resize(depth[board.side]);
     for(int i=0;i<pv.size();i++)
         pv[i].u = 0;
     DECL_SCORE(alpha,-10000,board.hash);
@@ -110,16 +163,43 @@ int think(node_t& board)
     int d = depth[board.side] % stepsize;
     if(d == 0)
         d = stepsize;
+    board.depth = d;
     score_t f(search_ab(board,d,alpha,beta));
     while(d < depth[board.side]) {
         d+=stepsize;
+        board.depth = d;
         f = mtdf(board,f,d);
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
+  } else if (search_method == MULTISTRIKE) {
+    multistrike_on = true;
+    //para_depth_lo = para_depth_hi = -1;
+    //pv.resize(depth[board.side]);
+    for(int i=0;i<pv.size();i++)
+        pv[i].u = 0;
+    /*
+    DECL_SCORE(alpha,-10000,board.hash);
+    DECL_SCORE(beta,10000,board.hash);
+    int stepsize = 2;
+    int d = depth[board.side] % stepsize;
+    if(d == 0)
+        d = stepsize;
+    score_t f(search_ab(board,d,alpha,beta));
+    while(d < depth[board.side]) {
+        chx_abort = false;
+        d+=stepsize;
+        f = multistrike(board,f,d);
+    }
+    */
+    score_t f = multistrike(board,0,depth[board.side]);
+    if (bench_mode)
+      std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
-    pv.resize(depth[board.side]);
+    //pv.resize(depth[board.side]);
+    for(int i=0;i<pv.size();i++)
+        pv[i].u = 0;
     score_t f;
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
@@ -155,6 +235,109 @@ int think(node_t& board)
 #pragma mark Search functions
 #endif
 
+inline int figx(int n) {
+    if(n < 0) return -figx(-n);
+    if(n <= 3) return 3*n;
+    if(n <= 5) return 5*(n-3)+figx(3);
+    if(n <= 10) return 8*(n-5)+figx(5);
+    return 10*(n-10)+figx(10);
+}
+
+score_t multistrike(const node_t& board,score_t f,int depth)
+{
+    score_t ret=0;
+    const int max_parallel = 5;
+    const int fac = 600/max_parallel;//10*25/max_parallel;
+    std::vector<smart_ptr<task> > tasks;
+    DECL_SCORE(lower,-10000,0);
+    DECL_SCORE(upper,10000,0);
+    //DECL_SCORE(lbound,0,0);
+    //DECL_SCORE(ubound,0,0);
+    for(int i=-max_parallel;i<=max_parallel;i++) {
+        //std::cout << "figx(i=" << i << ")=" << figx(i) << std::endl;
+        DECL_SCORE(alpha,i==-max_parallel ? -10000 : fac*(i)  ,0);
+        DECL_SCORE(beta, i== max_parallel ?  10000 : fac*(i+1),0);
+        //std::cout << "i=" << i << " (" << alpha << "," << beta << ")" << std::endl;
+        //DECL_SCORE(alpha,fac*(i)  ,0);
+        //DECL_SCORE(beta, fac*(i+1),0);
+        //lbound=min(lbound,alpha);
+        //ubound=max(ubound,beta);
+        beta++;
+        smart_ptr<task> t = parallel_task(board.hply==0);
+        t->info = new search_info;
+        t->info->alpha = alpha;
+        t->info->beta = beta;
+        t->info->board = board;
+        t->info->depth = depth;
+        t->pfunc = strike_f;
+        t->start();
+        tasks.push_back(t);
+    }
+    for(int i=0;i<tasks.size();i++) {
+        tasks[i]->join();
+        score_t result = tasks[i]->info->result;
+        score_t alpha = tasks[i]->info->alpha;
+        score_t beta = tasks[i]->info->beta;
+        if(alpha < result && result < beta) {
+            ret = result;
+            std::cout << VAR(alpha) << VAR(beta) << "ms::SCORE=" << result << std::endl;
+        }
+    }
+    /*
+    DECL_SCORE(lbound,  -max_parallel *fac,0);
+    DECL_SCORE(ubound,(1+max_parallel)*fac,0);
+    bool done = false;
+    while(!done) {
+        done=true;
+        for(int i=0;i<tasks.size();i++) {
+            if(((pthread_task*)tasks[i].ptr())->joined)
+                continue;
+            done=false;
+            tasks[i]->join();
+            //std::cout << VAR(tc) << VAR(lower) << VAR(lbound) << VAR(ubound) << VAR(upper) << std::endl;
+            score_t result = tasks[i]->info->result;
+            score_t alpha = tasks[i]->info->alpha;
+            score_t beta = tasks[i]->info->beta;
+            if(alpha < result && result < beta) {
+                ret = result;
+                std::cout << "ms::SCORE=" << result << std::endl;
+            } else if(result < beta) {
+                upper = min(upper,result);
+                if(upper < ubound && upper > lbound)
+                    upper = lbound;
+                if(!chx_abort && lower < upper) {
+                    tasks[i]->info->board = board;
+                    tasks[i]->info->depth = depth;
+
+                    tasks[i]->info->beta = upper;
+                    upper = ADD_SCORE(upper,-fac);
+                    tasks[i]->info->alpha = upper;
+
+                    tasks[i]->info->beta++;
+                    //std::cout << VAR(upper) << VAR(result) << VAR(alpha) << VAR(beta) << std::endl;
+                    tasks[i]->start();
+                }
+            } else if(result > alpha) {
+                lower = max(lower,result);
+                if(lower > lbound && lower < ubound)
+                    lower = ubound;
+                if(!chx_abort && lower < upper) {
+                    tasks[i]->info->depth = depth;
+                    tasks[i]->info->board = board;
+
+                    tasks[i]->info->alpha = lower;
+                    lower = ADD_SCORE(lower,3L);
+                    tasks[i]->info->beta = lower;
+
+                    tasks[i]->info->beta++;
+                    tasks[i]->start();
+                }
+            }
+        }
+    }
+    */
+    return ret;
+}
 
 
 /** MTD-f */
@@ -237,27 +420,8 @@ score_t search(const node_t& board, int depth)
     max = minf; // Set the max score to -infinity
 
     const int worksq = workq.size();
-    smart_ptr<task> tasks[worksq];
-
-    int j=0;
-    for(;depth == para_depth && j < workq.size(); j++) {
-        move g = workq[j];
-        smart_ptr<search_info> info = new search_info(board);
-
-        if (!makemove(info->board, g.b)) { // Make the move, if it isn't 
-            // legal, then go to the next one
-            continue;
-        }
-        tasks[j] = new task;
-
-        tasks[j]->info = info;
-
-        DECL_SCORE(z,0,board.hash);
-        info->depth = depth-1;
-        info->result = z;
-        tasks[j]->pfunc = search_pt;
-        workers[get_bucket_index(info->board,info->depth)].add(tasks[j]);
-    }
+    std::vector<smart_ptr<task> > tasks;
+    bool para = true;//(para_depth_lo == depth)||(para_depth_hi == depth);
 
     // loop through the moves
     // We do this twice. The first time we skip
@@ -267,70 +431,57 @@ score_t search(const node_t& board, int depth)
     // cutoffs within the quiescent search routine.
     // Without doing this, minimax runs extremely
     // slowly.
-    for (int i = 0; i < workq.size(); i++) {
-        move g = workq[i];
-        if(i < j) {
-            assert(false);
-            if(!tasks[i].valid())
-                continue;
-            smart_ptr<search_info> info = tasks[i]->info;
-            tasks[i]->join();
-            val = -tasks[i]->info->result;
-        } else {
-            node_t p_board = board;
+    for(int mm=0;mm<2;mm++) {
+        for(int j=0;j < workq.size(); j++) {
+            bool last = (j+1)==workq.size();
+            move g = workq[j];
+            smart_ptr<search_info> info = new search_info(board);
 
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                    // legal, then go to the next one
+            if (makemove(info->board, g.b)) { // Make the move, if it isn't 
+                DECL_SCORE(z,0,board.hash);
+                info->depth = depth-1;
+                info->mv.u = g.u;
+                info->result = z;
+                if(depth == 1 && capture(board,g)) {
+                    if(mm==1) {
+                        smart_ptr<task> t = 
+                            para ? parallel_task(info->board.hply==0) : new task;
+                        t->info = info;
+                        DECL_SCORE(lo,-10000,0);
+                        info->beta = -max;
+                        info->alpha = lo;
+                        t->pfunc = qeval_f;
+                        tasks.push_back(t);
+                        t->start();
+                    }
+                } else {
+                    if(mm==0) {
+                        smart_ptr<task> t = 
+                            para ? parallel_task(info->board.hply == 0) : new task;
+                        t->info = info;
+                        t->pfunc = search_f;
+                        tasks.push_back(t);
+                        t->start();
+                    }
+                }
             }
+            if(!para||tasks.size()>=256||last) {
+                for(int n=0;n<tasks.size();n++) {
+                    smart_ptr<search_info> info = tasks[n]->info;
+                    tasks[n]->join();
+                    val = -tasks[n]->info->result;
 
-            if(depth == 1 && capture(board,g)) {
-                //DECL_SCORE(lower,-10000,board.hash);
-                //val = -qeval(p_board,lower,-max); 
-                continue;
-            } else {
-                val = -search(p_board, depth - 1); 
+                    if (val > max)
+                    {
+                        max = val;
+                        max_move = info->mv;
+                    }
+                }
+                tasks.clear();
             }
-        }
-
-        if (val > max)  // Is this value our maximum?
-        {
-            max = val;
-
-            max_move = g;
         }
     }
-    for (int i = 0; i < workq.size(); i++) {
-        move g = workq[i];
-        if(i < j) {
-            assert(false);
-            if(!tasks[i].valid())
-                continue;
-            smart_ptr<search_info> info = tasks[i]->info;
-            tasks[i]->join();
-            val = -tasks[i]->info->result;
-        } else {
-            node_t p_board = board;
-
-            if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-                continue;                    // legal, then go to the next one
-            }
-
-            if(depth == 1 && capture(board,g)) {
-                DECL_SCORE(lower,-10000,board.hash);
-                val = -qeval(p_board,lower,-max); 
-            } else {
-                //val = -search(p_board, depth - 1); 
-                continue;
-            }
-        }
-
-        if (val > max)  // Is this value our maximum?
-        {
-            max = val;
-
-            max_move = g;
-        }
-    }
+    assert(tasks.size()==0);
 
     // no legal moves? then we're in checkmate or stalemate
     if (max_move.u == INVALID_MOVE) {
@@ -347,6 +498,7 @@ score_t search(const node_t& board, int depth)
     }
 
     if (board.ply == 0) {
+        assert(max_move.u != INVALID_MOVE);
         pthread_mutex_lock(&mutex);
         move_to_make = max_move;
         pthread_mutex_unlock(&mutex);
@@ -384,19 +536,22 @@ score_t search(const node_t& board, int depth)
 void *search_ab_pt(void *vptr)
 {
   search_info *info = (search_info *)vptr;
+  assert(info->depth == info->board.depth);
   info->result = search_ab(info->board,info->depth, info->alpha, info->beta);
   return NULL;
 }
 
 score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 {
+  assert(depth >= 0);
   // if we are a leaf node, return the value from the eval() function
-  if (!depth)
+  if (depth == 0)
   {
     evaluator ev;
     DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
     return s;
   }
+  assert(depth >= 1);
   /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
@@ -412,7 +567,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     return z;
   }
 
-  if(depth >= zdepth) {
+  /*
+  if(mpi_rank==0 && depth >= zdepth) {
     int b_index = get_bucket_index(board,depth);
     hash_bucket[b_index].lock();
     zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
@@ -427,6 +583,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     }
     hash_bucket[b_index].unlock();
   }
+  */
 
   std::vector<move> workq;
   move max_move;
@@ -434,13 +591,21 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
   gen(workq, board); // Generate the moves
 
+  /*
+  if(multistrike_on) {
+    std::random_shuffle(workq.begin(),workq.end());
+    capture_last(board,workq);
+  }
+  */
+  //if(!multistrike_on)
   sort_pv(workq, board.ply); // Part of iterative deepening
   
   const int worksq = workq.size();
-  smart_ptr<task> tasks[worksq];
+  std::vector<smart_ptr<task> > tasks;
   
   int j=0;
   score_t val;
+  bool para = (para_depth_lo == depth)||(para_depth_hi == depth);
   
   /**
    * This loop will execute once and it will do it
@@ -457,6 +622,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       continue;                    // legal, then go to the next one
     }
 
+    assert(depth >= 1);
     if(depth == 1 && capture(board,g)) {
         val = -qeval(p_board, -beta, -alpha);
     } else
@@ -474,7 +640,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       hash_bucket[b_index].unlock();
     
       alpha = val;
-      pv[board.ply] = g;
+      if(board.ply < pv.size())
+        pv[board.ply] = g;
       max_move = g;
     }
     j++;
@@ -482,65 +649,66 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
   }
   
   // loop through the moves
-  for (; depth == para_depth && j < worksq; j++) {
-    move g = workq[j];
-    smart_ptr<search_info> info = new search_info(board);
-    
-    if (!makemove(info->board, g.b))
-      continue;
-    
-    tasks[j] = new task;
-    
-    tasks[j]->info = info;
-    info->depth = depth-1;
-    info->alpha = -beta;
-    info->beta = -alpha;
-    DECL_SCORE(z,0,board.hash);
-    info->result = z;
-    tasks[j]->pfunc = search_ab_pt;
-    workers[get_bucket_index(info->board, info->depth)].add(tasks[j]);
-  }
-  
-  for (int i = 0; i < worksq; i++) {  
-    if(alpha >= beta)
-      break;
-    move g = workq[i];
-    if (i < j) {
-      if (!tasks[i].valid())
-        continue;
-      smart_ptr<search_info> info = tasks[i]->info;
-      tasks[i]->join();
-      val = -tasks[i]->info->result;
-    } else {
-      node_t p_board = board;
-
-      if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-        continue;                    // legal, then go to the next one
+  bool last = false;
+  for (; j < worksq; j++) {
+      assert(!last);
+      last = (j+1==worksq);
+      move g = workq[j];
+      smart_ptr<search_info> info = new search_info(board);
+      if(chx_abort) {
+        DECL_SCORE(v,-11000,0);
+        return v;
       }
 
-      if(depth == 1 && capture(board,g)) {
-        val = -qeval(p_board, -beta, -alpha);
-      } else {
-        val = -search_ab(p_board, depth-1, -beta, -alpha);
+      if (makemove(info->board, g.b)) {
+
+          smart_ptr<task> t = para ? parallel_task(info->board.hply == 0) : new task;
+
+          t->info = info;
+          info->board.depth = info->depth = depth-1;
+          assert(depth >= 0 && depth < 7);
+          info->alpha = -beta;
+          info->beta = -alpha;
+          info->result = -beta;
+          info->mv = g;
+          if(depth == 1 && capture(board,g))
+              t->pfunc = qeval_f;
+          else
+              t->pfunc = search_ab_f;
+          t->start();
+          tasks.push_back(t);
       }
-    }
+      if(!para || tasks.size() >= 3 || last) {
+          for(int n=0;n<tasks.size();n++) {
+              smart_ptr<search_info> info = tasks[n]->info;
+              tasks[n]->join();
+              val = -tasks[n]->info->result;
 
-    if (val > alpha)
-    {
-      int b_index = get_bucket_index(board,depth);
-      hash_bucket[b_index].lock();
-      zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
+              if (val > alpha)
+              {
+                  int b_index = get_bucket_index(board,depth);
+                  hash_bucket[b_index].lock();
+                  zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
 
-      z->hash = board.hash;
-      z->score = val;
-      z->depth = depth;
-      hash_bucket[b_index].unlock();
-    
-      alpha = val;
-      pv[board.ply] = g;
-      max_move = g;
-    }
+                  z->hash = board.hash;
+                  z->score = val;
+                  z->depth = depth;
+                  hash_bucket[b_index].unlock();
+
+                  alpha = val;
+                  if(board.ply < pv.size())
+                    pv[board.ply] = info->mv;
+                  max_move = info->mv;
+              }
+              if(alpha >= beta)
+                break;
+          }
+          tasks.clear();
+          if(alpha >= beta)
+              break;
+      }
   }
+  assert(tasks.size()==0);
 
   /**
    * If we're doing mtd-f, it's possible that all
@@ -565,9 +733,12 @@ int reps(const node_t& board)
   int i;
   int r = 0;
 
-  for (i = board.hply - board.fifty; i < board.hply; ++i)
+  for (i = board.hply - board.fifty; i < board.hply; ++i) {
+    assert(i < board.hist_dat.size());
+    assert(board.hash != 0);
     if (board.hist_dat[i] == board.hash)
       ++r;
+  }
   return r;
 }
 
@@ -587,8 +758,243 @@ bool compare_moves(move a, move b)
 }
 */
 
+void capture_last(const node_t& board,std::vector<move>& workq)
+{
+    int ilo = 0, ihi = workq.size()-1;
+    while(true) {
+        while(!capture(board,workq[ilo]))
+            ilo++;
+        while(capture(board,workq[ihi]))
+            ihi--;
+        if(ilo < ihi) {
+            move tmp = workq[ilo];
+            workq[ilo] = workq[ihi];
+            workq[ihi] = tmp;
+        } else {
+            break;
+        }
+    }
+}
+
+/*
+void *mpi_job(void *v) {
+    search_info *s = (search_info)*v;
+
+    delete s;
+}
+*/
+
+//std::map<hash_t,std::map<int,worker_result> > results;
+worker_result results[worker_result_size];
+
+int result_alloc(hash_t h,int d) {
+    int n = abs(h^d)%worker_result_size;
+    for(int i=0;i<worker_result_size;i++) {
+        int q = (i+n)%worker_result_size;
+        pthread_mutex_lock(&results[q].mut);
+        bool done = false;
+        if(results[q].depth == -1) {
+            results[q].depth = d;
+            results[q].hash = h;
+            results[q].has_result = false;
+            results[q].score = 0;
+            done = true;
+        }
+        pthread_mutex_unlock(&results[q].mut);
+        if(done)
+            return q;
+    }
+    assert(false);
+    return -1;
+}
+void result_free(int q) {
+    pthread_mutex_lock(&results[q].mut);
+    results[q].depth = -1;
+    pthread_mutex_unlock(&results[q].mut);
+}
+
+void *do_mpi_thread(void *);
+
+struct MPI_Thread {
+    smart_ptr<search_info> info;
+    pthread_t thread;
+    pthread_mutex_t mut;
+    pfunc_v pfunc;
+    int windex;
+    bool in_use;
+    MPI_Thread() : in_use(false) {
+        pthread_mutex_init(&mut,NULL);
+    }
+    bool alloc() {
+        pthread_mutex_lock(&mut);
+        bool allocated = !in_use;
+        if(allocated)
+            in_use = true;
+        pthread_mutex_unlock(&mut);
+        return allocated;
+    }
+    void free() {
+        pthread_mutex_lock(&mut);
+        in_use = false;
+        pthread_mutex_unlock(&mut);
+    }
+    void start() {
+        pthread_create(&thread,NULL,do_mpi_thread,this);
+    }
+};
+const int MPI_Thread_count = chx_threads_per_proc();
+
+void *do_mpi_thread(void *voidp) {
+    MPI_Thread *mp = (MPI_Thread*)voidp;
+    score_t result;
+    if(mp->pfunc == search_ab_f) {
+        result = search_ab(mp->info->board,mp->info->board.depth,mp->info->alpha,mp->info->beta);
+    } else if(mp->pfunc == search_f)
+        result = search(mp->info->board,mp->info->board.depth);
+    else if(mp->pfunc == qeval_f)
+        result = qeval(mp->info->board,mp->info->alpha,mp->info->beta);
+    //else if(func == strike_f)
+    //result = strike(board,board.depth,alpha,beta);
+    else
+        abort();
+    int result_data[2];
+    result_data[1] = result;
+    result_data[0] = mp->windex;
+    assert(mp->windex != -1);
+    MPI_Send(result_data,2,MPI_INT,
+            0,WORK_COMPLETED,MPI_COMM_WORLD);
+    mp->free();
+    return NULL;
+}
+
+void *mpi_worker(void *)
+{
+    int result_data[2];
+#ifdef MPI_SUPPORT
+    if(mpi_rank==0) {
+        int count = mpi_size -1;
+        while(count>0)
+        {
+            MPI_Status status;
+            int err = MPI_Recv(result_data,3,MPI_INT,
+                MPI_ANY_SOURCE,WORK_COMPLETED,MPI_COMM_WORLD,&status);
+            assert(err == MPI_SUCCESS);
+            if(result_data[0] == -1)
+                count--;
+            else {
+                //pthread_mutex_lock(&res_mut);
+                //results[result_data[0]][result_data[1]].set_result(result_data[2]);
+                results[result_data[0]].set_result(result_data[1]);
+                //pthread_mutex_unlock(&res_mut);
+            }
+        }
+    } else {
+        init_hash();
+        MPI_Thread mpi_threads[MPI_Thread_count];
+        while(true)
+        {
+            FixedArray<int,mpi_ints> mpi_data;//[mpi_ints];
+            MPI_Status status;
+            int err = MPI_Recv(mpi_data.ptr(),mpi_ints,MPI_INT,
+                    0,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD,&status);
+            assert(err == MPI_SUCCESS);
+            int n = 0;
+            node_t board;
+            for(int i=0;i<16;i++) {
+                int_to_chars(mpi_data[n++],
+                    board.color[4*i],board.color[4*i+1],
+                    board.color[4*i+2],board.color[4*i+3]);
+            }
+            for(int i=0;i<16;i++) {
+                int_to_chars(mpi_data[n++],
+                    board.piece[4*i],board.piece[4*i+1],
+                    board.piece[4*i+2],board.piece[4*i+3]);
+            }
+            board.hash = mpi_data[n++];
+            board.depth = mpi_data[n++];
+            if(board.depth == -1) {
+                result_data[0] = -1;
+                MPI_Send(result_data,2,MPI_INT,
+                    0,WORK_COMPLETED,MPI_COMM_WORLD);
+                MPI_Finalize();
+                exit(0);
+            }
+            assert(board.depth >= 0 && board.depth < 7);
+            board.side =  mpi_data[n++];
+            board.castle = mpi_data[n++];
+            board.ep = mpi_data[n++];
+            board.ply = mpi_data[n++];
+            board.hply = mpi_data[n++];
+            board.fifty = mpi_data[n++];
+            score_t alpha = mpi_data[n++];
+            score_t beta = mpi_data[n++];
+            pfunc_v func = (pfunc_v)mpi_data[n++];
+            int windex = mpi_data[n++];
+
+            if(board.hply > 0) {
+                //int fifty_array[50];
+                /*
+                FixedArray<int,50> fifty_array;
+                int err = MPI_Recv(fifty_array.ptr(),board.hply,MPI_INT,
+                        0,WORK_SUPPLEMENT,MPI_COMM_WORLD,&status);
+                assert(err == MPI_SUCCESS);
+                */
+                board.hist_dat.resize(board.hply);
+                for(int i=0;i<board.hply;i++)
+                    board.hist_dat[i] = mpi_data[n++];//fifty_array[i];
+            }
+            
+            for(int i=0;i<MPI_Thread_count;i++) {
+                if(mpi_threads[i].alloc()) {
+                    smart_ptr<search_info> info = new search_info(board);
+                    info->beta = beta;
+                    info->alpha = alpha;
+                    info->depth = board.depth;
+                    MPI_Thread *mp = &mpi_threads[i];
+                    mp->windex = windex;
+                    mp->pfunc = func;
+                    mp->info = info;
+                    mp->start();
+                    break;
+                }
+            }
+            /*
+            search_info *s = new search_info(board);
+            s->alpha = alpha;
+            s->beta = beta;
+            s->depth = board.depth;
+            pthread_create(
+            */
+
+            /*
+            score_t result;
+            if(func == search_ab_f) {
+                result = search_ab(board,board.depth,alpha,beta);
+            } else if(func == search_f)
+                result = search(board,board.depth);
+            else if(func == qeval_f)
+                result = qeval(board,alpha,beta);
+            //else if(func == strike_f)
+                //result = strike(board,board.depth,alpha,beta);
+            else
+                abort();
+            int result_data[2];
+            result_data[1] = result;
+            result_data[0] = windex;
+            assert(windex != -1);
+            MPI_Send(result_data,2,MPI_INT,
+                    0,WORK_COMPLETED,MPI_COMM_WORLD);
+                    */
+        }
+    }
+#endif
+    return NULL;
+}
+
 void sort_pv(std::vector<move>& workq, int ply)
 {
+  if(ply >= pv.size())
+    return;
   for(int i = 0; i < workq.size() ; i++)
   {
     move temp;
@@ -602,31 +1008,12 @@ void sort_pv(std::vector<move>& workq, int ply)
     }
   }
 }
-
-void *run_worker(void *vptr) {
-    worker *w = (worker *)vptr;
-    while(true) {
-        smart_ptr<task> pt = w->remove();
-        void *v = (*pt->pfunc)(pt->info.ptr());
-        pt->finish();
-        if(v == DONE)
-            return 0;
-    }
-    return 0;
+void int_from_chars(int& i1,char c1,char c2,char c3,char c4) {
+    i1 = c1 << 8*3 | c2 << 8*2 | c3 << 8 | c4;
 }
-
-void *stop_worker(void *) {
-    return (void *)DONE;
-}
-void shutdown() {
-    std::cout << "Shutting down" << std::endl;
-    for(int i=0;i<bucket_size;i++) {
-        smart_ptr<task> t = new task;
-        smart_ptr<search_info> info = new search_info;
-        t->info = info;
-        t->pfunc = stop_worker;
-        worker *w = workers+i;
-        w->add(t);
-        t->join();
-    }
+void int_to_chars(int i1,char& c1,char& c2,char& c3,char& c4) {
+    c4 = i1 & 0xFF;
+    c3 = (i1 >> 8) & 0xFF;
+    c2 = (i1 >> 8*2) & 0xFF;
+    c1 = (i1 >> 8*3) & 0xFF;
 }

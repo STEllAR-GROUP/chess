@@ -4,6 +4,7 @@
 
 
 #include "board.hpp"
+#include "here.hpp"
 
 static int count, count2;
 
@@ -177,6 +178,7 @@ bool attack(const node_t& board, int sq, int s)
 void gen(std::vector<move>& workq, const node_t& board)
 {
     int i, j, n;
+    do_data();
 
     // so far, we have no moves for the current ply
 
@@ -222,6 +224,7 @@ void gen(std::vector<move>& workq, const node_t& board)
                             break;
                     }
         }
+
 
     // generate castle moves
     if (board.side == LIGHT) {
@@ -434,7 +437,7 @@ bool makemove(node_t& board,const move_bytes m)
     }
 // This could debugs update_hash(), making sure it's consistent
 // with set_hash()
-#if 0
+#if 1
     hash_t sh = set_hash(board);
     if (board.hash == sh)
       count++;
@@ -442,8 +445,10 @@ bool makemove(node_t& board,const move_bytes m)
       std::cerr << "board.hash == " << board.hash << " :: set_hash == " << sh << std::endl;
       std::cerr << "Number of times board.hash == sh: " << count << std::endl;
       std::cerr << "Number of times set_hash was called: " << count2 << std::endl;
-      exit(3);
+      abort();
     }
 #endif
+    //board.hash = set_hash(board);
+    assert(board.hash != 0);
     return true;
 }

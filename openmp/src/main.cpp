@@ -11,6 +11,7 @@
 
 #include "mpi_support.hpp"
 int mpi_size=1, mpi_rank=0;
+std::vector<pcounter> mpi_task_array;
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
@@ -23,50 +24,32 @@ double sum_exec_times2 = 0;
 double sum_exec_times = 0;
 int count_exec_times;
 
+pthread_t rank_0_thread;
+
+void mpi_terminate() {
+    if(mpi_rank == 0) {
+        for(int i=0;i<3;i++)
+            std::cout << std::endl;
+        const int n = 2*16+10;
+        int data[n];
+        data[32] = -1;
+        data[33] = -1;
+        chx_abort = true;
+        for(int i=1;i<mpi_size;i++) {
+            MPI_Send(data,n,MPI_INT,
+                    i,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD);
+        }
+        pthread_join(rank_0_thread,NULL);
+        MPI_Finalize();
+    }
+}
+
 /* main() is basically an infinite loop that either calls
    think() when it's the computer's turn to move or prompts
    the user for a command (and deciphers it). */
 
 int auto_move = 0;
 int computer_side;
-
-void mpi_start_benchmark(std::string filename, int ply_level, int num_runs) {
-    int data[] = {filename.size(), ply_level, num_runs };
-#ifdef MPI_SUPPORT
-    MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast((void*)filename.c_str(),filename.size()+1,MPI_CHAR,0,MPI_COMM_WORLD);
-#endif
-    start_benchmark(filename,ply_level,num_runs);
-}
-
-void mpi_terminate() {
-#ifdef MPI_SPPORT
-    if(mpi_rank == 0) {
-        int data[] = {-1,0,0};
-        MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
-    }
-    MPI_Finalize();
-#endif
-}
-
-void mpi_bench_call() {
-    while(true) {
-        int data[3];
-#ifdef MPI_SPPORT
-        MPI_Bcast(data,3,MPI_INT,0,MPI_COMM_WORLD);
-#endif
-        if(data[0] == -1 && data[1] == 0 && data[2] == 0) {
-            break;
-        }
-        char *fn = new char[data[0]+1];
-#ifdef MPI_SUPPORT
-        MPI_Bcast(fn,data[0]+1,MPI_CHAR,0,MPI_COMM_WORLD);
-#endif
-        std::string filename = fn;
-        start_benchmark(fn,data[1],data[2]);
-        delete[] fn;
-    }
-}
 
 int chx_main(int argc, char **argv)
 {
@@ -113,7 +96,7 @@ int chx_main(int argc, char **argv)
         if (board.side == computer_side) {  // computer's turn
 
             // think about the move and make it
-            think(board);
+            think(board,false);
             if (move_to_make.u == 0) {
                 std::cout << "(no legal moves)" << std::endl;
                 computer_side = EMPTY;
@@ -243,7 +226,7 @@ int chx_main(int argc, char **argv)
             std::cout << "Number of runs: ";
             std::cin >> num_runs;
             std::cout << std::endl;
-            mpi_start_benchmark(filename, ply_level, num_runs);
+            start_benchmark(filename, ply_level, num_runs, false);
             continue;
         }
         if(s.compare(0,bench.length(),bench)==0) {
@@ -259,7 +242,7 @@ int chx_main(int argc, char **argv)
             iss >> ply_level;
             iss >> num_runs;
             std::cout << std::endl;
-            start_benchmark(filename, ply_level, num_runs);
+            start_benchmark(filename, ply_level, num_runs,false);
             continue;
         }
         if (s == "eval") {
@@ -282,6 +265,9 @@ int chx_main(int argc, char **argv)
             } else if (search_method == MTDF) {
                 std::cout << "Minimax search method now in use" << std::endl;
                 search_method = MINIMAX;
+            } else if (search_method == MULTISTRIKE) {
+                std::cout << "Multistrike search now in use" << std::endl;
+                search_method = MULTISTRIKE;
             }
             continue;
         }
@@ -318,9 +304,15 @@ int chx_main(int argc, char **argv)
         }
     }
 
-    shutdown();
-
     return 0;
+}
+
+int chx_threads_per_proc() {
+    const char *th = getenv("CHX_THREADS_PER_PROC");
+    if(th == NULL)
+        return 1;
+    else
+        return atoi(th);
 }
 
 int main(int argc, char *argv[])
@@ -330,15 +322,23 @@ int main(int argc, char *argv[])
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-#endif
+    int threads_per_proc = chx_threads_per_proc();
     if(mpi_rank==0) {
-        retcode = chx_main(argc, argv);
+        mpi_task_array.resize(mpi_size);
+        for(int i=0;i<mpi_size;i++)
+            mpi_task_array[i].add(threads_per_proc);
+        std::cout << "MPI enabled" << std::endl;
+        for(int i=0;i<mpi_size;i++)
+            std::cout << mpi_task_array[i].add(0) << " ";
+        std::cout << std::endl;
+        pthread_create(&rank_0_thread,NULL,mpi_worker,NULL);
     } else {
-        mpi_bench_call();
+        mpi_worker(NULL);
+        return 255;
     }
-#ifdef MPI_SUPPORT
-    mpi_terminate();
 #endif
+    retcode = chx_main(argc, argv);
+    mpi_terminate();
     return retcode;
 }
 
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 #pragma mark Benchmark
 #endif
 
-void start_benchmark(std::string filename, int ply_level, int num_runs)
+void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel)
 {
   std::ifstream benchfile(filename.c_str());
 
@@ -401,6 +401,9 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   } else if (search_method == MTDF) {
     std::cout << "  search method: MTD-f" << std::endl;
     logfile << "  search method: MTD-f" << std::endl;
+  } else if (search_method == MULTISTRIKE) {
+    std::cout << "  search method: Multistrike" << std::endl;
+    logfile << "  search method: Multistrike" << std::endl;
   }
 
   // reading board configuration
@@ -512,13 +515,14 @@ void start_benchmark(std::string filename, int ply_level, int num_runs)
   double average_time = 0;
   int best_time = 0;
 
+  std::cout << "Parallel=" << parallel << std::endl;
   for (int i = 0; i < num_runs; ++i)
   {
     std::cout << "Run " << i+1 << " ";
     logfile << "Run " << i+1 << " ";
     fflush(stdout);
     start_time = get_ms();          // Start the clock
-    think(board);                   // Do the processing
+    think(board,parallel);          // Do the processing
     t[i] = get_ms() - start_time;   // Measure the time
     if (i == 0)
       best_time = t[0];
@@ -758,7 +762,6 @@ int parseArgs(int argc, char **argv)
       printf("\n");
       FreeOptList(thisOpt);
       mpi_terminate();
-      shutdown();
       exit(0);
     }
 
@@ -838,6 +841,8 @@ bool parseIni(const char * filename)
     search_method = ALPHABETA;
   else if (s == "mtd-f")
     search_method = MTDF;
+  else if (s == "multistrike")
+    search_method = MULTISTRIKE;
   else
     std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" ,\"alphabeta\" or \"mtd-f\" " << std::endl;
 
@@ -873,17 +878,17 @@ bool parseIni(const char * filename)
     {
       std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
       mpi_terminate();
-      shutdown();
       exit(-1);
     }
 
-    int max_ply = atoi(ini.GetValue("Benchmark", "max_ply", "3"));
-    int num_runs  = atoi(ini.GetValue("Benchmark", "num_runs", "1"));
+    int max_ply = atoi(    ini.GetValue("Benchmark", "max_ply", "3"));
+    int num_runs  = atoi(  ini.GetValue("Benchmark", "num_runs", "1"));
+    bool parallel = strcmp(
+        ini.GetValue("Benchmark", "parallel", "false"),"true")==0;
 
     init_hash();
-    start_benchmark(s, max_ply, num_runs);
+    start_benchmark(s, max_ply, num_runs, parallel);
     mpi_terminate();
-    shutdown();
     exit(0);
   }
   else if (s != "false")
