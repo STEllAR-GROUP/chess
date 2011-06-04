@@ -845,6 +845,7 @@ struct MPI_Thread {
 const int MPI_Thread_count = chx_threads_per_proc();
 
 void *do_mpi_thread(void *voidp) {
+#ifdef MPI_SUPPORT
     MPI_Thread *mp = (MPI_Thread*)voidp;
     score_t result;
     if(mp->pfunc == search_ab_f) {
@@ -864,6 +865,7 @@ void *do_mpi_thread(void *voidp) {
     MPI_Send(result_data,2,MPI_INT,
             0,WORK_COMPLETED,MPI_COMM_WORLD);
     mp->free();
+#endif
     return NULL;
 }
 

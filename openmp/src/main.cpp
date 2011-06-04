@@ -35,12 +35,14 @@ void mpi_terminate() {
         data[32] = -1;
         data[33] = -1;
         chx_abort = true;
+#ifdef MPI_SUPPORT
         for(int i=1;i<mpi_size;i++) {
             MPI_Send(data,n,MPI_INT,
                     i,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD);
         }
         pthread_join(rank_0_thread,NULL);
         MPI_Finalize();
+#endif
     }
 }
 
@@ -322,6 +324,7 @@ int main(int argc, char *argv[])
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
+#endif
     int threads_per_proc = chx_threads_per_proc();
     if(mpi_rank==0) {
         mpi_task_array.resize(mpi_size);
@@ -336,7 +339,6 @@ int main(int argc, char *argv[])
         mpi_worker(NULL);
         return 255;
     }
-#endif
     retcode = chx_main(argc, argv);
     mpi_terminate();
     return retcode;

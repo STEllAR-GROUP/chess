@@ -88,7 +88,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             if($sm eq "mtd-f") {
                 #sleep(1);
             }
-            open($fd,"mpiexec -np 3 ./src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"./src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
