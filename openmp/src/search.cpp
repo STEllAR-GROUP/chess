@@ -154,9 +154,6 @@ int think(node_t& board,bool parallel)
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
-    //pv.resize(depth[board.side]);
-    for(int i=0;i<pv.size();i++)
-        pv[i].u = 0;
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
     int stepsize = 2;
@@ -175,9 +172,6 @@ int think(node_t& board,bool parallel)
   } else if (search_method == MULTISTRIKE) {
     multistrike_on = true;
     //para_depth_lo = para_depth_hi = -1;
-    //pv.resize(depth[board.side]);
-    for(int i=0;i<pv.size();i++)
-        pv[i].u = 0;
     /*
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
@@ -197,9 +191,6 @@ int think(node_t& board,bool parallel)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     // Initially alpha is -infinity, beta is infinity
-    //pv.resize(depth[board.side]);
-    for(int i=0;i<pv.size();i++)
-        pv[i].u = 0;
     score_t f;
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
@@ -222,7 +213,6 @@ int think(node_t& board,bool parallel)
 
     if (brk)
       f=search_ab(board, depth[board.side], alpha, beta);
-    pv.clear();
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   }
@@ -640,8 +630,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       hash_bucket[b_index].unlock();
     
       alpha = val;
-      if(board.ply < pv.size())
-        pv[board.ply] = g;
+      if(board.ply >= pv.size())
+        pv.resize(board.ply+1);
+      pv[board.ply] = g;
       max_move = g;
     }
     j++;
@@ -696,8 +687,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
                   hash_bucket[b_index].unlock();
 
                   alpha = val;
-                  if(board.ply < pv.size())
-                    pv[board.ply] = info->mv;
+                  if(board.ply >= pv.size())
+                    pv.resize(board.ply+1);
+                  pv[board.ply] = info->mv;
                   max_move = info->mv;
               }
               if(alpha >= beta)
