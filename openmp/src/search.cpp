@@ -102,8 +102,8 @@ void *qeval_pt(void *vptr)
   return NULL;
 }
 
-smart_ptr<task> parallel_task(bool parx) {
-    if(mpi_rank != 0){// || !parx) {
+smart_ptr<task> parallel_task(int depth) {
+    if(mpi_rank != 0 || depth <= 3 || depth % 2 == 1) {
         smart_ptr<task> t = new task;
         return t;
     }
@@ -263,7 +263,7 @@ score_t multistrike(const node_t& board,score_t f,int depth)
         //lbound=min(lbound,alpha);
         //ubound=max(ubound,beta);
         beta++;
-        smart_ptr<task> t = parallel_task(board.hply==0);
+        smart_ptr<task> t = parallel_task(depth);
         t->info = new search_info;
         t->info->alpha = alpha;
         t->info->beta = beta;
@@ -445,7 +445,7 @@ score_t search(const node_t& board, int depth)
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
                         smart_ptr<task> t = 
-                            para ? parallel_task(info->board.hply==0) : new task;
+                            para ? parallel_task(depth) : new task;
                         t->info = info;
                         DECL_SCORE(lo,-10000,0);
                         info->beta = -max;
@@ -457,7 +457,7 @@ score_t search(const node_t& board, int depth)
                 } else {
                     if(mm==0) {
                         smart_ptr<task> t = 
-                            para ? parallel_task(info->board.hply == 0) : new task;
+                            para ? parallel_task(depth) : new task;
                         t->info = info;
                         t->pfunc = search_f;
                         tasks.push_back(t);
@@ -662,11 +662,11 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
       if (makemove(info->board, g.b)) {
 
-          smart_ptr<task> t = para ? parallel_task(info->board.hply == 0) : new task;
+          smart_ptr<task> t = para ? parallel_task(depth) : new task;
 
           t->info = info;
           info->board.depth = info->depth = depth-1;
-          assert(depth >= 0 && depth < 7);
+          assert(depth >= 0);
           info->alpha = -beta;
           info->beta = -alpha;
           info->result = -beta;
@@ -866,6 +866,7 @@ void *do_mpi_thread(void *voidp) {
             0,WORK_COMPLETED,MPI_COMM_WORLD);
     mp->free();
 #endif
+    pthread_exit(NULL);
     return NULL;
 }
 
@@ -921,7 +922,7 @@ void *mpi_worker(void *)
                 MPI_Finalize();
                 exit(0);
             }
-            assert(board.depth >= 0 && board.depth < 7);
+            assert(board.depth >= 0);
             board.side =  mpi_data[n++];
             board.castle = mpi_data[n++];
             board.ep = mpi_data[n++];
