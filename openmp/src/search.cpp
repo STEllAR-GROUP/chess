@@ -932,6 +932,7 @@ void *mpi_worker(void *)
             score_t beta = mpi_data[n++];
             pfunc_v func = (pfunc_v)mpi_data[n++];
             int windex = mpi_data[n++];
+            int hist_size = mpi_data[n++];
 
             if(board.hply > 0) {
                 //int fifty_array[50];
@@ -941,8 +942,8 @@ void *mpi_worker(void *)
                         0,WORK_SUPPLEMENT,MPI_COMM_WORLD,&status);
                 assert(err == MPI_SUCCESS);
                 */
-                board.hist_dat.resize(board.hply);
-                for(int i=0;i<board.hply;i++)
+                board.hist_dat.resize(hist_size);
+                for(int i=0;i<hist_size;i++)
                     board.hist_dat[i] = mpi_data[n++];//fifty_array[i];
             }
             

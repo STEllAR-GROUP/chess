@@ -127,6 +127,7 @@ struct pthread_task : public task {
             return;
         joined = true;
         pthread_join(thread,NULL);
+        mpi_task_array[0].add(1);
     }
 };
 struct worker_result {
@@ -174,7 +175,7 @@ const int WORK_ASSIGN_MESSAGE = 1, WORK_COMPLETED = 2, WORK_SUPPLEMENT = 3;
 void int_from_chars(int& i1,char c1,char c2,char c3,char c4);
 void int_to_chars(int i1,char& c1,char& c2,char& c3,char& c4);
 
-const int mpi_ints = 2*16+12+50;
+const int mpi_ints = 2*16+13+50;
 struct mpi_task : public task {
     int windex;
     int dest;
@@ -218,7 +219,8 @@ struct mpi_task : public task {
             windex = result_alloc(info->board.hash,info->board.depth);
         assert(windex != -1);
         mpi_data[n++] = windex;
-        for(int i=0;i<info->board.hply;i++) {
+        mpi_data[n++] = info->board.hist_dat.size();
+        for(int i=0;i<info->board.hist_dat.size();i++) {
             mpi_data[n++] = info->board.hist_dat[i];
         }
 
@@ -247,6 +249,8 @@ struct mpi_task : public task {
         //info->result = results[info->board.hash][info->depth].get_result();
         info->result = results[windex].get_result();
         score_t s = info->result;
+        results[windex].depth = -1;
+        mpi_task_array[dest].add(1);
     }
 };
 
