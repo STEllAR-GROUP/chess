@@ -5,7 +5,13 @@
 #ifdef MPI_SUPPORT
 #include <mpi.h>
 #endif
+
+// Number of ints needed to
+// send board over MPI
 const int mpi_ints = 2*16+13+50;
+
+// if MPI is not turned on, mpi_rank will
+// be zero and mpi_size will be one.
 extern int mpi_rank, mpi_size;
 
 void *mpi_worker(void *);

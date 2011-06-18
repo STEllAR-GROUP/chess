@@ -328,10 +328,13 @@ int main(int argc, char *argv[])
         mpi_task_array.resize(mpi_size);
         for(int i=0;i<mpi_size;i++)
             mpi_task_array[i].add(threads_per_proc);
+#ifdef MPI_SUPPORT
+        // Just a diagnostic message announcing MPI is on
         std::cout << "MPI enabled" << std::endl;
         for(int i=0;i<mpi_size;i++)
             std::cout << mpi_task_array[i].add(0) << " ";
         std::cout << std::endl;
+#endif
         pthread_create(&rank_0_thread,NULL,mpi_worker,NULL);
     } else {
         mpi_worker(NULL);
