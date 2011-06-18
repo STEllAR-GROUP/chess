@@ -10,8 +10,6 @@
 #include <sys/time.h>
 
 #include "mpi_support.hpp"
-int mpi_size=1, mpi_rank=0;
-std::vector<pcounter> mpi_task_array;
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
