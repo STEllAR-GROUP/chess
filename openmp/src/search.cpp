@@ -306,8 +306,8 @@ score_t mtdf(const node_t& board,score_t f,int depth)
             g = search_ab(board,depth,lower,upper);
             break;
         } else {
-            alpha = max(lower,ADD_SCORE(g,    -(1+width/2)));
-            beta  = min(upper,ADD_SCORE(alpha, (1+width)));
+            alpha = max(g == lower ? lower+1 : lower,ADD_SCORE(g,    -(1+width/2)));
+            beta  = min(g == upper ? upper-1 : upper,ADD_SCORE(alpha, (1+width)));
         }
         g = search_ab(board,depth,alpha,beta);
         if(g < beta) {
@@ -505,6 +505,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     return z;
   }
 
+  DECL_SCORE(bad_max_val,-11000,board.hash);
+  score_t max_val = bad_max_val;
   score_t zscore;
   if(get_transposition_value(board,zscore)) {
       if(alpha < zscore) {
@@ -559,17 +561,21 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     } else
         val = -search_ab(p_board, depth-1, -beta, -alpha);
 
-    if (val > alpha)
+    if (val > max_val)
     {
-      set_transposition_value(board,val);
+        max_val = val;
+        if (val > alpha)
+        {
+            set_transposition_value(board,val);
 
-      alpha = val;
-      pthread_mutex_lock(&mutex);
-      if(board.ply >= pv.size())
-        pv.resize(board.ply+1);
-      pv[board.ply] = g;
-      pthread_mutex_unlock(&mutex);
-      max_move = g;
+            alpha = val;
+            pthread_mutex_lock(&mutex);
+            if(board.ply >= pv.size())
+                pv.resize(board.ply+1);
+            pv[board.ply] = g;
+            pthread_mutex_unlock(&mutex);
+            max_move = g;
+        }
     }
     j++;
     break;
@@ -583,7 +589,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
       move g = workq[j];
       smart_ptr<search_info> info = new search_info(board);
       if(chx_abort) {
-        DECL_SCORE(v,-11000,0);
+        DECL_SCORE(v,-10000,0);
         return v;
       }
 
@@ -611,20 +617,23 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
               tasks[n]->join();
               val = -tasks[n]->info->result;
 
-              if (val > alpha)
-              {
-                  set_transposition_value(board,val);
+              if (val > max_val) {
+                  max_val = val;
+                  if (val > alpha)
+                  {
+                      set_transposition_value(board,val);
 
-                  alpha = val;
-                  pthread_mutex_lock(&mutex);
-                  if(board.ply >= pv.size())
-                    pv.resize(board.ply+1);
-                  pv[board.ply] = info->mv;
-                  pthread_mutex_unlock(&mutex);
-                  max_move = info->mv;
+                      alpha = val;
+                      pthread_mutex_lock(&mutex);
+                      if(board.ply >= pv.size())
+                          pv.resize(board.ply+1);
+                      pv[board.ply] = info->mv;
+                      pthread_mutex_unlock(&mutex);
+                      max_move = info->mv;
+                      if(alpha >= beta)
+                          break;
+                  }
               }
-              if(alpha >= beta)
-                break;
           }
           tasks.clear();
           if(alpha >= beta)
@@ -644,7 +653,15 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     pthread_mutex_unlock(&mutex);
   }
 
-  return alpha;
+  /*
+   * This seems to be different from the pseudo-code
+   * offered by Aske Plaat, but without it I get wrong
+   * answers compared to minimax if this isn't done.
+   */
+  if(max_val == bad_max_val)
+    return alpha;
+
+  return max_val;
 }
 
 /* reps() returns the number of times the current position
