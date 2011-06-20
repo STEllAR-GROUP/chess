@@ -29,6 +29,10 @@ void init_board(node_t& board)
     board.hash = set_hash(board);  
 }
 
+bool board_equals(const node_t& b1,const node_t& b2) {
+    return memcmp(&b1,&b2,sizeof(node_t)) == 0;
+}
+
 
 // init_hash() initializes the random numbers used by set_hash().
 

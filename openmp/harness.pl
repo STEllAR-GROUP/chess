@@ -73,6 +73,7 @@ $anskey->{4}->{4} = "g5f7";
 $anskey->{4}->{5} = "g5f7";
 
 my $bad_score = -6666;
+my $tot_time = 0;
 
 for my $sm (("minimax","alphabeta","mtd-f")) {
     for(my $b=1;$b<=4;$b++) {
@@ -88,7 +89,8 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             if($sm eq "mtd-f") {
                 #sleep(1);
             }
-            open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
+            #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 0 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
@@ -116,6 +118,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 if(/Average time for run: (\d+) ms/) {
                     $tm = $1*1.0e-3;
                     $tm = 1.0e-3 if($tm < 1.0e-3);
+                    $tot_time += $tm;
                 }
             }
             if(defined($anskey->{$b}->{$ply})) {
@@ -138,6 +141,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             }
             $speedtab->{$b}->{$ply} = $tm;
             printf("%10s, %4d, %4d, %9d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
+            die $doc if($st =~ /VARIABLE/);
             if($sm eq "mtd-f") {
                 $fsup += 1 if($speedup > 1);
                 $fsup += 0.5 if($speedup == 1);
@@ -155,6 +159,8 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
 }
 
 printf("mtd-f over alpha speedup: avg=%3.2f geomtric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
+
+printf("total time: %3.2f\n",$tot_time);
 
 sub genbench {
     my $sm = shift;

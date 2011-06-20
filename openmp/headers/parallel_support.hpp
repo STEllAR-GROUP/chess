@@ -3,6 +3,7 @@
 
 #include "smart_ptr.hpp"
 #include "node.hpp"
+#include "score.hpp"
 
 extern bool par_enabled;
 int chx_threads_per_proc();

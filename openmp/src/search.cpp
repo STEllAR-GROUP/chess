@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "mpi_support.hpp"
 #include "here.hpp"
+#include "zkey.hpp"
 
 void capture_last(const node_t& board,std::vector<move>& workq);
 score_t multistrike(const node_t& board,score_t f,int depth);
@@ -33,7 +34,6 @@ bool multistrike_on = false;
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
-bucket_t hash_bucket[bucket_size];
 std::vector<move> pv;  // Principle Variation, used in iterative deepening
 
 /**
@@ -135,10 +135,11 @@ void *strike(void *vptr) {
 // think() calls a search function 
 int think(node_t& board,bool parallel)
 {
+  pv.clear();
+  for(int i=0;i<table_size;i++)
+    transposition_table[i].depth = -1;
   multistrike_on = false;
   chx_abort = false;
-  for(int i=0;i<bucket_size;i++)
-    hash_bucket[i].init();
   board.ply = 0;
   if(parallel) {
     para_depth_lo = 3;
@@ -201,6 +202,7 @@ int think(node_t& board,bool parallel)
         low = 1;
     for (int i = low; i <= depth[board.side]; i++) // Iterative deepening
     {
+      board.depth = i;
       f = search_ab(board, i, alpha, beta);
 
       if (i >= iter_depth)  // if our ply is greater than the iter_depth, then break
@@ -235,7 +237,7 @@ inline int figx(int n) {
 score_t multistrike(const node_t& board,score_t f,int depth)
 {
     score_t ret=0;
-    const int max_parallel = 5;
+    const int max_parallel = 30;
     const int fac = 600/max_parallel;//10*25/max_parallel;
     std::vector<smart_ptr<task> > tasks;
     DECL_SCORE(lower,-10000,0);
@@ -503,23 +505,15 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     return z;
   }
 
-  /*
-  if(mpi_rank==0 && depth >= zdepth) {
-    int b_index = get_bucket_index(board,depth);
-    hash_bucket[b_index].lock();
-    zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
-    if ((z->hash == board.hash)&&(z->depth == depth)) {
-        if(z->score >= beta)
-        {
-          score_t zscore = z->score;
-          hash_bucket[b_index].unlock();
-          return zscore;
-        }
-        alpha = max(alpha,z->score);
-    }
-    hash_bucket[b_index].unlock();
+  score_t zscore;
+  if(get_transposition_value(board,zscore)) {
+      if(alpha < zscore) {
+          alpha = zscore;
+          if(alpha >= beta) {
+              return alpha;
+          }
+      }
   }
-  */
 
   std::vector<move> workq;
   move max_move;
@@ -549,7 +543,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
    * It is a 'Younger Brothers Wait' strategy.
    **/
   for(;j < worksq;j++) {
-    if(alpha > beta)
+    if(alpha >= beta)
       continue;
     move g = workq[j];
     node_t p_board = board;
@@ -559,6 +553,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
     }
 
     assert(depth >= 1);
+    p_board.depth = depth-1;
     if(depth == 1 && capture(board,g)) {
         val = -qeval(p_board, -beta, -alpha);
     } else
@@ -566,19 +561,14 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
     if (val > alpha)
     {
-      int b_index = get_bucket_index(board,depth);
-      hash_bucket[b_index].lock();
-      zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
+      set_transposition_value(board,val);
 
-      z->hash = board.hash;
-      z->score = val;
-      z->depth = depth;
-      hash_bucket[b_index].unlock();
-    
       alpha = val;
+      pthread_mutex_lock(&mutex);
       if(board.ply >= pv.size())
         pv.resize(board.ply+1);
       pv[board.ply] = g;
+      pthread_mutex_unlock(&mutex);
       max_move = g;
     }
     j++;
@@ -623,19 +613,14 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
               if (val > alpha)
               {
-                  int b_index = get_bucket_index(board,depth);
-                  hash_bucket[b_index].lock();
-                  zkey_t* z = hash_bucket[b_index].get(get_entry_index(board,depth));
-
-                  z->hash = board.hash;
-                  z->score = val;
-                  z->depth = depth;
-                  hash_bucket[b_index].unlock();
+                  set_transposition_value(board,val);
 
                   alpha = val;
+                  pthread_mutex_lock(&mutex);
                   if(board.ply >= pv.size())
                     pv.resize(board.ply+1);
                   pv[board.ply] = info->mv;
+                  pthread_mutex_unlock(&mutex);
                   max_move = info->mv;
               }
               if(alpha >= beta)
@@ -674,7 +659,7 @@ int reps(const node_t& board)
   for (i = board.hply - board.fifty; i < board.hply; ++i) {
     assert(i < board.hist_dat.size());
     assert(board.hash != 0);
-    if (board.hist_dat[i] == board.hash)
+    if (board.hist_dat.get(i) == board.hash)
       ++r;
   }
   return r;
@@ -730,4 +715,37 @@ void sort_pv(std::vector<move>& workq, int ply)
       break;
     }
   }
+}
+
+//#define TRANSPOSE_ON 1
+
+zkey_t transposition_table[table_size];
+
+bool get_transposition_value(const node_t& board,score_t& val) {
+    bool gotten = false;
+#ifdef TRANSPOSE_ON
+    int n = abs(board.hash^board.depth) % table_size;
+    zkey_t *z = &transposition_table[n];
+    pthread_mutex_lock(&z->mut);
+    if(z->depth >= 0 && board_equals(board,z->board)) {
+        val = z->score;
+        gotten = true;
+    }
+    pthread_mutex_unlock(&z->mut);
+#endif
+    return gotten;
+}
+
+void set_transposition_value(const node_t& board,score_t val) {
+#ifdef TRANSPOSE_ON
+    int n = abs(board.hash^board.depth) % table_size;
+    zkey_t *z = &transposition_table[n];
+    if(board.depth < z->depth)
+        return;
+    pthread_mutex_lock(&z->mut);
+    z->board = board;
+    z->score = val;
+    z->depth = board.depth;
+    pthread_mutex_unlock(&z->mut);
+#endif
 }

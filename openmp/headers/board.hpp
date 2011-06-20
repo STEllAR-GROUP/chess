@@ -18,4 +18,5 @@ void gen_push(std::vector<move>& workq, const node_t& board, int from, int to, i
 void gen_promote(std::vector<move>& workq, int from, int to, int bits);
 bool makemove(node_t& board, const move_bytes m);
 void takeback(node_t& board);
+bool board_equals(const node_t& b1,const node_t& b2);
 #endif

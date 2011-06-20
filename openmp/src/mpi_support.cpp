@@ -115,8 +115,8 @@ void *do_mpi_thread(void *voidp) {
         result = search(mp->info->board,mp->info->board.depth);
     else if(mp->pfunc == qeval_f)
         result = qeval(mp->info->board,mp->info->alpha,mp->info->beta);
-    //else if(func == strike_f)
-    //result = strike(board,board.depth,alpha,beta);
+    else if(mp->pfunc == strike_f)
+        ;
     else
         abort();
     int result_data[2];
