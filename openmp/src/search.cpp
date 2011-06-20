@@ -717,7 +717,7 @@ void sort_pv(std::vector<move>& workq, int ply)
   }
 }
 
-//#define TRANSPOSE_ON 1
+#define TRANSPOSE_ON 1
 
 zkey_t transposition_table[table_size];
 
