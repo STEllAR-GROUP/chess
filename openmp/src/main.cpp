@@ -670,7 +670,7 @@ char *move_str(move_bytes m)
 
 // print_board() prints the board
 
-void print_board(node_t& board, std::ostream& out)
+void print_board(const node_t& board, std::ostream& out)
 {
   int i;
 

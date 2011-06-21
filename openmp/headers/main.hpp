@@ -15,7 +15,7 @@ bool parseIni(const char * filename);
 int main(int argc, char *argv[]);
 int parse_move(std::vector<move>& workq, const char *s);
 char *move_str(move_bytes m);
-void print_board(node_t& board, std::ostream& out);
+void print_board(const node_t& board, std::ostream& out);
 int print_result(std::vector<move>& workq, node_t& board);
 void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel);
 int get_ms();
