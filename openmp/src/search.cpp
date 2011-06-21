@@ -151,6 +151,7 @@ int think(node_t& board,bool parallel)
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
+    assert(move_to_make.u != INVALID_MOVE);
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
@@ -289,15 +290,15 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     // better with a coarser evaluation function. Since
     // this maps readily onto a wider, non-zero width
     // we provide a width setting for optimization.
-    const int start_width = 8;
+    const int start_width = 4;//atoi(getenv("START_WIDTH"));
     // Sometimes MTD-f gets stuck and can try many
     // times without finding an answer. If this happens
     // we want to set a threshold for bailing out.
-    const int max_tries = 4;
+    const int max_tries = 4;//atoi(getenv("MAX_TRIES"));
     // If our first guess isn't right, chances are
     // we want to search a little wider the next try
     // to improve our odds.
-    const int grow_width = 4;
+    const int grow_width = 4;//atoi(getenv("GROW_WIDTH"));
     int width = start_width;
     const int max_width = start_width+grow_width*max_tries;
     score_t alpha = lower, beta = upper;
@@ -481,187 +482,195 @@ void *search_ab_pt(void *vptr)
 
 score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 {
-  assert(depth >= 0);
-  // if we are a leaf node, return the value from the eval() function
-  if (depth == 0)
-  {
-    evaluator ev;
-    DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
-    return s;
-  }
-  assert(depth >= 1);
-  /* if this isn't the root of the search tree (where we have
-     to pick a move and can't simply return 0) then check to
-     see if the position is a repeat. if so, we can assume that
-     this line is a draw and return 0. */
-  if (board.ply && reps(board)) {
-    DECL_SCORE(z,0,board.hash);
-    return z;
-  }
-
-  // fifty move draw rule
-  if (board.fifty >= 100) {
-    DECL_SCORE(z,0,board.hash);
-    return z;
-  }
-
-  DECL_SCORE(bad_max_val,-11000,board.hash);
-  score_t max_val = bad_max_val;
-  score_t zscore;
-  if(get_transposition_value(board,zscore)) {
-      if(alpha < zscore) {
-          alpha = zscore;
-          if(alpha >= beta) {
-              return alpha;
-          }
-      }
-  }
-
-  std::vector<move> workq;
-  move max_move;
-  max_move.u = INVALID_MOVE; 
-
-  gen(workq, board); // Generate the moves
-
-  /*
-  if(multistrike_on) {
-    std::random_shuffle(workq.begin(),workq.end());
-    capture_last(board,workq);
-  }
-  */
-  //if(!multistrike_on)
-  sort_pv(workq, board.ply); // Part of iterative deepening
-  
-  const int worksq = workq.size();
-  std::vector<smart_ptr<task> > tasks;
-  
-  int j=0;
-  score_t val;
-  bool para = (para_depth_lo == depth)||(para_depth_hi == depth);
-  
-  /**
-   * This loop will execute once and it will do it
-   * sequentially. This should produce good cut-offs.
-   * It is a 'Younger Brothers Wait' strategy.
-   **/
-  for(;j < worksq;j++) {
-    if(alpha >= beta)
-      continue;
-    move g = workq[j];
-    node_t p_board = board;
-
-    if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
-      continue;                    // legal, then go to the next one
+    assert(depth >= 0);
+    // if we are a leaf node, return the value from the eval() function
+    if (depth == 0)
+    {
+        evaluator ev;
+        DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
+        return s;
     }
 
-    assert(depth >= 1);
-    p_board.depth = depth-1;
-    if(depth == 1 && capture(board,g)) {
-        val = -qeval(p_board, -beta, -alpha);
-    } else
-        val = -search_ab(p_board, depth-1, -beta, -alpha);
+    /* if this isn't the root of the search tree (where we have
+       to pick a move and can't simply return 0) then check to
+       see if the position is a repeat. if so, we can assume that
+       this line is a draw and return 0. */
+    if (board.ply && reps(board)) {
+        DECL_SCORE(z,0,board.hash);
+        return z;
+    }
 
-    if (val > max_val)
-    {
-        max_val = val;
-        if (val > alpha)
-        {
-            set_transposition_value(board,val);
+    // fifty move draw rule
+    if (board.fifty >= 100) {
+        DECL_SCORE(z,0,board.hash);
+        return z;
+    }
 
-            alpha = val;
-            pthread_mutex_lock(&mutex);
-            if(board.ply >= pv.size())
-                pv.resize(board.ply+1);
-            pv[board.ply] = g;
-            pthread_mutex_unlock(&mutex);
-            max_move = g;
+    DECL_SCORE(bad_max_val,-11000,board.hash);
+    score_t max_val = bad_max_val;
+    score_t zscore;
+    if(get_transposition_value(board,zscore)) {
+        if(alpha < zscore) {
+            alpha = zscore;
         }
     }
-    j++;
-    break;
-  }
-  
-  // loop through the moves
-  bool last = false;
-  for (; j < worksq; j++) {
-      assert(!last);
-      last = (j+1==worksq);
-      move g = workq[j];
-      smart_ptr<search_info> info = new search_info(board);
-      if(chx_abort) {
-        DECL_SCORE(v,-10000,0);
-        return v;
-      }
+    if(alpha >= beta)
+        return alpha;
 
-      if (makemove(info->board, g.b)) {
+    std::vector<move> workq;
+    move max_move;
+    max_move.u = INVALID_MOVE; 
 
-          smart_ptr<task> t = para ? parallel_task(depth) : new task;
+    gen(workq, board); // Generate the moves
 
-          t->info = info;
-          info->board.depth = info->depth = depth-1;
-          assert(depth >= 0);
-          info->alpha = -beta;
-          info->beta = -alpha;
-          info->result = -beta;
-          info->mv = g;
-          if(depth == 1 && capture(board,g))
-              t->pfunc = qeval_f;
-          else
-              t->pfunc = search_ab_f;
-          t->start();
-          tasks.push_back(t);
-      }
-      if(!para || tasks.size() >= 3 || last) {
-          for(int n=0;n<tasks.size();n++) {
-              smart_ptr<search_info> info = tasks[n]->info;
-              tasks[n]->join();
-              val = -tasks[n]->info->result;
+    /*
+       if(multistrike_on) {
+       std::random_shuffle(workq.begin(),workq.end());
+       capture_last(board,workq);
+       }
+     */
+    //if(!multistrike_on)
+    sort_pv(workq, board.ply); // Part of iterative deepening
 
-              if (val > max_val) {
-                  max_val = val;
-                  if (val > alpha)
-                  {
-                      set_transposition_value(board,val);
+    const int worksq = workq.size();
+    std::vector<smart_ptr<task> > tasks;
 
-                      alpha = val;
-                      pthread_mutex_lock(&mutex);
-                      if(board.ply >= pv.size())
-                          pv.resize(board.ply+1);
-                      pv[board.ply] = info->mv;
-                      pthread_mutex_unlock(&mutex);
-                      max_move = info->mv;
-                      if(alpha >= beta)
-                          break;
-                  }
-              }
-          }
-          tasks.clear();
-          if(alpha >= beta)
-              break;
-      }
-  }
-  assert(tasks.size()==0);
+    int j=0;
+    score_t val;
+    bool para = (para_depth_lo == depth)||(para_depth_hi == depth);
 
-  /**
-   * If we're doing mtd-f, it's possible that all
-   * the moves were cut off. Thus we need to check
-   * for INVALID_MOVE
-   **/
-  if (board.ply == 0 && max_move.u != INVALID_MOVE) {
-    pthread_mutex_lock(&mutex);
-    move_to_make = max_move;
-    pthread_mutex_unlock(&mutex);
-  }
+    /**
+     * This loop will execute once and it will do it
+     * sequentially. This should produce good cut-offs.
+     * It is a 'Younger Brothers Wait' strategy.
+     **/
+    for(;j < worksq;j++) {
+        if(alpha >= beta)
+            continue;
+        move g = workq[j];
+        node_t p_board = board;
 
-  /*
-   * This seems to be different from the pseudo-code
-   * offered by Aske Plaat, but without it I get wrong
-   * answers compared to minimax if this isn't done.
-   */
-  if(max_val == bad_max_val)
-    return alpha;
+        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+            continue;                    // legal, then go to the next one
+        }
 
-  return max_val;
+        assert(depth >= 1);
+        p_board.depth = depth-1;
+        if(depth == 1 && capture(board,g)) {
+            val = -qeval(p_board, -beta, -alpha);
+        } else
+            val = -search_ab(p_board, depth-1, -beta, -alpha);
+
+        if (val > max_val)
+        {
+            max_val = val;
+            max_move = g;
+            if (val > alpha)
+            {
+                set_transposition_value(board,val);
+
+                alpha = val;
+                pthread_mutex_lock(&mutex);
+                if(board.ply >= pv.size())
+                    pv.resize(board.ply+1);
+                pv[board.ply] = g;
+                pthread_mutex_unlock(&mutex);
+            }
+        }
+        j++;
+        break;
+    }
+
+    // loop through the moves
+    bool last = false;
+    for (; j < worksq; j++) {
+        assert(!last);
+        last = (j+1==worksq);
+        move g = workq[j];
+        smart_ptr<search_info> info = new search_info(board);
+        if(chx_abort) {
+            DECL_SCORE(v,-10000,0);
+            return v;
+        }
+
+        if (makemove(info->board, g.b)) {
+
+            smart_ptr<task> t = para ? parallel_task(depth) : new task;
+
+            t->info = info;
+            info->board.depth = info->depth = depth-1;
+            assert(depth >= 0);
+            info->alpha = -beta;
+            info->beta = -alpha;
+            info->result = -beta;
+            info->mv = g;
+            if(depth == 1 && capture(board,g))
+                t->pfunc = qeval_f;
+            else
+                t->pfunc = search_ab_f;
+            t->start();
+            tasks.push_back(t);
+        }
+        if(!para || tasks.size() >= 3 || last) {
+            for(int n=0;n<tasks.size();n++) {
+                smart_ptr<search_info> info = tasks[n]->info;
+                tasks[n]->join();
+                val = -tasks[n]->info->result;
+
+                if (val > max_val) {
+                    max_val = val;
+                    max_move = info->mv;
+                    if (val > alpha)
+                    {
+                        set_transposition_value(board,val);
+
+                        alpha = val;
+                        pthread_mutex_lock(&mutex);
+                        if(board.ply >= pv.size())
+                            pv.resize(board.ply+1);
+                        pv[board.ply] = info->mv;
+                        pthread_mutex_unlock(&mutex);
+                        if(alpha >= beta)
+                            break;
+                    }
+                }
+            }
+            tasks.clear();
+            if(alpha >= beta)
+                break;
+        }
+    }
+    assert(tasks.size()==0);
+
+    // no legal moves? then we're in checkmate or stalemate
+    if (max_move.u == INVALID_MOVE) {
+        if (in_check(board, board.side))
+        {
+            DECL_SCORE(s,-10000 + board.ply,board.hash);
+            return s;
+        }
+        else
+        {
+            DECL_SCORE(z,0,board.hash);
+            return z;
+        }
+    }
+
+    if (board.ply == 0) {
+        assert(max_move.u != INVALID_MOVE);
+        pthread_mutex_lock(&mutex);
+        move_to_make = max_move;
+        pthread_mutex_unlock(&mutex);
+    }
+
+    // fifty move draw rule
+    if (board.fifty >= 100) {
+        DECL_SCORE(z,0,board.hash);
+        return z;
+    }
+
+    assert(max_val != bad_max_val);
+    return max_val;
 }
 
 /* reps() returns the number of times the current position
@@ -734,7 +743,7 @@ void sort_pv(std::vector<move>& workq, int ply)
   }
 }
 
-#define TRANSPOSE_ON 1
+//#define TRANSPOSE_ON 1
 
 zkey_t transposition_table[table_size];
 
