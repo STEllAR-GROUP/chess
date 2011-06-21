@@ -167,9 +167,9 @@ sub genbench {
     my $b = shift;
     my $ply = shift;
     my $fd = new FileHandle;
-    my $runs = 3;
+    my $runs = 9;
     $runs = 1 if($sm eq "minimax");
-    $runs = 1 if($ply > 5);
+    $runs = 3 if($ply > 5);
     open($fd,">.bench.ini");
 print $fd qq{
 ; settings.ini

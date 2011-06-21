@@ -95,4 +95,7 @@ typedef signed int score_t;
 #define ADD_SCORE(var,val) var + val
 #endif
 
+const DECL_SCORE(bad_min_score,-11000,0);
+const DECL_SCORE(bad_max_score, 11000,0);
+
 #endif

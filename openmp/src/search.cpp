@@ -506,13 +506,15 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
         return z;
     }
 
-    DECL_SCORE(bad_max_val,-11000,board.hash);
-    score_t max_val = bad_max_val;
-    score_t zscore;
-    if(get_transposition_value(board,zscore)) {
-        if(alpha < zscore) {
-            alpha = zscore;
-        }
+    score_t max_val = bad_min_score;
+    score_t zlo,zhi;
+    if(get_transposition_value(board,zlo,zhi)) {
+        if(zlo >= beta)
+            return zlo;
+        if(alpha >= zhi)
+            return zhi;
+        alpha = max(zlo,alpha);
+        beta  = min(zhi,beta);
     }
     if(alpha >= beta)
         return alpha;
@@ -567,8 +569,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
             max_move = g;
             if (val > alpha)
             {
-                set_transposition_value(board,val);
-
                 alpha = val;
                 pthread_mutex_lock(&mutex);
                 if(board.ply >= pv.size())
@@ -622,8 +622,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
                     max_move = info->mv;
                     if (val > alpha)
                     {
-                        set_transposition_value(board,val);
-
                         alpha = val;
                         pthread_mutex_lock(&mutex);
                         if(board.ply >= pv.size())
@@ -669,7 +667,11 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
         return z;
     }
 
-    assert(max_val != bad_max_val);
+    set_transposition_value(board,
+        max(zlo,max_val >= beta  ? max_val : bad_min_score),
+        min(zhi,max_val <= alpha ? max_val : bad_max_score));
+
+    assert(max_val != bad_min_score);
     return max_val;
 }
 
@@ -747,22 +749,26 @@ void sort_pv(std::vector<move>& workq, int ply)
 
 zkey_t transposition_table[table_size];
 
-bool get_transposition_value(const node_t& board,score_t& val) {
+bool get_transposition_value(const node_t& board,score_t& lower,score_t& uppper) {
     bool gotten = false;
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
     zkey_t *z = &transposition_table[n];
     pthread_mutex_lock(&z->mut);
     if(z->depth >= 0 && board_equals(board,z->board)) {
-        val = z->score;
+        lower = z->lower;
+        upper = z->upper;
         gotten = true;
+    } else {
+        lower = bad_min_score;
+        upper = bad_max_score;
     }
     pthread_mutex_unlock(&z->mut);
 #endif
     return gotten;
 }
 
-void set_transposition_value(const node_t& board,score_t val) {
+void set_transposition_value(const node_t& board,score_t lower,score_t upper) {
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
     zkey_t *z = &transposition_table[n];
@@ -770,7 +776,8 @@ void set_transposition_value(const node_t& board,score_t val) {
         return;
     pthread_mutex_lock(&z->mut);
     z->board = board;
-    z->score = val;
+    z->lower = lower;
+    z->upper = upper;
     z->depth = board.depth;
     pthread_mutex_unlock(&z->mut);
 #endif

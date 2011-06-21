@@ -9,7 +9,7 @@
 const int table_size = 4096;
 
 struct zkey_t {
-  score_t score;
+  score_t lower, upper;
   pthread_mutex_t mut;
   node_t board;
   int depth;
@@ -20,8 +20,8 @@ struct zkey_t {
 
 extern zkey_t transposition_table[table_size];
 
-bool get_transposition_value(const node_t& board,score_t& val);
+bool get_transposition_value(const node_t& board,score_t& lower,score_t& upper);
 
-inline void set_transposition_value(const node_t& board,score_t val);
+inline void set_transposition_value(const node_t& board,score_t lower,score_t upper);
 
 #endif
