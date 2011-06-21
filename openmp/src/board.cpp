@@ -125,6 +125,7 @@ bool in_check(const node_t& board, int s)
     for (i = 0; i < 64; ++i)
         if (board.piece[i] == KING && board.color[i] == s)
             return attack(board, i, s ^ 1);
+    assert(false);
     return true;  /* shouldn't get here */
 }
 
@@ -331,6 +332,11 @@ bool makemove(node_t& board,const move_bytes m)
     if (m.bits & 2) {
         int from, to;
         needs_set_hash = true;
+        // It's not legal to castle if
+        // the king is not on the from
+        // square. SRB
+        if(board.piece[m.from] != KING || board.color[m.from] != board.side)
+            return false;
 
         if (in_check(board, board.side))
             return false;
