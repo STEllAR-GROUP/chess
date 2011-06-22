@@ -8,7 +8,7 @@
 #include "hash.hpp"
 #include "FixedVec.hpp"
 
-struct node_t { 
+struct base_node_t { 
     hash_t hash;
     char color[64];
     char piece[64];
@@ -23,7 +23,9 @@ struct node_t {
     int ply;
     int hply;
     //std::vector<hash_t> hist_dat;
-    FixedVec<hash_t,50> hist_dat;
+};
+struct node_t : public base_node_t {
+    FixedVec<hash_t,100> hist_dat;
 };
 
 #endif
