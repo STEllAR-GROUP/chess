@@ -326,8 +326,9 @@ int main(int argc, char *argv[])
     int threads_per_proc = chx_threads_per_proc();
     if(mpi_rank==0) {
         mpi_task_array.resize(mpi_size);
-        for(int i=0;i<mpi_size;i++)
-            mpi_task_array[i].add(threads_per_proc);
+        for(int i=1;i<mpi_size;i++)
+            mpi_task_array[i].add(1);
+        mpi_task_array[0].add(threads_per_proc);
 #ifdef MPI_SUPPORT
         // Just a diagnostic message announcing MPI is on
         std::cout << "MPI enabled" << std::endl;
@@ -337,6 +338,8 @@ int main(int argc, char *argv[])
 #endif
         pthread_create(&rank_0_thread,NULL,mpi_worker,NULL);
     } else {
+        mpi_task_array.resize(1);
+        mpi_task_array[0].add(threads_per_proc);
         mpi_worker(NULL);
         return 255;
     }
