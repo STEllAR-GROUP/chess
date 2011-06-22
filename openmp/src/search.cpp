@@ -12,20 +12,10 @@
 #include "here.hpp"
 #include "zkey.hpp"
 
-void capture_last(const node_t& board,std::vector<move>& workq);
+#define PV_ON 1
+
+const int num_proc = chx_threads_per_proc();
 score_t multistrike(const node_t& board,score_t f,int depth);
-
-// Maximum number of pthreads we can create
-// Even on a two core machine we want 40 or 50
-// here to get the factor 2 speedup.
-const int max_pcount = 64;
-
-// Depth at which to spawn pthreads
-int para_depth_lo, para_depth_hi;
-
-// Count of how many more threads we can create
-// when it reaches zero, we have to stop making them
-int pcount = max_pcount;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 bool chx_abort = false;
@@ -34,7 +24,25 @@ bool multistrike_on = false;
 inline int min(int a,int b) { return a < b ? a : b; }
 inline int max(int a,int b) { return a > b ? a : b; }
 
-std::vector<move> pv;  // Principle Variation, used in iterative deepening
+struct safe_move {
+    pthread_mutex_t mut;
+    move mv;
+    safe_move() {
+        pthread_mutex_init(&mut,NULL);
+    }
+    void set(move mv_) {
+        pthread_mutex_lock(&mut);
+        mv = mv_;
+        pthread_mutex_unlock(&mut);
+    }
+    move get() {
+        pthread_mutex_lock(&mut);
+        move m = mv;
+        pthread_mutex_unlock(&mut);
+        return m;
+    }
+};
+std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
 
 /**
  * This determines whether we have a capture. It's not sophisticated
@@ -102,15 +110,13 @@ void *qeval_pt(void *vptr)
 }
 
 smart_ptr<task> parallel_task(int depth) {
-    if(mpi_rank != 0 || depth <= 3 || depth % 2 == 1) {
-        smart_ptr<task> t = new task;
-        return t;
+    if(depth >= 3) {
+        if(mpi_task_array[0].dec()) {
+            smart_ptr<task> t = new pthread_task;
+            return t;
+        }
     }
-    bool par = mpi_task_array[0].dec();
-    if(par) {
-        smart_ptr<task> t = new pthread_task;
-        return t;
-    } else {
+    if(depth >= 4) {
         for(int i=1;i<mpi_size;i++) {
             if(mpi_task_array[i].dec()) {
                 smart_ptr<task> t = new mpi_task(i);
@@ -118,7 +124,7 @@ smart_ptr<task> parallel_task(int depth) {
             }
         }
     }
-    smart_ptr<task> t = new task;
+    smart_ptr<task> t = new serial_task;
     return t;
 }
 
@@ -135,19 +141,23 @@ void *strike(void *vptr) {
 // think() calls a search function 
 int think(node_t& board,bool parallel)
 {
+#ifdef PV_ON
   pv.clear();
-  for(int i=0;i<table_size;i++)
+  pv.resize(depth[board.side]);
+  move mvz;
+  mvz.u = INVALID_MOVE;
+  for(int i=0;i<pv.size();i++) {
+    pv[i].set(mvz);
+  }
+#endif
+  for(int i=0;i<table_size;i++) {
     transposition_table[i].depth = -1;
+    transposition_table[i].lower = bad_min_score;
+    transposition_table[i].upper = bad_max_score;
+  }
   multistrike_on = false;
   chx_abort = false;
   board.ply = 0;
-  if(parallel) {
-    para_depth_lo = 3;
-    para_depth_hi = 5;
-  } else {
-    para_depth_lo = -1;
-    para_depth_hi = -1;
-  }
 
   if (search_method == MINIMAX) {
     score_t f = search(board, depth[board.side]);
@@ -256,10 +266,9 @@ score_t multistrike(const node_t& board,score_t f,int depth)
         //ubound=max(ubound,beta);
         beta++;
         smart_ptr<task> t = parallel_task(depth);
-        t->info = new search_info;
+        t->info = new search_info(board);
         t->info->alpha = alpha;
         t->info->beta = beta;
-        t->info->board = board;
         t->info->depth = depth;
         t->pfunc = strike_f;
         t->start();
@@ -326,6 +335,11 @@ score_t mtdf(const node_t& board,score_t f,int depth)
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
     info->result = search(info->board,info->depth);
+    if(info->par) {
+        info->set_done();
+        mpi_task_array[0].add(1);
+        pthread_exit(NULL);
+    }
     return NULL;
 }
 
@@ -384,7 +398,7 @@ score_t search(const node_t& board, int depth)
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
                         smart_ptr<task> t = 
-                            para ? parallel_task(depth) : new task;
+                            parallel_task(depth);
                         t->info = info;
                         DECL_SCORE(lo,-10000,0);
                         info->beta = -max;
@@ -396,15 +410,16 @@ score_t search(const node_t& board, int depth)
                 } else {
                     if(mm==0) {
                         smart_ptr<task> t = 
-                            para ? parallel_task(depth) : new task;
+                            parallel_task(depth);
                         t->info = info;
                         t->pfunc = search_f;
                         tasks.push_back(t);
                         t->start();
+                        para = t->info->par;
                     }
                 }
             }
-            if(!para||tasks.size()>=256||last) {
+            if(!para||tasks.size()>=num_proc/2||last) {
                 for(int n=0;n<tasks.size();n++) {
                     smart_ptr<search_info> info = tasks[n]->info;
                     tasks[n]->join();
@@ -474,10 +489,15 @@ score_t search(const node_t& board, int depth)
  
 void *search_ab_pt(void *vptr)
 {
-  search_info *info = (search_info *)vptr;
-  assert(info->depth == info->board.depth);
-  info->result = search_ab(info->board,info->depth, info->alpha, info->beta);
-  return NULL;
+    search_info *info = (search_info *)vptr;
+    assert(info->depth == info->board.depth);
+    info->result = search_ab(info->board,info->depth, info->alpha, info->beta);
+    if(info->par) {
+        info->set_done();
+        mpi_task_array[0].add(1);
+        pthread_exit(NULL);
+    }
+    return NULL;
 }
 
 score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
@@ -525,21 +545,16 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
     gen(workq, board); // Generate the moves
 
-    /*
-       if(multistrike_on) {
-       std::random_shuffle(workq.begin(),workq.end());
-       capture_last(board,workq);
-       }
-     */
-    //if(!multistrike_on)
+#ifdef PV_ON
     sort_pv(workq, board.ply); // Part of iterative deepening
+#endif
 
     const int worksq = workq.size();
     std::vector<smart_ptr<task> > tasks;
 
     int j=0;
     score_t val;
-    bool para = (para_depth_lo == depth)||(para_depth_hi == depth);
+    bool para = false;
 
     /**
      * This loop will execute once and it will do it
@@ -570,11 +585,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
             if (val > alpha)
             {
                 alpha = val;
-                pthread_mutex_lock(&mutex);
-                if(board.ply >= pv.size())
-                    pv.resize(board.ply+1);
-                pv[board.ply] = g;
-                pthread_mutex_unlock(&mutex);
+#ifdef PV_ON
+                pv[board.ply].set(g);
+#endif
             }
         }
         j++;
@@ -595,7 +608,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
         if (makemove(info->board, g.b)) {
 
-            smart_ptr<task> t = para ? parallel_task(depth) : new task;
+            smart_ptr<task> t = parallel_task(depth);
 
             t->info = info;
             info->board.depth = info->depth = depth-1;
@@ -610,8 +623,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
                 t->pfunc = search_ab_f;
             t->start();
             tasks.push_back(t);
+            para = t->info->par;
         }
-        if(!para || tasks.size() >= 3 || last) {
+        if(!para || tasks.size() >= num_proc/2 || last) {
             for(int n=0;n<tasks.size();n++) {
                 smart_ptr<search_info> info = tasks[n]->info;
                 tasks[n]->join();
@@ -623,11 +637,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
                     if (val > alpha)
                     {
                         alpha = val;
-                        pthread_mutex_lock(&mutex);
-                        if(board.ply >= pv.size())
-                            pv.resize(board.ply+1);
-                        pv[board.ply] = info->mv;
-                        pthread_mutex_unlock(&mutex);
+#ifdef PV_ON
+                        pv[board.ply].set(info->mv);
+#endif
                         if(alpha >= beta)
                             break;
                     }
@@ -669,7 +681,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
 
     set_transposition_value(board,
         max(zlo,max_val >= beta  ? max_val : bad_min_score),
-        min(zhi,max_val <= alpha ? max_val : bad_max_score));
+        min(zhi,max_val < alpha ? max_val : bad_max_score));
+
 
     assert(max_val != bad_min_score);
     return max_val;
@@ -687,7 +700,7 @@ int reps(const node_t& board)
   for (i = board.hply - board.fifty; i < board.hply; ++i) {
     assert(i < board.hist_dat.size());
     assert(board.hash != 0);
-    if (board.hist_dat.get(i) == board.hash)
+    if (board.hist_dat[i] == board.hash)
       ++r;
   }
   return r;
@@ -709,32 +722,15 @@ bool compare_moves(move a, move b)
 }
 */
 
-void capture_last(const node_t& board,std::vector<move>& workq)
+void sort_pv(std::vector<move>& workq, int index)
 {
-    int ilo = 0, ihi = workq.size()-1;
-    while(true) {
-        while(!capture(board,workq[ilo]))
-            ilo++;
-        while(capture(board,workq[ihi]))
-            ihi--;
-        if(ilo < ihi) {
-            move tmp = workq[ilo];
-            workq[ilo] = workq[ihi];
-            workq[ihi] = tmp;
-        } else {
-            break;
-        }
-    }
-}
-
-void sort_pv(std::vector<move>& workq, int ply)
-{
-  if(ply >= pv.size())
+  assert(index < pv.size());
+  move temp = pv[index].get();
+  if(temp.u == INVALID_MOVE)
     return;
   for(int i = 0; i < workq.size() ; i++)
   {
-    move temp;
-    if (workq[i].u == pv[ply].u) /* If we have a move in the work queue that is the 
+    if (workq[i].u == temp.u) /* If we have a move in the work queue that is the 
                                     same as the best move we have searched before */
     {
       temp = workq[0];
@@ -745,11 +741,11 @@ void sort_pv(std::vector<move>& workq, int ply)
   }
 }
 
-//#define TRANSPOSE_ON 1
+#define TRANSPOSE_ON 1
 
 zkey_t transposition_table[table_size];
 
-bool get_transposition_value(const node_t& board,score_t& lower,score_t& uppper) {
+bool get_transposition_value(const node_t& board,score_t& lower,score_t& upper) {
     bool gotten = false;
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
@@ -772,13 +768,13 @@ void set_transposition_value(const node_t& board,score_t lower,score_t upper) {
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
     zkey_t *z = &transposition_table[n];
-    if(board.depth < z->depth)
-        return;
     pthread_mutex_lock(&z->mut);
-    z->board = board;
-    z->lower = lower;
-    z->upper = upper;
-    z->depth = board.depth;
+    if(board.depth >= z->depth) {
+        z->board = board;
+        z->lower = lower;
+        z->upper = upper;
+        z->depth = board.depth;
+    }
     pthread_mutex_unlock(&z->mut);
 #endif
 }

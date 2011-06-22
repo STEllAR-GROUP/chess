@@ -16,6 +16,10 @@ void *strike(void *);
 void *qeval_pt(void *);
 
 struct search_info {
+    pthread_mutex_t mut;
+    pthread_cond_t cond;
+    bool par;
+    bool par_done;
     score_t result;
     int depth;
     int incr;
@@ -23,8 +27,26 @@ struct search_info {
     score_t beta;
     node_t board;
     move mv;
-    search_info(const node_t& board_) : board(board_) {}
-    search_info() {}
+    void set_parallel() {
+        par = true;
+        par_done = false;
+        pthread_mutex_init(&mut,NULL);
+        pthread_cond_init(&cond,NULL);
+    }
+    void set_done() {
+        pthread_mutex_lock(&mut);
+        par_done = true;
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&mut);
+    }
+    void wait_for_done() {
+        pthread_mutex_lock(&mut);
+        while(!par_done)
+            pthread_cond_wait(&cond,&mut);
+        pthread_mutex_unlock(&mut);
+    }
+    search_info(const node_t& board_) : board(board_), par(false),
+        par_done(true) {}
 };
 
 enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
@@ -35,6 +57,14 @@ struct task {
     pfunc_v pfunc;
     task() : pfunc(no_f) {}
     virtual ~task() {}
+
+    virtual void start() = 0;
+
+    virtual void join() = 0;
+};
+struct serial_task : public task {
+    serial_task() {}
+    virtual ~serial_task() {}
 
     virtual void start() {}
 
@@ -99,6 +129,7 @@ struct pthread_task : public task {
         //pthread_attr_init(&attr);
         //pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
         //pthread_create(&thread,&attr,pfunc,info.ptr());
+        info->set_parallel();
         if(pfunc == search_f)
             pthread_create(&thread,NULL,search_pt,info.ptr());
         else if(pfunc == search_ab_f)
@@ -113,9 +144,10 @@ struct pthread_task : public task {
     virtual void join() {
         if(joined)
             return;
+        info->wait_for_done();
         joined = true;
-        pthread_join(thread,NULL);
-        mpi_task_array[0].add(1);
+        //pthread_join(thread,NULL);
+        //mpi_task_array[0].add(1);
     }
 };
 #endif
