@@ -7,6 +7,9 @@
 #include "here.hpp"
 
 static int count, count2;
+// Make sure hashing works. Note
+// that the test is not thread safe.
+//#define CHECK_HASH 1
 
 // init_board() sets the board to the initial game state.
 
@@ -30,7 +33,14 @@ void init_board(node_t& board)
 }
 
 bool board_equals(const node_t& b1,const node_t& b2) {
-    return memcmp(&b1,&b2,sizeof(node_t)) == 0;
+    return memcmp(&b1,&b2,sizeof(base_node_t)) == 0;
+    int n = b1.hist_dat.size();
+    if(n != b2.hist_dat.size())
+        return false;
+    for(int i=0;i<n;i++)
+        if(b1.hist_dat[i] != b2.hist_dat[i])
+            return false;
+    return true;
 }
 
 
@@ -443,11 +453,13 @@ bool makemove(node_t& board,const move_bytes m)
     if (needs_set_hash)
     {
       board.hash = set_hash(board);
+#if CHECK_HASH
       count2++;
+#endif
     }
 // This could debugs update_hash(), making sure it's consistent
 // with set_hash()
-#if 1
+#if CHECK_HASH
     hash_t sh = set_hash(board);
     if (board.hash == sh)
       count++;
