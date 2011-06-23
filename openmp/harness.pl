@@ -90,7 +90,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 #sleep(1);
             }
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
-            open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 0 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 8 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;

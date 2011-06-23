@@ -7,6 +7,7 @@
 
 extern bool par_enabled;
 int chx_threads_per_proc();
+extern pthread_attr_t pth_attr;
 
 typedef void *(*pthread_func_t)(void*);
 
@@ -16,9 +17,12 @@ void *strike(void *);
 void *qeval_pt(void *);
 
 struct search_info {
+    // self-reference used
+    // to delay cleanup
+    smart_ptr<search_info> self;
+
     pthread_mutex_t mut;
     pthread_cond_t cond;
-    bool par;
     bool par_done;
     score_t result;
     int depth;
@@ -28,7 +32,6 @@ struct search_info {
     node_t board;
     move mv;
     void set_parallel() {
-        par = true;
         par_done = false;
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
@@ -45,8 +48,7 @@ struct search_info {
             pthread_cond_wait(&cond,&mut);
         pthread_mutex_unlock(&mut);
     }
-    search_info(const node_t& board_) : board(board_), par(false),
-        par_done(true) {}
+    search_info(const node_t& board_) : board(board_), par_done(true) {}
 };
 
 enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
@@ -120,7 +122,7 @@ struct pthread_task : public task {
         //pthread_mutex_init(&mut,NULL);
     }
     virtual ~pthread_task() {
-        join();
+        //join();
     }
     virtual void start() {
         //pthread_mutex_lock(&mut);
@@ -130,14 +132,15 @@ struct pthread_task : public task {
         //pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
         //pthread_create(&thread,&attr,pfunc,info.ptr());
         info->set_parallel();
+        info->self = info;
         if(pfunc == search_f)
-            pthread_create(&thread,NULL,search_pt,info.ptr());
+            pthread_create(&thread,&pth_attr,search_pt,info.ptr());
         else if(pfunc == search_ab_f)
-            pthread_create(&thread,NULL,search_ab_pt,info.ptr());
+            pthread_create(&thread,&pth_attr,search_ab_pt,info.ptr());
         else if(pfunc == strike_f)
-            pthread_create(&thread,NULL,strike,info.ptr());
+            pthread_create(&thread,&pth_attr,strike,info.ptr());
         else if(pfunc == qeval_f)
-            pthread_create(&thread,NULL,qeval_pt,info.ptr());
+            pthread_create(&thread,&pth_attr,qeval_pt,info.ptr());
         else
             abort();
     }

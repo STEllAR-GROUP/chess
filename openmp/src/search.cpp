@@ -335,9 +335,10 @@ score_t mtdf(const node_t& board,score_t f,int depth)
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
     info->result = search(info->board,info->depth);
-    if(info->par) {
+    if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
+        info->self.clean();
         pthread_exit(NULL);
     }
     return NULL;
@@ -415,7 +416,7 @@ score_t search(const node_t& board, int depth)
                         t->pfunc = search_f;
                         tasks.push_back(t);
                         t->start();
-                        para = t->info->par;
+                        para = t->info->self.valid();
                     }
                 }
             }
@@ -492,9 +493,10 @@ void *search_ab_pt(void *vptr)
     search_info *info = (search_info *)vptr;
     assert(info->depth == info->board.depth);
     info->result = search_ab(info->board,info->depth, info->alpha, info->beta);
-    if(info->par) {
+    if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
+        info->self.clean();
         pthread_exit(NULL);
     }
     return NULL;
@@ -623,7 +625,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
                 t->pfunc = search_ab_f;
             t->start();
             tasks.push_back(t);
-            para = t->info->par;
+            para = t->info->self.valid();
         }
         if(!para || tasks.size() >= num_proc/2 || last) {
             for(int n=0;n<tasks.size();n++) {

@@ -315,9 +315,13 @@ int chx_threads_per_proc() {
         return atoi(th);
 }
 
+pthread_attr_t pth_attr;
+
 int main(int argc, char *argv[])
 {
     int retcode = 0;
+    pthread_attr_init(&pth_attr);
+    pthread_attr_setdetachstate(&pth_attr, PTHREAD_CREATE_DETACHED);
 #ifdef MPI_SUPPORT
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);

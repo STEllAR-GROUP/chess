@@ -35,12 +35,12 @@ class smart_ptr_guts {
 template<typename T>
 class smart_ptr {
     smart_ptr_guts<T> *guts;
+    public:
     void clean() {
         if(guts != 0 && guts->dec()) {
             delete guts;
         }
     }
-    public:
     smart_ptr(T *ptr) : guts(new smart_ptr_guts<T>(1,ptr)) {
     }
     smart_ptr(const smart_ptr<T> &sm) : guts(sm.guts) {
