@@ -70,7 +70,7 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper)
     std::vector<move> workq;
     gen(workq, board); // Generate the moves
     if(chx_abort)
-        return s;
+        return bad_min_score;
     for(int j=0;j < workq.size(); j++) {
         move g = workq[j];
         node_t p_board = board;
@@ -132,9 +132,10 @@ void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
   info->result = search_ab(info->board,info->depth,info->alpha,info->beta);
   if(info->alpha < info->result && info->result < info->beta) {
-    std::cout << "FOUND: " << VAR(info->result) << std::endl;
+    //std::cout << "FOUND: " << VAR(info->result) << std::endl;
     chx_abort = true;
   }
+  mpi_task_array[0].add(1);
   return NULL;
 }
 
@@ -156,7 +157,6 @@ int think(node_t& board,bool parallel)
     transposition_table[i].upper = bad_max_score;
   }
   multistrike_on = false;
-  chx_abort = false;
   board.ply = 0;
 
   if (search_method == MINIMAX) {
@@ -197,6 +197,7 @@ int think(node_t& board,bool parallel)
         f = multistrike(board,f,d);
     }
     */
+    board.depth = depth[board.side];
     score_t f = multistrike(board,0,depth[board.side]);
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
@@ -237,33 +238,23 @@ int think(node_t& board,bool parallel)
 #pragma mark Search functions
 #endif
 
-inline int figx(int n) {
-    if(n < 0) return -figx(-n);
-    if(n <= 3) return 3*n;
-    if(n <= 5) return 5*(n-3)+figx(3);
-    if(n <= 10) return 8*(n-5)+figx(5);
-    return 10*(n-10)+figx(10);
-}
-
 score_t multistrike(const node_t& board,score_t f,int depth)
 {
+    //std::cout << VAR(num_proc) << VAR(mpi_task_array[0].add(0)) << std::endl;
+    chx_abort = false;
     score_t ret=0;
-    const int max_parallel = 30;
+    const int max_parallel = (num_proc-1)/2;
+    assert(max_parallel > 0);
     const int fac = 600/max_parallel;//10*25/max_parallel;
     std::vector<smart_ptr<task> > tasks;
     DECL_SCORE(lower,-10000,0);
     DECL_SCORE(upper,10000,0);
-    //DECL_SCORE(lbound,0,0);
-    //DECL_SCORE(ubound,0,0);
     for(int i=-max_parallel;i<=max_parallel;i++) {
-        //std::cout << "figx(i=" << i << ")=" << figx(i) << std::endl;
+        mpi_task_array[0].wait_dec();
+    }
+    for(int i=-max_parallel;i<=max_parallel;i++) {
         DECL_SCORE(alpha,i==-max_parallel ? -10000 : fac*(i)  ,0);
         DECL_SCORE(beta, i== max_parallel ?  10000 : fac*(i+1),0);
-        //std::cout << "i=" << i << " (" << alpha << "," << beta << ")" << std::endl;
-        //DECL_SCORE(alpha,fac*(i)  ,0);
-        //DECL_SCORE(beta, fac*(i+1),0);
-        //lbound=min(lbound,alpha);
-        //ubound=max(ubound,beta);
         beta++;
         smart_ptr<task> t = parallel_task(depth);
         t->info = new search_info(board);
@@ -281,7 +272,6 @@ score_t multistrike(const node_t& board,score_t f,int depth)
         score_t beta = tasks[i]->info->beta;
         if(alpha < result && result < beta) {
             ret = result;
-            std::cout << VAR(alpha) << VAR(beta) << "ms::SCORE=" << result << std::endl;
         }
     }
     return ret;
@@ -604,8 +594,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
         move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
         if(chx_abort) {
-            DECL_SCORE(v,-10000,0);
-            return v;
+            return bad_min_score;
         }
 
         if (makemove(info->board, g.b)) {
@@ -668,7 +657,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta)
         }
     }
 
-    if (board.ply == 0) {
+    if (board.ply == 0 && !chx_abort) {
         assert(max_move.u != INVALID_MOVE);
         pthread_mutex_lock(&mutex);
         move_to_make = max_move;
@@ -726,7 +715,8 @@ bool compare_moves(move a, move b)
 
 void sort_pv(std::vector<move>& workq, int index)
 {
-  assert(index < pv.size());
+  if(index < pv.size())
+    return;
   move temp = pv[index].get();
   if(temp.u == INVALID_MOVE)
     return;

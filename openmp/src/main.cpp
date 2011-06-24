@@ -553,8 +553,8 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
       logfile << "  Computer's move: " << move_str(move_to_make.b)
         << std::endl;
     }
-    //std::cout << "Sleeping for twenty secs." << std::endl;
-    //sleep(20);
+    // Allow time for aborted threads to get cleaned up
+    sleep(2);
   }
 
   for (int i = 0; i < num_runs; ++i)

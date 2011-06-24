@@ -24,6 +24,5 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper);
 int reps(const node_t& board);
 bool compare_moves(move a, move b);
 void sort_pv(std::vector<move>& workq, int ply);
-extern bool chx_abort;
 
 #endif

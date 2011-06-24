@@ -8,6 +8,7 @@
 extern bool par_enabled;
 int chx_threads_per_proc();
 extern pthread_attr_t pth_attr;
+extern bool chx_abort;
 
 typedef void *(*pthread_func_t)(void*);
 
@@ -33,8 +34,6 @@ struct search_info {
     move mv;
     void set_parallel() {
         par_done = false;
-        pthread_mutex_init(&mut,NULL);
-        pthread_cond_init(&cond,NULL);
     }
     void set_done() {
         pthread_mutex_lock(&mut);
@@ -44,11 +43,19 @@ struct search_info {
     }
     void wait_for_done() {
         pthread_mutex_lock(&mut);
-        while(!par_done)
-            pthread_cond_wait(&cond,&mut);
+        while(!par_done && !chx_abort) {
+            timespec ts;
+            clock_gettime(CLOCK_REALTIME,&ts);
+            ts.tv_nsec += 10000;
+            pthread_cond_timedwait(&cond,&mut,&ts);
+        }
         pthread_mutex_unlock(&mut);
     }
-    search_info(const node_t& board_) : board(board_), par_done(true) {}
+    search_info(const node_t& board_) : board(board_), par_done(true),
+            result(bad_min_score) {
+        pthread_mutex_init(&mut,NULL);
+        pthread_cond_init(&cond,NULL);
+    }
 };
 
 enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
@@ -86,18 +93,29 @@ struct serial_task : public task {
 struct pcounter {
     int count;
     pthread_mutex_t mut;
+    pthread_cond_t cond;
     pcounter() : count(0) {
         pthread_mutex_init(&mut,NULL);
+        pthread_cond_init(&cond,NULL);
     }
     pcounter(int n) : count(n) {
         pthread_mutex_init(&mut,NULL);
     }
     int add(int n) {
         pthread_mutex_lock(&mut);
+        int old = count;
         count += n;
+        if(old == 0 && count > 0)
+            pthread_cond_broadcast(&cond);
         int m = count;
         pthread_mutex_unlock(&mut);
         return m;
+    }
+    bool wait_dec() {
+        pthread_mutex_lock(&mut);
+        while(count == 0)
+            pthread_cond_wait(&cond,&mut);
+        pthread_mutex_unlock(&mut);
     }
     bool dec() {
         pthread_mutex_lock(&mut);

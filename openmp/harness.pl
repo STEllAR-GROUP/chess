@@ -81,7 +81,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             # It takes too long for minimax above ply 4
             # So I ran it once at 5 to verify the answer
             # and then introduced this next.
-            if($sm eq "minimax" and $ply >= 0) {
+            if($sm eq "minimax" and $ply >= 5) {
                 next;
             }
             genbench($sm,$b,$ply);
@@ -142,7 +142,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             $speedtab->{$b}->{$ply} = $tm;
             printf("%10s, %4d, %4d, %9d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
             die $doc if($st =~ /VARIABLE/);
-            if($sm eq "mtd-f") {
+            if($sm eq "mtd-f" or $sm eq "multistrike") {
                 $fsup += 1 if($speedup > 1);
                 $fsup += 0.5 if($speedup == 1);
                 $asup += $speedup;
