@@ -188,31 +188,6 @@ search_method = $sm
 ;  simple
 eval_method = original
 
-; Valid arguments to num_threads: (note that this only works when OpenMP is enabled, otherwise ignored)
-;  [1-9][0-9]* (default 3)
-num_threads = 2
-
-; Valid arguments to output:
-;  true (default)
-;  false
-output = true
-
-; Iterative deepening can be tuned to only go to a certain number of plys before just calling the
-; search function
-; Valid arguments to iter_depth:
-; [1-9][0-9]* (default 5)
-iter_depth = 5
-
-[Depth]
-
-; This sets the ply-depth of the white player
-; Valid arguments to white:
-; [1-9][0-9]* (default 3)
-white = 7
-
-; Depth for black player, same arguments
-black = 7
-
 [Benchmark]
 ; This section is for using the built in benchmark
 

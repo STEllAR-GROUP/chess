@@ -1,51 +1,156 @@
-(c) Copyright 2011 Phillip LeBlanc. All Rights Reserved. 
+Compiling the chess benchmark:
+==============================
 
-Thanks for getting CHX!
+The Chess benchmark is compiled with cmake.
 
-To report any problems/bugs/comments with CHX please send an email to:
-gopx@cct.lsu.edu
+    cmake ./CMakeLists.txt
+    make
 
-==================== COMPILING ====================
+The end result is an executable named ./src/chx.
+The program can be executed either from the command
+line, by supplying an ini file, or by using the
+perl test harness.
 
-To build CHX type these commands (requires CMake)
+Running the chess benchmark:
+============================
 
- $ cmake .
- $ make
+The Perl Test Harness
+---------------------
 
-If you are on a machine that has an intel compiler, use this command instead (if gcc doesn't compile successfully):
+The perl test harness creates ini files and executes
+the chess benchmark multiple times, executing the
+chess benchmark to a number of different ply depths,
+using a variety of algorithms, on a number of different
+boards.
 
- $ cmake . -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc
- $ make
+The benchmark does not attempt to play a game, instead
+it attempts to make a single move by a single side. The
+objective of the benchmark is to search to the deepest
+ply depth possible in two hours.
 
-==================== RUNNING ====================
+Before running the test harness line 93 should be
+edited to create an appropriate run command. By default
+it reads as follows:
 
-To run type these commands
+open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 8 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
 
- $ cd src
- $ ./chx
-You then get an interactive prompt ("chx>"). 
+This uses MPI to run in a single process using 8
+threads per core. Please edit this line to match
+the core count and number of processes appropriate
+for your platform.
 
-================= SETTING OPTIONS ================
+By default three algorithms are run by the benchmark:
 
-You can use CHX with command line options or with the provided settings.ini file.
-Any settings made via the command line arguments will override those provided in the
-settings.ini file
+1) Minimax - This algorithm is a simple test program
+   that provides a deterministic workload.
 
-NOTE: In order for the settings.ini file to read in properly, you need to be
-in the same working directory as the settings file when you run the program.
+2) Alpha Beta - This algorithm is actually the Alpha-
+   Beta With Memory required by MTD-f. The macro definition
+   
+   #define PV_ON 1
 
-==================== BENCHMARK ====================
+   can be commented out to disable principle variation
+   search.
 
-At the interactive prompt you can run the benchmark by typing:
+   The macro definition
 
-    bench ../inputs/board2 3 4
+   #define TRANSPOSE_ON 1
 
-This will load the board from file ../inputs/board2, and evaluate the solution to ply depth 3 and do it 4 times. The program will display the best move, as well as the time for each board evaluation, the average time, and the best time.
+   can be commented out to disable the use of a transposition
+   table.
 
-==================== ADDITIONAL NOTES ====================
+3) MTD-f - The basic MTD-f algorithm has three parameters
+   which modify its behavior. Strictly speaking, MTD-f does
+   zero width searches. The code provided with the benchmark
+   uses a narrow width instead, one which is permitted to
+   grow as the number of searches increases, and which gives
+   up after a set number of searches are tried and fail.
 
-When the readline package is enabled, the user will be able to access command line history to edit and re-execute commands.
+   start_width: This is the width in terms of the base
+   score. This is the value of the score before the score
+   is augmented by the hash value of the board.
 
-Command line options:
--h          Displays this help message
--s file     Uses the specified settings file instead of settings.ini
+   grow_width: This is a constant value that is added to
+   the search width after each failure.
+
+   max_tries: This is the maximum number of tries that
+   should be made at finding the with MTD-f before giving up
+   and doing a full Alpha-Beta search between the remaining
+   lower/upper score range.
+
+4) Multistrike - This algorithm divides the possible range
+   of scores into subranges and assigns a subrange to each
+   available thread/core. Each subrange of Multistrike is
+   searched completely by a strict Alpha-Beta search without
+   recourse to principle variation. (The code might be improved
+   by using MTD-f on each sub-range)
+
+   The Multistrike code with the chess benchmark is not able
+   to use MPI. This lack does not represent a limitation of the
+   algorithm, but a feature that is not yet implemented.
+
+Using an ini file
+-----------------
+
+The ini file there are two sections which are relevant to
+the benchmark: the [CHX Main] section and the [Benchmark]
+section.
+
+The [CHX Main] section has two parameters of significance:
+search_method and eval_method. The search_method can have
+the values: minimax, alphabeta, mtd-f, or multistrike. The
+significance is described above.
+
+The [Benchmark] section has four significant parameters:
+mode (which should be set to true), file (which takes the
+path to a file describing a board position), max_ply (which
+defines the maximum depth to be searched), parallel (which
+is either true or false), num_runs (which describes the
+number of times the move is to be re-searched in order to
+provide a good minimum and average value).
+
+If an ini file named "settings.ini" is present in the current
+directory, it will be used. Alternatively, an ini file can
+be supplied on the command line with the -s flag. E.g.
+
+    ./src/chx -s bench.ini
+
+One parameter, the number of threads, is controlled through
+an environment variable: CHX_THREADS_PER_PROC.
+
+Interactive Mode
+----------------
+
+This mode is useful for actually playing chess. If an ini
+file is not supplied, or if a non-existent file is supplied,
+chx goes into interactive mode. To understand how this mode
+is used, please type "help" at the prompt.
+
+To display the board type "d". To make the first move, type
+in a move (e.g. e2e4 to advance white's king pawn two squares).
+Type "d" again to see the result. Type "go" to let the chx
+program move on behalf of black. After this, the chx program
+will automatically move and redisplay the board after each
+move by white.
+
+Limitations of the CHX code
+===========================
+
+The current version of the CHX code suffers from a number
+of limitations, including:
+
+1) The parallel implementation does not have a proper mechanism
+   for aborting a subset of calculations. Because of this,
+   the Younger Brother's Wait algorithm must explore moves in
+   batches and wait for each batch to complete before moving
+   on to search new moves.
+
+2) The MPI implementation is more a proof of concept than an
+   optimal implementation. The transposition table is not
+   exchanged in the course of MPI searching. Like the threading
+   aspect of the parallel implementation, MPI moves must be
+   explored in batches.
+
+3) The Multistrike implementation has a number of defects
+   that are described above. In short, it needs to make use
+   of MTD-f, as well as MPI.
