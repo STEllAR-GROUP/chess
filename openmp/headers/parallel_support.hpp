@@ -7,6 +7,7 @@
 #ifndef PARALLEL_SUPPORT_HPP
 #define PARALLEL_SUPPORT_HPP
 
+#include <sys/time.h>
 #include "smart_ptr.hpp"
 #include "node.hpp"
 #include "score.hpp"
@@ -51,8 +52,10 @@ struct search_info {
         pthread_mutex_lock(&mut);
         while(!par_done && !chx_abort) {
             timespec ts;
-            clock_gettime(CLOCK_REALTIME,&ts);
-            ts.tv_nsec += 10000;
+            timeval tv;
+            gettimeofday(&tv, NULL);
+            ts.tv_sec = tv.tv_sec + 0;
+            ts.tv_nsec = 10000;
             pthread_cond_timedwait(&cond,&mut,&ts);
         }
         pthread_mutex_unlock(&mut);
