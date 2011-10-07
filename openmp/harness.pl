@@ -96,7 +96,8 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
                 #sleep(1);
             }
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
-            open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 8 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
+            #open($fd,"CHX_THREADS_PER_PROC=8; mpiexec -np 1 src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"CHX_THREADS_PER_PROC=8; src/chx -s .bench.ini 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
@@ -164,7 +165,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
     }
 }
 
-printf("mtd-f over alpha speedup: avg=%3.2f geomtric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
+printf("mtd-f over alpha speedup: avg=%3.2f geometric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
 
 printf("total time: %3.2f\n",$tot_time);
 
@@ -202,7 +203,7 @@ eval_method = original
 mode=true
 
 ; If a relative path is given, it will be to the relative path in which CHX was called from
-file=inputs/board$b
+file=../openmp/inputs/board$b
 
 max_ply=$ply
 

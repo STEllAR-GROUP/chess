@@ -38,7 +38,6 @@ void mpi_terminate() {
         int data[n];
         data[32] = -1;
         data[33] = -1;
-        chx_abort = true;
 #ifdef MPI_SUPPORT
         for(int i=1;i<mpi_size;i++) {
             MPI_Send(data,n,MPI_INT,
@@ -60,8 +59,8 @@ int computer_side;
 int chx_main(int argc, char **argv)
 {
     int arguments = 0;
-    std::string s("settings.ini");
-    parseIni(s.c_str());
+    std::string setting("settings.ini");
+    parseIni(setting.c_str());
     arguments = parseArgs(argc,argv);
 
     int m;
@@ -358,11 +357,6 @@ int main(int argc, char *argv[])
     return retcode;
 }
 
-#if 0
-#pragma mark -
-#pragma mark Benchmark
-#endif
-
 void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel)
 {
   std::ifstream benchfile(filename.c_str());
@@ -587,11 +581,6 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
 
 }
 
-#if 0
-#pragma mark -
-#pragma mark Parsing move notation
-#endif
-
 /* parse the move s (in coordinate notation) and return the move's
    int value, or -1 if the move is illegal */
 
@@ -675,12 +664,6 @@ char *move_str(move_bytes m)
   return str;
 }
 
-
-#if 0
-#pragma mark -
-#pragma mark Printing functions
-#endif
-
 // print_board() prints the board
 
 void print_board(const node_t& board, std::ostream& out)
@@ -745,13 +728,6 @@ int print_result(std::vector<move>& workq, node_t& board)
   }
   return 1;
 }
-
-#if 0
-#pragma mark -
-#pragma mark Argument Parsing
-#endif
-
-
 
 int parseArgs(int argc, char **argv)
 {

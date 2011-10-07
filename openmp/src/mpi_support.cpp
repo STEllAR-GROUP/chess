@@ -116,11 +116,11 @@ void *do_mpi_thread(void *voidp) {
     MPI_Thread *mp = (MPI_Thread*)voidp;
     score_t result;
     if(mp->pfunc == search_ab_f) {
-        result = search_ab(mp->info->board,mp->info->board.depth,mp->info->alpha,mp->info->beta);
+        result = search_ab(mp->info->board,mp->info->board.depth,mp->info->alpha,mp->info->beta,mp->info->parent_task);
     } else if(mp->pfunc == search_f)
-        result = search(mp->info->board,mp->info->board.depth);
+        result = search(mp->info->board,mp->info->board.depth,mp->info->parent_task);
     else if(mp->pfunc == qeval_f)
-        result = qeval(mp->info->board,mp->info->alpha,mp->info->beta);
+        result = qeval(mp->info->board,mp->info->alpha,mp->info->beta,mp->info->parent_task);
     else if(mp->pfunc == strike_f)
         ;
     else

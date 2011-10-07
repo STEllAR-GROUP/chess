@@ -26,67 +26,70 @@ const int worker_result_size = 1000;
 const int WORK_ASSIGN_MESSAGE = 1, WORK_COMPLETED = 2, WORK_SUPPLEMENT = 3;
 
 struct worker_result {
-    pthread_mutex_t mut;
-    pthread_cond_t cond;
-    bool has_result;
-    hash_t hash;
-    int depth;
-    score_t score;
-    worker_result() : has_result(false), depth(-1) {
-        pthread_mutex_init(&mut,NULL);
-        pthread_cond_init(&cond,NULL);
+  pthread_mutex_t mut;
+  pthread_cond_t cond;
+  bool has_result;
+  hash_t hash;
+  int depth;
+  score_t score;
+  worker_result() : has_result(false), depth(-1) {
+    pthread_mutex_init(&mut,NULL);
+    pthread_cond_init(&cond,NULL);
+  }
+  void set_result(score_t s) {
+    pthread_mutex_lock(&mut);
+    assert(!has_result);
+    score = s;
+    has_result = true;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mut);
+  }
+  void clear_result() {
+    /*
+    pthread_mutex_lock(&mut);
+    has_result = false;
+    pthread_mutex_unlock(&mut);
+    */
+  }
+  score_t get_result() {
+    pthread_mutex_lock(&mut);
+    assert(mpi_rank == 0);
+    if(!has_result) {
+      pthread_cond_wait(&cond,&mut);
     }
-    void set_result(score_t s) {
-        pthread_mutex_lock(&mut);
-        assert(!has_result);
-        score = s;
-        has_result = true;
-        pthread_cond_signal(&cond);
-        pthread_mutex_unlock(&mut);
-    }
-    void clear_result() {
-        /*
-        pthread_mutex_lock(&mut);
-        has_result = false;
-        pthread_mutex_unlock(&mut);
-        */
-    }
-    score_t get_result() {
-        pthread_mutex_lock(&mut);
-        assert(mpi_rank == 0);
-        if(!has_result) {
-            pthread_cond_wait(&cond,&mut);
-        }
-        assert(has_result);
-        score_t t = score;
-        pthread_mutex_unlock(&mut);
-        return t;
-    }
+    assert(has_result);
+    score_t t = score;
+    pthread_mutex_unlock(&mut);
+    return t;
+  }
 };
 
 extern worker_result results[worker_result_size];
 
 struct mpi_task : public task {
-    int windex;
-    int dest;
-    bool joined;
-    mpi_task(int d) : joined(false), dest(d), windex(-1) {
-        assert(d != 0);
-    }
-    virtual ~mpi_task() {
-        join();
-    }
-    int mpi_data[mpi_ints];
-    virtual void start();
-    virtual void join() {
-        if(joined)
-            return;
-        joined = true;
-        info->result = results[windex].get_result();
-        score_t s = info->result;
-        results[windex].depth = -1;
-        mpi_task_array[dest].add(1);
-    }
+  int windex;
+  int dest;
+  bool joined;
+  mpi_task(int d) : joined(false), dest(d), windex(-1) {
+    assert(d != 0);
+  }
+  virtual ~mpi_task() {
+    join();
+  }
+  int mpi_data[mpi_ints];
+  virtual void start();
+  virtual void join() {
+    if(joined)
+      return;
+    joined = true;
+    info->result = results[windex].get_result();
+    score_t s = info->result;
+    results[windex].depth = -1;
+    mpi_task_array[dest].add(1);
+  }
+  virtual void abort_search() {}
+
+  virtual bool check_abort() {}
 };
 #endif
 extern worker_result results[worker_result_size];

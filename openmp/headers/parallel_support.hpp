@@ -24,10 +24,13 @@ void *search_ab_pt(void *);
 void *strike(void *);
 void *qeval_pt(void *);
 
+struct task;
+
 struct search_info {
     // self-reference used
     // to delay cleanup
     smart_ptr<search_info> self;
+    task *parent_task;
 
     pthread_mutex_t mut;
     pthread_cond_t cond;
@@ -50,7 +53,8 @@ struct search_info {
     }
     void wait_for_done() {
         pthread_mutex_lock(&mut);
-        while(!par_done && !chx_abort) {
+        //while(!par_done && !chx_abort) {
+        while(!par_done) {
             timespec ts;
             timeval tv;
             gettimeofday(&tv, NULL);
@@ -64,6 +68,7 @@ struct search_info {
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
+        parent_task = 0;
     }
 };
 
@@ -73,12 +78,17 @@ struct task {
     smart_ptr<search_info> info;
     //pthread_func_t pfunc;
     pfunc_v pfunc;
-    task() : pfunc(no_f) {}
+    task() : pfunc(no_f) {
+    }
     virtual ~task() {}
 
     virtual void start() = 0;
 
     virtual void join() = 0;
+
+    virtual void abort_search() = 0;
+
+    virtual bool check_abort() = 0;
 };
 struct serial_task : public task {
     serial_task() {}
@@ -98,6 +108,10 @@ struct serial_task : public task {
         else
             abort();
     }
+
+    virtual void abort_search() {}
+
+    virtual bool check_abort() {}
 };
 struct pcounter {
     int count;
@@ -142,11 +156,13 @@ struct pcounter {
 extern std::vector<pcounter> mpi_task_array;
 struct pthread_task : public task {
     pthread_t thread;
-    //pthread_mutex_t mut;
+    pthread_mutex_t mut;
+    bool abort_flag;
     //pthread_attr_t attr;
     bool joined;
     pthread_task() : joined(true) {
-        //pthread_mutex_init(&mut,NULL);
+        pthread_mutex_init(&mut,NULL);
+        abort_flag = false;
     }
     virtual ~pthread_task() {
         //join();
@@ -178,6 +194,19 @@ struct pthread_task : public task {
         joined = true;
         //pthread_join(thread,NULL);
         //mpi_task_array[0].add(1);
+    }
+    virtual void abort_search() {
+        pthread_mutex_lock(&mut);
+        abort_flag = true;
+        pthread_mutex_unlock(&mut);
+    }
+
+    virtual bool check_abort() {
+        bool ret;
+        pthread_mutex_lock(&mut);
+        ret = abort_flag;
+        pthread_mutex_unlock(&mut);
+        return ret;
     }
 };
 #endif
