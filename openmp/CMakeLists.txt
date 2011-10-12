@@ -25,10 +25,6 @@ ELSE (READLINE_FOUND)
 ENDIF (READLINE_FOUND)
 
 include_directories ("${PROJECT_SOURCE_DIR}/headers")
-include_directories ("${PROJECT_SOURCE_DIR}/liboptlist")
-include_directories ("${PROJECT_SOURCE_DIR}/libini")
-add_subdirectory (liboptlist)
-add_subdirectory (libini)
-set (EXTRA_LIBS ${EXTRA_LIBS} optlist ncurses ini pthread)
+set (EXTRA_LIBS ${EXTRA_LIBS} ncurses pthread)
 
 add_subdirectory (src)

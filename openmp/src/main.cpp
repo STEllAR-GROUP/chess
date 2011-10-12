@@ -9,8 +9,6 @@
  */
 #include <boost/algorithm/string.hpp>
 #include "main.hpp"
-#include "optlist.hpp"
-#include "SimpleIni.h"
 #include <signal.h>
 #include <fstream>
 #include <sys/time.h>
@@ -749,50 +747,6 @@ int print_result(std::vector<move>& workq, node_t& board)
   return 1;
 }
 
-int parseArgs(int argc, char **argv)
-{
-  if (argc == 1)
-  {
-    return 0;
-  }
-  option_t *optList, *thisOpt;
-  optList = NULL;
-  optList = GetOptList(argc, argv,"hs:?");
-  int flag = 0;
-
-  while (optList != NULL)
-  {
-    thisOpt = optList;
-    optList = optList->next;
-
-    if (('?' == thisOpt->option)||('h' == thisOpt->option))
-    {
-      // display help
-      printf("Command line options:\n");
-      printf("-h          Displays this help message\n");
-      printf("-s file     Uses the specified settings file instead of settings.ini\n");
-      printf("\n");
-      FreeOptList(thisOpt);
-      mpi_terminate();
-      exit(0);
-    }
-
-    switch (thisOpt->option)
-    {
-      case 's':
-        parseIni(thisOpt->argument);
-        break;
-    }
-    free(thisOpt);
-  }
-  return flag;
-}
-
-#if 0
-#pragma mark -
-#pragma mark Helper functions
-#endif
-
 // get_ms() gets the current time in milliseconds
 
 int get_ms()
@@ -832,86 +786,5 @@ std::string get_log_name()
   logfilename = logfilenamestream.str();
 
   return logfilename;
-}
-
-#if 0
-#pragma mark -
-#pragma mark INI Parsing
-#endif
-
-bool parseIni(const char * filename)
-{
-  CSimpleIniA ini;
-  SI_Error rc = ini.LoadFile(filename);
-  if (rc < 0) return false;  // file not found
-
-  // arguments to ini.GetValue are 1) section name 2) key name 3) value to return if its not in the ini file
-  std::string s = std::string(ini.GetValue("CHX Main", "search_method", "minimax")); // ini.GetValue returns char * , so wrap it in std::string for fun    
-  if (s == "minimax")
-    search_method = MINIMAX;
-  else if (s == "alphabeta")
-    search_method = ALPHABETA;
-  else if (s == "mtd-f")
-    search_method = MTDF;
-  else if (s == "multistrike")
-    search_method = MULTISTRIKE;
-  else
-    std::cerr << "Invalid parameter in ini file for 'search_method', please use \"minimax\" ,\"alphabeta\" or \"mtd-f\" " << std::endl;
-
-  depth[LIGHT] = atoi(ini.GetValue("Depth", "white", "3"));
-  depth[DARK]  = atoi(ini.GetValue("Depth", "black", "3"));
-
-  s = std::string(ini.GetValue("CHX Main", "eval_method", "original"));
-  if (s == "original")
-    chosen_evaluator = ORIGINAL;
-  else if (s == "simple")
-    chosen_evaluator = SIMPLE;
-  else
-    std::cerr << "Invalid parameter in ini file for 'eval_method', please use \"original\" or \"simple\" " << std::endl;
-
-  s = std::string(ini.GetValue("CHX Main", "output", "true"));
-  if (s == "true")
-    output = 1;
-  else if (s == "false")
-    output = 0;
-  else
-    std::cerr << "Invalid parameter in ini file for 'output', please use \"true\" or \"false\" " << std::endl;
-
-
-  // Benchmark ini parsing
-
-  s = std::string(ini.GetValue("Benchmark", "mode", "false"));
-  if (s == "true")
-  {
-    bench_mode = true;
-    s = std::string(ini.GetValue("Benchmark", "file", "ERROR"));
-
-    if (s == "ERROR")
-    {
-      std::cerr << "Could not start benchmark because no input file was specified." << std::endl;
-      mpi_terminate();
-      exit(-1);
-    }
-
-    int max_ply = atoi(    ini.GetValue("Benchmark", "max_ply", "3"));
-    int num_runs  = atoi(  ini.GetValue("Benchmark", "num_runs", "1"));
-    bool parallel = strcmp(
-        ini.GetValue("Benchmark", "parallel", "false"),"true")==0;
-
-    init_hash();
-    start_benchmark(s, max_ply, num_runs, parallel);
-    mpi_terminate();
-    exit(0);
-  }
-  else if (s != "false")
-    std::cerr << "Invalid parameter in ini file for 'mode', please use \"true\" or \"false\" " << std::endl;
-
-  iter_depth = atoi(ini.GetValue("CHX Main", "iter_depth", "5"));
-  
-  s = std::string(ini.GetValue("CHX Main", "logging", "false"));
-  if (s == "true")
-    logging_enabled = true;
-
-  return true;
 }
 
