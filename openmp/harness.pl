@@ -181,7 +181,7 @@ sub genbench {
 print $fd qq{
 search $sm
 eval original
-bench ../openmp/inputs/board$b $ply $runs
+bench inputs/board$b $ply $runs
 };
     close($fd);
 }
