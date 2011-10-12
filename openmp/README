@@ -32,7 +32,7 @@ Before running the test harness line 93 should be
 edited to create an appropriate run command. By default
 it reads as follows:
 
-open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 8 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
+open($fd,"mpiexec -np 1 -env CHX_THREADS_PER_PROC 8 $ENV{PWD}/src/chx < .bench 2>/dev/null|");
 
 This uses MPI to run in a single process using 8
 threads per core. Please edit this line to match
@@ -89,42 +89,11 @@ By default three algorithms are run by the benchmark:
    to use MPI. This lack does not represent a limitation of the
    algorithm, but a feature that is not yet implemented.
 
-Using an ini file
------------------
-
-The ini file there are two sections which are relevant to
-the benchmark: the [CHX Main] section and the [Benchmark]
-section.
-
-The [CHX Main] section has two parameters of significance:
-search_method and eval_method. The search_method can have
-the values: minimax, alphabeta, mtd-f, or multistrike. The
-significance is described above.
-
-The [Benchmark] section has four significant parameters:
-mode (which should be set to true), file (which takes the
-path to a file describing a board position), max_ply (which
-defines the maximum depth to be searched), parallel (which
-is either true or false), num_runs (which describes the
-number of times the move is to be re-searched in order to
-provide a good minimum and average value).
-
-If an ini file named "settings.ini" is present in the current
-directory, it will be used. Alternatively, an ini file can
-be supplied on the command line with the -s flag. E.g.
-
-    ./src/chx -s bench.ini
-
-One parameter, the number of threads, is controlled through
-an environment variable: CHX_THREADS_PER_PROC.
-
 Interactive Mode
 ----------------
 
-This mode is useful for actually playing chess. If an ini
-file is not supplied, or if a non-existent file is supplied,
-chx goes into interactive mode. To understand how this mode
-is used, please type "help" at the prompt.
+This mode is useful for actually playing chess. 
+To understand how this mode is used, please type "help" at the prompt.
 
 To display the board type "d". To make the first move, type
 in a move (e.g. e2e4 to advance white's king pawn two squares).
@@ -132,6 +101,24 @@ Type "d" again to see the result. Type "go" to let the chx
 program move on behalf of black. After this, the chx program
 will automatically move and redisplay the board after each
 move by white.
+
+Configuring chx
+-----------------
+
+In order to configure chx so that you don't have to use the
+interactive mode all the time, you may specify the commands to 
+do in a file and then pipe it in using stdin.
+
+For example, to specify the search method to be multistrike and
+then run the benchmark, a file might look like:
+
+  $ cat > input
+  search multistrike
+  bench some_board 3 1
+  $ ./src/chx < input
+
+One parameter, the number of threads, is controlled through
+an environment variable: CHX_THREADS_PER_PROC.
 
 Limitations of the CHX code
 ===========================

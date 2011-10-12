@@ -7,4 +7,3 @@ TODO list. Place to check off progress.
     c) communicate transposition table?
 3) Sinch evaluator
 4) Modifiy harness to accept a command line parameter that accepts the number of processors and the number of threads per processor
-5) Have everything go through the parallel interface, including MPI, for better abstraction
