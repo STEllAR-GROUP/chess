@@ -31,7 +31,7 @@ struct base_node_t {
     //std::vector<hash_t> hist_dat;
 };
 struct node_t : public base_node_t {
-    FixedVec<hash_t,100> hist_dat;
+    FixedVec<hash_t,1000> hist_dat;
 };
 
 #endif

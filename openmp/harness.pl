@@ -81,7 +81,7 @@ $anskey->{4}->{5} = "g5f7";
 my $bad_score = -6666;
 my $tot_time = 0;
 
-for my $sm (("minimax","alphabeta","mtd-f")) {
+for my $sm (("minimax","alphabeta","mtdf")) {
     for(my $b=1;$b<=4;$b++) {
         for(my $ply=2;$ply<=5;$ply++) {
             # It takes too long for minimax above ply 4
@@ -92,12 +92,12 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             }
             genbench($sm,$b,$ply);
             my $fd = new FileHandle;
-            if($sm eq "mtd-f") {
+            if($sm eq "mtdf") {
                 #sleep(1);
             }
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
             #open($fd,"CHX_THREADS_PER_PROC=8; mpiexec -np 1 src/chx -s .bench.ini 2>/dev/null|");
-            open($fd,"CHX_THREADS_PER_PROC=8; src/chx -s .bench.ini 2>/dev/null|");
+            open($fd,"CHX_THREADS_PER_PROC=8; src/chx < .bench 2>/dev/null|");
 
             my $ans = "";
             my $score = $bad_score;
@@ -149,7 +149,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
             $speedtab->{$b}->{$ply} = $tm;
             printf("%10s, %4d, %4d, %9d, %s, %s, %.2f\n",$sm,$b,$ply,$score,$ans,$st,$speedup);
             die $doc if($st =~ /VARIABLE/);
-            if($sm eq "mtd-f" or $sm eq "multistrike") {
+            if($sm eq "mtdf" or $sm eq "multistrike") {
                 $fsup += 1 if($speedup > 1);
                 $fsup += 0.5 if($speedup == 1);
                 $asup += $speedup;
@@ -165,7 +165,7 @@ for my $sm (("minimax","alphabeta","mtd-f")) {
     }
 }
 
-printf("mtd-f over alpha speedup: avg=%3.2f geometric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
+printf("mtdf over alpha speedup: avg=%3.2f geometric mean=%3.2f fraction faster=%3.2f\n",$asup/$nsup,($msup)**(1.0/$nsup),$fsup/$nsup);
 
 printf("total time: %3.2f\n",$tot_time);
 
@@ -177,39 +177,11 @@ sub genbench {
     my $runs = 9;
     $runs = 1 if($sm eq "minimax");
     $runs = 3 if($ply > 5);
-    open($fd,">.bench.ini");
+    open($fd,">.bench");
 print $fd qq{
-; settings.ini
-; Configuration file for CHX
-
-[CHX Main]
-
-; Valid arguments to search_method:
-;  minimax (default)
-; alphabeta
-;search_method = mtd-f
-search_method = $sm
-
-; Valid arguments to eval_method:
-;  original (default)
-;  simple
-eval_method = original
-
-[Benchmark]
-; This section is for using the built in benchmark
-
-; If mode is set to true, then it will read in the file
-; specified by file, run the benchmark and then quit (useful for automating the bench runs)
-mode=true
-
-; If a relative path is given, it will be to the relative path in which CHX was called from
-file=../openmp/inputs/board$b
-
-max_ply=$ply
-
-parallel=true
-
-num_runs=$runs
+search $sm
+eval original
+bench ../openmp/inputs/board$b $ply $runs
 };
     close($fd);
 }
