@@ -406,7 +406,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                         info->beta = -max;
                         info->alpha = lo;
                         info->this_task = t;
-                        this_task->children.push_back(t);
+                        //this_task->children.push_back(t);
                         t->parent_task = this_task;
                         t->pfunc = qeval_f;
                         tasks.push_back(t);
