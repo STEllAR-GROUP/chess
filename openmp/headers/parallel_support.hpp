@@ -30,7 +30,9 @@ struct search_info {
     // self-reference used
     // to delay cleanup
     smart_ptr<search_info> self;
-    task *parent_task;
+    
+    smart_ptr<task> this_task;
+    
 
     pthread_mutex_t mut;
     pthread_cond_t cond;
@@ -68,7 +70,6 @@ struct search_info {
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
-        parent_task = 0;
     }
 };
 
@@ -76,6 +77,9 @@ enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
 
 struct task {
     smart_ptr<search_info> info;
+
+    smart_ptr<task> parent_task;
+    std::vector< smart_ptr<task> > children;
     //pthread_func_t pfunc;
     pfunc_v pfunc;
     task() : pfunc(no_f) {
@@ -92,7 +96,8 @@ struct task {
 };
 struct serial_task : public task {
     serial_task() {}
-    virtual ~serial_task() {}
+    virtual ~serial_task() {
+    }
 
     virtual void start() {}
 
@@ -111,7 +116,9 @@ struct serial_task : public task {
 
     virtual void abort_search() {}
 
-    virtual bool check_abort() {}
+    virtual bool check_abort() { 
+      return false;
+    }
 };
 struct pcounter {
     int count;

@@ -15,6 +15,10 @@
 
 #include "mpi_support.hpp"
 
+#ifdef MPI_SUPPORT
+#undef MPI_SUPPORT
+#endif
+
 
 #ifdef READLINE_SUPPORT
 #include <stdlib.h>
