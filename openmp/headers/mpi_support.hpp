@@ -89,7 +89,7 @@ struct mpi_task : public task {
   }
   virtual void abort_search() {}
 
-  virtual bool check_abort() {}
+  virtual bool check_abort() { return false; }
 };
 #endif
 extern worker_result results[worker_result_size];

@@ -141,7 +141,7 @@ struct pcounter {
         pthread_mutex_unlock(&mut);
         return m;
     }
-    bool wait_dec() {
+    void wait_dec() {
         pthread_mutex_lock(&mut);
         while(count == 0)
             pthread_cond_wait(&cond,&mut);

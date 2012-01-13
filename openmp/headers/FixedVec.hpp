@@ -36,7 +36,7 @@ struct FixedVec {
     int size() const {
         return _size;
     }
-    int resize(int n) {
+    void resize(int n) {
         // Keep Valgrind happy
         while(_size < n) {
             push_back(0);
