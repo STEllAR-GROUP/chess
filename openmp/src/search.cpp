@@ -285,6 +285,7 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
         if(alpha < result && result < beta) {
             ret = result;
         }
+        tasks[i]->info->this_task = 0;
     }
     return ret;
 }
@@ -403,9 +404,9 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                             parallel_task(depth);
                         t->info = info;
                         DECL_SCORE(lo,-10000,0);
-                        info->beta = -max;
-                        info->alpha = lo;
-                        info->this_task = t;
+                        t->info->beta = -max;
+                        t->info->alpha = lo;
+                        t->info->this_task = t;
                         //this_task->children.push_back(t);
                         t->parent_task = this_task;
                         t->pfunc = qeval_f;
@@ -434,6 +435,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                         max = val;
                         max_move = info->mv;
                     }
+                    tasks[n]->info->this_task = 0;
                 }
                 tasks.clear();
             }
@@ -656,6 +658,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                             break;
                     }
                 }
+                tasks[n]->info->this_task = 0;
             }
             tasks.clear();
             if(alpha >= beta)
