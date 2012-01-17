@@ -32,5 +32,12 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
 int reps(const node_t& board);
 bool compare_moves(move a, move b);
 void sort_pv(std::vector<move>& workq, int ply);
+bool capture(const node_t& board,move& g);
+smart_ptr<task> parallel_task(int depth);
+int min(int a,int b);
+int max(int a,int b);
+
+extern pthread_mutex_t mutex;
+extern const int num_proc;
 
 #endif

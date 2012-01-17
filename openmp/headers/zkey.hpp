@@ -28,6 +28,6 @@ extern zkey_t transposition_table[table_size];
 
 bool get_transposition_value(const node_t& board,score_t& lower,score_t& upper);
 
-inline void set_transposition_value(const node_t& board,score_t lower,score_t upper);
+void set_transposition_value(const node_t& board,score_t lower,score_t upper);
 
 #endif
