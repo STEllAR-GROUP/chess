@@ -75,6 +75,11 @@ struct mpi_task : public task {
   }
   virtual ~mpi_task() {
     join();
+    parent_task.clean();
+    for (int i = 0; i < children.size(); ++i)
+    {
+        children[i].clean();
+    }
   }
   int mpi_data[mpi_ints];
   virtual void start();

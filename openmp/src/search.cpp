@@ -115,7 +115,7 @@ void *qeval_pt(void *vptr)
 }
 
 smart_ptr<task> parallel_task(int depth) {
-    if(depth >= 3) {
+    /*if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
             smart_ptr<task> t = new pthread_task;
             return t;
@@ -128,7 +128,7 @@ smart_ptr<task> parallel_task(int depth) {
                 return t;
             }
         }
-    }
+    }*/
     smart_ptr<task> t = new serial_task;
     return t;
 }
@@ -337,6 +337,7 @@ score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
 
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
+    assert(info->depth == info->board.depth);
     info->result = search(info->board,info->depth,info->this_task);
     if(info->self.valid()) {
         info->set_done();
@@ -349,10 +350,9 @@ void *search_pt(void *vptr) {
 
 score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
 {
-    score_t val, max;
-
+    assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
-    if (!depth)
+    if (depth == 0)
     {
         evaluator ev;
         DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
@@ -366,6 +366,14 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
         DECL_SCORE(s,0,board.hash);
         return s;
     }
+
+    // fifty move draw rule
+    if (board.fifty >= 100) {
+        DECL_SCORE(z,0,board.hash);
+        return z;
+    }
+
+    score_t val, max;
 
     std::vector<move> workq;
     move max_move;
@@ -536,21 +544,32 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     // If our parent has aborted, then we abort, and tell our children to abort
     if (this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
       this_task->abort_search();
+      this_task.clean();
+      this_task = 0;
       return bad_min_score;
     }
 
     score_t max_val = bad_min_score;
     score_t zlo,zhi;
     if(get_transposition_value(board,zlo,zhi)) {
-        if(zlo >= beta)
+        if(zlo >= beta) {
+            this_task.clean();
+            this_task = 0;
             return zlo;
-        if(alpha >= zhi)
+        }
+        if(alpha >= zhi) {
+            this_task.clean();
+            this_task = 0;
             return zhi;
+        }
         alpha = max(zlo,alpha);
         beta  = min(zhi,beta);
     }
-    if(alpha >= beta)
+    if(alpha >= beta) {
+        this_task.clean();
+        this_task = 0;
         return alpha;
+    }
 
     std::vector<move> workq;
     move max_move;
@@ -615,6 +634,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         smart_ptr<search_info> info = new search_info(board);
         if(this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
           this_task->abort_search();
+          this_task.clean();
+          this_task = 0;
           return bad_min_score;
         }
 
@@ -704,6 +725,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 
 
     assert(max_val != bad_min_score);
+    this_task.clean();
+    this_task = 0;
     return max_val;
 }
 

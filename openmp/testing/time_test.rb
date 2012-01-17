@@ -8,13 +8,13 @@ num_tests = 1
 
 # maps revision number to input type (ini or unified) for each 
 # svn revision we want to test
-svn_revs = Hash[5433 => :ini]
+svn_revs = Hash[5433 => :ini, 5953 => :unified, 6723 => :unified]
 
 # because I do an out of source build, my executable is in a non standard place
 # so put the path to the current chx executable in here (relative to the testing folder)
 $chx_exe = "../../build_chx/src/chx"
 
-search_ms = ["minimax","alphabeta","mtdf","multistrike"]
+search_ms = ["minimax","alphabeta","mtdf"]
 plies = [2,3,4,5]
 boards = [:board1,:board2,:board3,:board4]
 
@@ -89,7 +89,7 @@ def run_test(search_m, board_n, ply, svn_revs)
   t1 = Time.now
   `#{$chx_exe} < .test_unified`
   t2 = Time.now
-  puts "%10s\t%5s\t%3d\t%8s\t%5.3f" % [search_m, board_n, ply, "current", t2-t1]
+  puts "%10s\t%5s\t%3d\t%8s\t%5.3f\n\n" % [search_m, board_n, ply, "current", t2-t1]
 end
 
 if $0 == __FILE__

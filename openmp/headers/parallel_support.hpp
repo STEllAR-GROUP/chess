@@ -44,6 +44,7 @@ struct search_info {
     score_t beta;
     node_t board;
     move mv;
+
     void set_parallel() {
         par_done = false;
     }
@@ -70,6 +71,7 @@ struct search_info {
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
+        this_task = 0;
     }
 };
 
@@ -96,8 +98,7 @@ struct task {
 };
 struct serial_task : public task {
     serial_task() {}
-    virtual ~serial_task() {
-    }
+    virtual ~serial_task() {}
 
     virtual void start() {}
 
