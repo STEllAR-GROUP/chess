@@ -5,7 +5,7 @@
 
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
-    assert(info->depth == info->board.depth);
+    //assert(info->depth == info->board.depth);
     info->result = search(info->board,info->depth,info->this_task);
     if(info->self.valid()) {
         info->set_done();
@@ -112,6 +112,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                         max_move = info->mv;
                     }
                     tasks[n]->info->this_task = 0;
+                    //tasks[n]->info = 0;
                 }
                 tasks.clear();
             }

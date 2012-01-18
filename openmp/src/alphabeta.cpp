@@ -18,7 +18,7 @@
 
    The algorithm maintains two values, alpha and beta, which represent the minimum 
    score that the maximizing player is assured of and the maximum score that the minimizing 
-   player is assured of respectively. Initially alpha is negative infinity and beta is 
+   player is assured of, respectively. Initially alpha is negative infinity and beta is 
    positive infinity. As the recursion progresses the "window" becomes smaller. 
    When beta becomes less than alpha, it means that the current position cannot 
    be the result of best play by both players and hence need not be explored further.
@@ -67,7 +67,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     // If our parent has aborted, then we abort, and tell our children to abort
     if (this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
       this_task->abort_search();
-      this_task.clean();
       this_task = 0;
       return bad_min_score;
     }
@@ -76,12 +75,10 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     score_t zlo,zhi;
     if(get_transposition_value(board,zlo,zhi)) {
         if(zlo >= beta) {
-            this_task.clean();
             this_task = 0;
             return zlo;
         }
         if(alpha >= zhi) {
-            this_task.clean();
             this_task = 0;
             return zhi;
         }
@@ -89,7 +86,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         beta  = min(zhi,beta);
     }
     if(alpha >= beta) {
-        this_task.clean();
         this_task = 0;
         return alpha;
     }
@@ -157,8 +153,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         smart_ptr<search_info> info = new search_info(board);
         if(this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
           this_task->abort_search();
-          this_task.clean();
           this_task = 0;
+          info = 0;
           return bad_min_score;
         }
 
@@ -203,6 +199,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                     }
                 }
                 tasks[n]->info->this_task = 0;
+                tasks[n]->info = 0;
             }
             tasks.clear();
             if(alpha >= beta)
