@@ -116,6 +116,8 @@ void *qeval_pt(void *vptr)
 }
 
 smart_ptr<task> parallel_task(int depth) {
+
+    // Commented out until all bugs are resolved with serial
     /*if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
             smart_ptr<task> t = new pthread_task;
@@ -238,6 +240,9 @@ int think(node_t& board,bool parallel)
         brk = true;
         break;
       }
+      root->purge();
+      root = 0;
+      root = new serial_task;
     }
 
     if (brk)

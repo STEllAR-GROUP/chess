@@ -95,10 +95,22 @@ struct task {
     virtual void abort_search() = 0;
 
     virtual bool check_abort() = 0;
+
+    virtual void purge() {
+        for (std::vector< smart_ptr<task> >::iterator i = children.begin(); i != children.end(); ++i)
+        {
+            (*i)->purge();
+        }
+        children.clear();
+        info = 0;
+        parent_task = 0;
+    }
 };
 struct serial_task : public task {
     serial_task() {}
-    virtual ~serial_task() {}
+    virtual ~serial_task() {
+        purge();
+    }
 
     virtual void start() {}
 
@@ -118,7 +130,7 @@ struct serial_task : public task {
     virtual void abort_search() {}
 
     virtual bool check_abort() { 
-      return false;
+        return false;
     }
 };
 struct pcounter {

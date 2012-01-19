@@ -245,7 +245,5 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 
 
     assert(max_val != bad_min_score);
-    this_task.clean();
-    this_task = 0;
     return max_val;
 }
