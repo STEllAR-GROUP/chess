@@ -32,7 +32,7 @@ void *search_ab_pt(void *vptr)
     if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
-        info->self.clean();
+        info->self = 0;
         pthread_exit(NULL);
     }
     return NULL;

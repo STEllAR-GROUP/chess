@@ -41,13 +41,18 @@ class smart_ptr_guts {
 template<typename T>
 class smart_ptr {
     smart_ptr_guts<T> *guts;
-    public:
     void clean() {
         if(guts != 0 && guts->dec()) {
             delete guts;
         }
     }
-    smart_ptr(T *ptr) : guts(new smart_ptr_guts<T>(1,ptr)) {
+    public:
+    smart_ptr(T *ptr) {
+        if(ptr == 0) {
+            guts = 0;
+        } else {
+            guts = new smart_ptr_guts<T>(1,ptr);
+        }
     }
     smart_ptr(const smart_ptr<T> &sm) : guts(sm.guts) {
         if(sm.guts != 0)
@@ -59,7 +64,11 @@ class smart_ptr {
     }
     void operator=(T *t) {
         clean();
-        guts = new smart_ptr_guts<T>(1,t);
+        if(t == 0) {
+            guts = 0;
+        } else {
+            guts = new smart_ptr_guts<T>(1,t);
+        }
     }
     void operator=(const smart_ptr<T>& s) {
         clean();
@@ -69,7 +78,6 @@ class smart_ptr {
     }
     T& operator*() {
         assert(guts != 0);
-        assert(guts->ptr != 0);
         return *guts->ptr;
     }
     T *operator->() const {
@@ -80,7 +88,6 @@ class smart_ptr {
     }
     T *ptr() {
         assert(guts != 0);
-        assert(guts->ptr != 0);
         return guts->ptr;
     }
     bool valid() {
