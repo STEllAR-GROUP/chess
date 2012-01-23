@@ -12,6 +12,11 @@ struct FixedVec {
     T data[N];
     int _size;
     FixedVec() : _size(0) {}
+    FixedVec(const FixedVec<T,N>& fvec) {
+        _size = fvec._size;
+        for(int i=0;i < _size;i++)
+            data[i] = fvec.data[i];
+    }
     T& operator[](int n) {
         assert(n >= 0 && n < _size);
         return data[n];
@@ -19,6 +24,11 @@ struct FixedVec {
     const T& operator[](int n) const {
         assert(n >= 0 && n < _size);
         return data[n];
+    }
+    void operator=(const FixedVec<T,N>& fvec) {
+        _size = fvec._size;
+        for(int i=0;i < _size;i++)
+            data[i] = fvec.data[i];
     }
     T *ptr() { return data; }
     void push_back(T t) {
@@ -37,12 +47,18 @@ struct FixedVec {
         return _size;
     }
     void resize(int n) {
+        assert(n >= 0 && n < N);
         // Keep Valgrind happy
         while(_size < n) {
             push_back(0);
         }
+        if(_size > n) {
+            int d = _size-n;
+            for(int i=0;i<n;i++) {
+                data[i] = data[i+d];
+            }
+        }
         _size = n;
-        assert(n >= 0 && n < N);
     }
 };
 #endif
