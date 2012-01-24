@@ -36,6 +36,7 @@ bool capture(const node_t& board,move& g);
 smart_ptr<task> parallel_task(int depth);
 int min(int a,int b);
 int max(int a,int b);
+void xboard();
 
 extern pthread_mutex_t mutex;
 extern const int num_proc;

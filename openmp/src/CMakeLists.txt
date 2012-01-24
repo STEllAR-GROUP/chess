@@ -1,4 +1,4 @@
-set( chx_SRCS main.cpp board.cpp data.cpp eval.cpp  search.cpp mpi_support.cpp minimax.cpp alphabeta.cpp)
+set( chx_SRCS main.cpp board.cpp data.cpp eval.cpp  search.cpp mpi_support.cpp minimax.cpp alphabeta.cpp xboard.cpp)
 
 
 add_executable(chx ${chx_SRCS})

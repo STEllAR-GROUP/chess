@@ -278,7 +278,6 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
         t->info->depth = depth;
         t->pfunc = strike_f;
         t->info->this_task = t;
-        this_task->children.push_back(t);
         t->parent_task = this_task;
         t->start();
         tasks.push_back(t);

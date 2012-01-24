@@ -147,6 +147,10 @@ int chx_main(int argc, char **argv)
         std::vector<std::string> input;
         boost::split(input, s, boost::is_any_of("\t "));
 
+        if (input[0] == "xboard") {
+            xboard();
+            break;
+        }
         if (input[0] == "go") {
             computer_side = board.side;
             auto_move = 0;
