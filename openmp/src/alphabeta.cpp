@@ -64,8 +64,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         return z;
     }
 
-    // If our parent has aborted, then we abort, and tell our children to abort
-    if (this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
+    // Check if we should abort
+    if (this_task->check_abort()) {
       this_task->abort_search();
       this_task = 0;
       return bad_min_score;
@@ -151,7 +151,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         last = (j+1==worksq);
         move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
-        if(this_task->parent_task.valid() && this_task->parent_task->check_abort()) {
+        
+        if (this_task->check_abort()) {
           this_task->abort_search();
           this_task = 0;
           info = 0;
@@ -170,7 +171,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             t->info->result = -beta;
             t->info->mv = g;
             t->info->this_task = t;
-            this_task->children.push_back(t);
             t->parent_task = this_task;
             if(depth == 1 && capture(board,g))
                 t->pfunc = qeval_f;
@@ -196,10 +196,14 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 #endif
                         if(alpha >= beta)
                             break;
+                        
                     }
                 }
-                tasks[n]->info->this_task = 0;
-                tasks[n]->info = 0;
+            }
+            for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
+            {
+                (*task)->info->this_task = 0;
+                (*task)->info = 0;
             }
             tasks.clear();
             if(alpha >= beta)

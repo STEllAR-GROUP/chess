@@ -81,7 +81,6 @@ struct task {
     smart_ptr<search_info> info;
 
     smart_ptr<task> parent_task;
-    std::vector< smart_ptr<task> > children;
     //pthread_func_t pfunc;
     pfunc_v pfunc;
     task() : pfunc(no_f) {
@@ -94,14 +93,11 @@ struct task {
 
     virtual void abort_search() = 0;
 
+    virtual void abort_search_parent() {}
+
     virtual bool check_abort() = 0;
 
     virtual void purge() {
-        for (std::vector< smart_ptr<task> >::iterator i = children.begin(); i != children.end(); ++i)
-        {
-            (*i)->purge();
-        }
-        children.clear();
         info = 0;
         parent_task = 0;
     }
@@ -186,6 +182,7 @@ struct pthread_task : public task {
     }
     virtual ~pthread_task() {
         //join();
+        purge();
     }
     virtual void start() {
         //pthread_mutex_lock(&mut);
@@ -215,16 +212,29 @@ struct pthread_task : public task {
         //pthread_join(thread,NULL);
         //mpi_task_array[0].add(1);
     }
-    virtual void abort_search() {
+
+    // We need this function because we don't want to tell everyone
+    // to abort, only the immediate parent
+    virtual void abort_search_parent() {
         pthread_mutex_lock(&mut);
         abort_flag = true;
         pthread_mutex_unlock(&mut);
     }
 
+    virtual void abort_search() {
+        pthread_mutex_lock(&mut);
+        abort_flag = true;
+        parent_task->abort_search_parent();
+        pthread_mutex_unlock(&mut);
+    }
+
+
     virtual bool check_abort() {
         bool ret;
         pthread_mutex_lock(&mut);
         ret = abort_flag;
+        if (parent_task.valid() && parent_task->check_abort())
+            ret = true;
         pthread_mutex_unlock(&mut);
         return ret;
     }
