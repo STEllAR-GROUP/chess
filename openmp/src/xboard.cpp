@@ -27,6 +27,7 @@ void xboard()
     gen(workq, board);
 
     for (;;) {
+        command.clear();
         if (board.side == computer_side) {
             think(board, false);
             if (move_to_make.u == 0) {
@@ -40,6 +41,8 @@ void xboard()
             workq.clear();
             gen(workq, board);
             print_result(workq, board);
+
+            move_to_make.u = 0;
             continue;
         }
         std::cin >> command;
