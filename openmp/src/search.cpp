@@ -117,8 +117,7 @@ void *qeval_pt(void *vptr)
 
 smart_ptr<task> parallel_task(int depth) {
 
-    // Commented out until all bugs are resolved with serial
-    /*if(depth >= 3) {
+    if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
             smart_ptr<task> t = new pthread_task;
             return t;
@@ -131,7 +130,7 @@ smart_ptr<task> parallel_task(int depth) {
                 return t;
             }
         }
-    }*/
+    }
     smart_ptr<task> t = new serial_task;
     return t;
 }
