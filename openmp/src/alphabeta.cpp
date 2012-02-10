@@ -86,6 +86,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         beta  = min(zhi,beta);
     }
     if(alpha >= beta) {
+        this_task->abort_search();
         this_task = 0;
         return alpha;
     }
@@ -185,6 +186,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                 tasks[n]->join();
                 val = -tasks[n]->info->result;
 
+                if (val == bad_max_score)
+                    continue;
+
                 if (val > max_val) {
                     max_val = val;
                     max_move = info->mv;
@@ -194,8 +198,10 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 #ifdef PV_ON
                         pv[board.ply].set(info->mv);
 #endif
-                        if(alpha >= beta)
+                        if(alpha >= beta) {
+                            this_task->abort_search();
                             break;
+                        }
                         
                     }
                 }
@@ -206,8 +212,11 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                 (*task)->info = 0;
             }
             tasks.clear();
-            if(alpha >= beta)
+            if(alpha >= beta) {
+                this_task->abort_search();
                 break;
+                //return bad_min_score;
+            }
         }
     }
     assert(tasks.size()==0);

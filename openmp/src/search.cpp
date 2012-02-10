@@ -140,10 +140,8 @@ void *strike(void *vptr) {
   info->result = search_ab(info->board,info->depth,info->alpha,info->beta, info->this_task);
   if(info->alpha < info->result && info->result < info->beta) {
     //std::cout << "FOUND: " << VAR(info->result) << std::endl;
-    if (info->this_task->parent_task.valid()) {
-      info->this_task->parent_task->abort_search();
-      return NULL;
-    }
+    info->this_task->abort_search();
+    return NULL;
   }
   mpi_task_array[0].add(1);
   return NULL;
@@ -383,7 +381,7 @@ void sort_pv(std::vector<move>& workq, int index)
   }
 }
 
-#define TRANSPOSE_ON 1
+#define TRANSPOSE_ON 0
 
 zkey_t transposition_table[table_size];
 

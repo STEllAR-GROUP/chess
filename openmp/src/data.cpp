@@ -21,7 +21,7 @@ int output = 1; //Used to tell the engine whether to output or not.
 
 int chosen_evaluator = ORIGINAL; // Which evaluation function to use
 
-int search_method = MINIMAX; // Which search method to use
+int search_method = ALPHABETA; // Which search method to use
 
 int iter_depth = 5;  // See search.cpp for usage
 
