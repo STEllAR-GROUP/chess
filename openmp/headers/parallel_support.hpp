@@ -73,6 +73,10 @@ struct search_info {
         pthread_cond_init(&cond,NULL);
         this_task = 0;
     }
+
+    ~search_info() {
+        this_task = 0;
+    }
 };
 
 enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
@@ -85,7 +89,10 @@ struct task {
     pfunc_v pfunc;
     task() : pfunc(no_f) {
     }
-    virtual ~task() {}
+    virtual ~task() {
+        info = 0;
+        parent_task = 0;
+    }
 
     virtual void start() = 0;
 
@@ -105,7 +112,8 @@ struct task {
 struct serial_task : public task {
     serial_task() {}
     virtual ~serial_task() {
-        purge();
+        info = 0;
+        parent_task = 0;
     }
 
     virtual void start() {}
@@ -192,6 +200,7 @@ struct pthread_task : public task {
         //pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
         //pthread_create(&thread,&attr,pfunc,info.ptr());
         info->set_parallel();
+        assert(info.valid());
         info->self = info;
         if(pfunc == search_f)
             pthread_create(&thread,&pth_attr,search_pt,info.ptr());
@@ -222,10 +231,12 @@ struct pthread_task : public task {
     }
 
     virtual void abort_search() {
+#ifdef ABORT
         pthread_mutex_lock(&mut);
         abort_flag = true;
         parent_task->abort_search_parent();
         pthread_mutex_unlock(&mut);
+#endif
     }
 
 

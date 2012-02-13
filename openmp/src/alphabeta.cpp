@@ -27,7 +27,9 @@
 void *search_ab_pt(void *vptr)
 {
     search_info *info = (search_info *)vptr;
+    assert(info != 0);
     assert(info->depth == info->board.depth);
+    //assert(info->self.valid());
     info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
     if(info->self.valid()) {
         info->set_done();
@@ -87,7 +89,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     }
     if(alpha >= beta) {
         this_task->abort_search();
-        this_task = 0;
+        //this_task = 0;
         return alpha;
     }
 
@@ -206,11 +208,13 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                     }
                 }
             }
+            assert(this_task.valid());
             for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
             {
-                (*task)->info->this_task = 0;
+                //(*task)->info->this_task = 0;
                 (*task)->info = 0;
             }
+            assert(this_task.valid());
             tasks.clear();
             if(alpha >= beta) {
                 this_task->abort_search();
