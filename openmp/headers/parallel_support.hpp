@@ -33,7 +33,7 @@ struct search_info {
     
     smart_ptr<task> this_task;
     
-
+    bool serial;
     pthread_mutex_t mut;
     pthread_cond_t cond;
     bool par_done;
@@ -72,6 +72,7 @@ struct search_info {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
         this_task = 0;
+        serial = false;
     }
 
     ~search_info() {
@@ -111,14 +112,17 @@ struct task {
 };
 struct serial_task : public task {
     serial_task() {}
-    virtual ~serial_task() {
+    ~serial_task() {
         info = 0;
         parent_task = 0;
     }
 
-    virtual void start() {}
+    virtual void start() { }
 
     virtual void join() {
+        if(!info.valid())
+            return;
+        info->serial = true;
         if(pfunc == search_f)
             search_pt(info.ptr());
         else if(pfunc == search_ab_f)
@@ -188,8 +192,7 @@ struct pthread_task : public task {
         pthread_mutex_init(&mut,NULL);
         abort_flag = false;
     }
-    virtual ~pthread_task() {
-        //join();
+    ~pthread_task() {
         purge();
     }
     virtual void start() {

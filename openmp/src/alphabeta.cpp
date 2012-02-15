@@ -28,14 +28,16 @@ void *search_ab_pt(void *vptr)
 {
     search_info *info = (search_info *)vptr;
     assert(info != 0);
-    assert(info->depth == info->board.depth);
-    //assert(info->self.valid());
-    info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
-    if(info->self.valid()) {
+    assert(info->serial || info->self.valid());
+    {
+        assert(info->depth == info->board.depth);
+        info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
         info->set_done();
         mpi_task_array[0].add(1);
-        info->self = 0;
-        pthread_exit(NULL);
+        smart_ptr<search_info> eg = info->self;
+        info->self=0;
+        if(!info->serial)
+            pthread_exit(NULL);
     }
     return NULL;
 }

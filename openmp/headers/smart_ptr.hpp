@@ -42,8 +42,10 @@ template<typename T>
 class smart_ptr {
     smart_ptr_guts<T> *guts;
     void clean() {
+        assert(this != 0);
         if(guts != 0 && guts->dec()) {
             delete guts;
+            guts = 0;
         }
     }
     public:
@@ -71,6 +73,7 @@ class smart_ptr {
         }
     }
     void operator=(const smart_ptr<T>& s) {
+        assert(this != 0);
         clean();
         guts = s.guts;
         if(guts != 0)
