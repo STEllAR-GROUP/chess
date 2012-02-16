@@ -17,14 +17,17 @@ int chx_threads_per_proc();
 extern pthread_attr_t pth_attr;
 extern bool chx_abort;
 
+struct task;
+
 typedef void *(*pthread_func_t)(void*);
 
 void *search_pt(void *);
 void *search_ab_pt(void *);
 void *strike(void *);
 void *qeval_pt(void *);
-
-struct task;
+score_t search(const node_t& board, int depth, smart_ptr<task> this_task);
+score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, smart_ptr<task> this_task);
+score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, smart_ptr<task> this_task);
 
 struct search_info {
     // self-reference used
@@ -33,7 +36,6 @@ struct search_info {
     
     smart_ptr<task> this_task;
     
-    bool serial;
     pthread_mutex_t mut;
     pthread_cond_t cond;
     bool par_done;
@@ -72,7 +74,6 @@ struct search_info {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
         this_task = 0;
-        serial = false;
     }
 
     ~search_info() {
@@ -104,11 +105,6 @@ struct task {
     virtual void abort_search_parent() {}
 
     virtual bool check_abort() = 0;
-
-    virtual void purge() {
-        info = 0;
-        parent_task = 0;
-    }
 };
 struct serial_task : public task {
     serial_task() {}
@@ -122,15 +118,15 @@ struct serial_task : public task {
     virtual void join() {
         if(!info.valid())
             return;
-        info->serial = true;
+        info->self=0;
         if(pfunc == search_f)
-            search_pt(info.ptr());
+            info->result = search(info->board,info->depth,info->this_task);
         else if(pfunc == search_ab_f)
-            search_ab_pt(info.ptr());
+            info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
         else if(pfunc == strike_f)
-            strike(info.ptr());
+            info->result = search_ab(info->board,info->depth,info->alpha,info->beta, info->this_task);
         else if(pfunc == qeval_f)
-            qeval_pt(info.ptr());
+            info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
         else
             abort();
     }
@@ -193,7 +189,8 @@ struct pthread_task : public task {
         abort_flag = false;
     }
     ~pthread_task() {
-        purge();
+        info = 0;
+        parent_task = 0;
     }
     virtual void start() {
         //pthread_mutex_lock(&mut);

@@ -112,6 +112,7 @@ void *qeval_pt(void *vptr)
 {
   search_info *info = (search_info *)vptr;
   info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
+  info->self = 0;
   return NULL;
 }
 
@@ -138,6 +139,7 @@ smart_ptr<task> parallel_task(int depth) {
 void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
   info->result = search_ab(info->board,info->depth,info->alpha,info->beta, info->this_task);
+  info->self = 0;
   if(info->alpha < info->result && info->result < info->beta) {
     //std::cout << "FOUND: " << VAR(info->result) << std::endl;
     info->this_task->abort_search();
@@ -237,8 +239,6 @@ int think(node_t& board,bool parallel)
         brk = true;
         break;
       }
-      root->purge();
-      root = 0;
       root = new serial_task;
     }
 

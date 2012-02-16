@@ -28,7 +28,7 @@ void *search_ab_pt(void *vptr)
 {
     search_info *info = (search_info *)vptr;
     assert(info != 0);
-    assert(info->serial || info->self.valid());
+    assert(info->self.valid());
     {
         assert(info->depth == info->board.depth);
         info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
@@ -36,8 +36,7 @@ void *search_ab_pt(void *vptr)
         mpi_task_array[0].add(1);
         smart_ptr<search_info> eg = info->self;
         info->self=0;
-        if(!info->serial)
-            pthread_exit(NULL);
+        pthread_exit(NULL);
     }
     return NULL;
 }
@@ -91,7 +90,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     }
     if(alpha >= beta) {
         this_task->abort_search();
-        //this_task = 0;
+        this_task = 0;
         return alpha;
     }
 
