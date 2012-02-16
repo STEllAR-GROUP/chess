@@ -7,7 +7,9 @@
 /*
  *  main.cpp
  */
+#ifdef HAS_BOOST
 #include <boost/algorithm/string.hpp>
+#endif
 #include "main.hpp"
 #include <signal.h>
 #include <fstream>
@@ -145,7 +147,11 @@ int chx_main(int argc, char **argv)
             continue;
 
         std::vector<std::string> input;
+#ifdef HAS_BOOST
         boost::split(input, s, boost::is_any_of("\t "));
+#else
+        input.push_back(s);
+#endif
 
         if (input[0] == "xboard") {
             xboard();
@@ -169,6 +175,7 @@ int chx_main(int argc, char **argv)
             gen(workq, board);
             continue;
         }
+#ifdef HAS_BOOST
         if (input[0] == "wd") {
           try {
             depth[LIGHT] = atoi(input.at(1).c_str());
@@ -202,11 +209,13 @@ int chx_main(int argc, char **argv)
           }
           continue;
         }
+#endif
         if (input[0] == "d") {
             print_board(board, std::cout);
             continue;
         }
         if ((input[0] == "o")||(input[0] == "output")) {
+#ifdef HAS_BOOST
           try {
             if (input.at(1) == "on")
               output = 1;
@@ -214,12 +223,15 @@ int chx_main(int argc, char **argv)
               output = 0;
           }
           catch (out_of_range&) {
+#endif
             output ^= 1;
             if (output == 1)
                 std::cout << "Output is now on" << std::endl;
             else
                 std::cout << "Output is now off" << std::endl;
+#ifdef HAS_BOOST
           }
+#endif
           continue;
         }
         if ((input[0] == "exit")||(input[0] == "quit")) {
@@ -231,10 +243,12 @@ int chx_main(int argc, char **argv)
           int ply_level;
           int num_runs;
           std::string filename;
+#ifdef HAS_BOOST
           try {
             filename = input.at(1);
           }
           catch (out_of_range&) {
+#endif
 #ifdef READLINE_SUPPORT
           buf = readline("Name of file:  ");
           filename.append(buf);
@@ -243,51 +257,67 @@ int chx_main(int argc, char **argv)
           std::cout << "Name of file: ";
           std::cin >> filename;
 #endif
+#ifdef HAS_BOOST
           }
 
           try {
             ply_level = atoi(input.at(2).c_str());
           }
           catch (out_of_range&) {
+#endif
             std::cout << "Search depth (ply): ";
             std::cin >> ply_level;
+#ifdef HAS_BOOST
           }
           try {
             num_runs = atoi(input.at(3).c_str());
           }
           catch (out_of_range&) {
+#endif
             std::cout << "Number of runs: ";
             std::cin >> num_runs;
+#ifdef HAS_BOOST
           }
+#endif
           std::cout << std::endl;
           start_benchmark(filename, ply_level, num_runs, true);
           continue;
         }
         if (input[0] == "eval") {
           std::string eval;
+#ifdef HAS_BOOST
           try {
             eval = input.at(1);
           }
           catch (out_of_range&) {
+#endif
             std::cout << "Name of evaluator (original,simple): ";
             std::cin >> eval;
+#ifdef HAS_BOOST
           }
+#endif
           if (eval == "simple") {
             chosen_evaluator = SIMPLE;
           } else if (eval == "original") {
             chosen_evaluator = ORIGINAL;
+          } else {
+            std::cout << "Invalid evaluator specified." << std::endl;
           }
           continue;
         }
         if (input[0] == "search") {
           std::string search_m;
+#ifdef HAS_BOOST
           try {
             search_m = input.at(1);
           }
           catch (out_of_range&) {
+#endif
             std::cout << "Name of search method (minimax,alphabeta,mtdf,multistrike): ";
             std::cin >> search_m;
+#ifdef HAS_BOOST
           }
+#endif
           if (search_m == "minimax") {
               search_method = MINIMAX;
           } else if (search_m == "alphabeta") {
@@ -309,8 +339,10 @@ int chx_main(int argc, char **argv)
           std::cout << "  go\n\tcomputer makes a move" << std::endl;
           std::cout << "  auto\n\tcomputer will continue to make moves until game is over" << std::endl;
           std::cout << "  new\n\tstarts a new game" << std::endl;
+#ifdef HAS_BOOST
           std::cout << "  wd <number>\n\tsets white search depth (default 3)" << std::endl;
           std::cout << "  bd <number>\n\tsets black search depth (default 3)" << std::endl;
+#endif
           std::cout << "  d\n\tdisplay the board" << std::endl;
           std::cout << "  o <on/off>\n\ttoggles engine output on or off (default on)" << std::endl;
           std::cout << "  exit\n\texit the program" << std::endl;

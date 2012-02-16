@@ -129,6 +129,7 @@ struct serial_task : public task {
             info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
         else
             abort();
+        info->set_done();
     }
 
     virtual void abort_search() {}
@@ -231,12 +232,10 @@ struct pthread_task : public task {
     }
 
     virtual void abort_search() {
-#ifdef ABORT
         pthread_mutex_lock(&mut);
         abort_flag = true;
         parent_task->abort_search_parent();
         pthread_mutex_unlock(&mut);
-#endif
     }
 
 

@@ -113,6 +113,8 @@ void *qeval_pt(void *vptr)
   search_info *info = (search_info *)vptr;
   info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
   info->self = 0;
+  info->set_done();
+  mpi_task_array[0].add(1);
   return NULL;
 }
 
@@ -145,6 +147,7 @@ void *strike(void *vptr) {
     info->this_task->abort_search();
     return NULL;
   }
+  info->set_done();
   mpi_task_array[0].add(1);
   return NULL;
 }
