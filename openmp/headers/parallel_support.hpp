@@ -138,21 +138,23 @@ struct serial_task : public task {
         return false;
     }
 };
-struct pcounter {
-    int count;
+class pcounter {
+    int count, max_count;
     pthread_mutex_t mut;
     pthread_cond_t cond;
-    pcounter() : count(0) {
+public:
+    pcounter() : count(0), max_count(0) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
     }
-    pcounter(int n) : count(n) {
-        pthread_mutex_init(&mut,NULL);
+    void set_max(int n) {
+        count = max_count = n;
     }
     int add(int n) {
         pthread_mutex_lock(&mut);
         int old = count;
         count += n;
+        assert(count <= max_count);
         if(old == 0 && count > 0)
             pthread_cond_broadcast(&cond);
         int m = count;

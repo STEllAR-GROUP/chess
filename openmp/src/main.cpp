@@ -372,10 +372,13 @@ int chx_main(int argc, char **argv)
 
 int chx_threads_per_proc() {
     const char *th = getenv("CHX_THREADS_PER_PROC");
+    int thcount = 0;
     if(th == NULL)
-        return 1;
+        ;
     else
-        return atoi(th);
+        thcount = atoi(th);
+    //std::cout << "thread count: " << thcount << std::endl;
+    return thcount;
 }
 
 pthread_attr_t pth_attr;
@@ -395,7 +398,7 @@ int main(int argc, char *argv[])
         mpi_task_array.resize(mpi_size);
         for(int i=1;i<mpi_size;i++)
             mpi_task_array[i].add(1);
-        mpi_task_array[0].add(threads_per_proc);
+        mpi_task_array[0].set_max(threads_per_proc);
 #ifdef MPI_SUPPORT
         // Just a diagnostic message announcing MPI is on
         std::cout << "MPI enabled" << std::endl;
