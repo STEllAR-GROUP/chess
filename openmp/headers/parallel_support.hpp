@@ -98,7 +98,7 @@ struct task {
 inline void search_info::wait_for_done() {
     pthread_mutex_lock(&mut);
     while(!par_done) {
-        if(this_task->check_abort())
+        if(this_task.valid() && this_task->check_abort())
             break;
         timespec ts;
         timeval tv;
