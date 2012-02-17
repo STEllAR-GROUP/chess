@@ -35,6 +35,9 @@ void *search_ab_pt(void *vptr)
         info->set_done();
         mpi_task_array[0].add(1);
         smart_ptr<search_info> eg = info->self;
+        if(info->result >= info->beta) {
+            info->this_task->abort_search();
+        }
         info->self=0;
         pthread_exit(NULL);
     }
@@ -71,7 +74,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     if (this_task->check_abort()) {
       this_task->abort_search();
       this_task = 0;
-      return bad_min_score;
+      return beta;
     }
 
     score_t max_val = bad_min_score;
@@ -160,7 +163,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
           this_task->abort_search();
           this_task = 0;
           info = 0;
-          return bad_min_score;
+          return alpha;
         }
 
         if (makemove(info->board, g.b)) {
@@ -202,7 +205,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                         pv[board.ply].set(info->mv);
 #endif
                         if(alpha >= beta) {
-                            this_task->abort_search();
                             break;
                         }
                         
@@ -218,7 +220,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             assert(this_task.valid());
             tasks.clear();
             if(alpha >= beta) {
-                this_task->abort_search();
                 break;
                 //return bad_min_score;
             }
@@ -242,7 +243,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 
     //if (board.ply == 0 && !chx_abort) {
 
-//    if (board.ply == 0 && (parent == NULL || !parent->check_abort())) {
     if (board.ply == 0) {
         assert(!this_task->parent_task.valid());
         assert(max_move.u != INVALID_MOVE);

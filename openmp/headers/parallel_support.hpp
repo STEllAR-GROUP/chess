@@ -56,19 +56,7 @@ struct search_info {
         pthread_cond_signal(&cond);
         pthread_mutex_unlock(&mut);
     }
-    void wait_for_done() {
-        pthread_mutex_lock(&mut);
-        //while(!par_done && !chx_abort) {
-        while(!par_done) {
-            timespec ts;
-            timeval tv;
-            gettimeofday(&tv, NULL);
-            ts.tv_sec = tv.tv_sec + 0;
-            ts.tv_nsec = 10000;
-            pthread_cond_timedwait(&cond,&mut,&ts);
-        }
-        pthread_mutex_unlock(&mut);
-    }
+    void wait_for_done();
     search_info(const node_t& board_) : board(board_), par_done(true),
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
@@ -106,6 +94,22 @@ struct task {
 
     virtual bool check_abort() = 0;
 };
+
+inline void search_info::wait_for_done() {
+    pthread_mutex_lock(&mut);
+    while(!par_done) {
+        if(this_task->check_abort())
+            break;
+        timespec ts;
+        timeval tv;
+        gettimeofday(&tv, NULL);
+        ts.tv_sec = tv.tv_sec + 0;
+        ts.tv_nsec = 10000;
+        pthread_cond_timedwait(&cond,&mut,&ts);
+    }
+    pthread_mutex_unlock(&mut);
+}
+
 struct serial_task : public task {
     serial_task() {}
     ~serial_task() {
@@ -235,7 +239,6 @@ struct pthread_task : public task {
 
     virtual void abort_search() {
         pthread_mutex_lock(&mut);
-        abort_flag = true;
         parent_task->abort_search_parent();
         pthread_mutex_unlock(&mut);
     }
@@ -244,7 +247,7 @@ struct pthread_task : public task {
     virtual bool check_abort() {
         bool ret;
         pthread_mutex_lock(&mut);
-        ret = abort_flag;
+        ret = false;
         if (parent_task.valid() && parent_task->check_abort())
             ret = true;
         pthread_mutex_unlock(&mut);
