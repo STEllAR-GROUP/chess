@@ -186,7 +186,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             t->start();
             tasks.push_back(t);
         }
-        if(tasks.size() >= num_proc/2 || last) {
+        if(tasks.size() >= num_proc || last) {
             for(int n=0;n<tasks.size();n++) {
                 smart_ptr<search_info> info = tasks[n]->info;
                 tasks[n]->join();
