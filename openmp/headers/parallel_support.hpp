@@ -134,6 +134,10 @@ struct serial_task : public task {
         else
             abort();
         info->set_done();
+        if(pfunc != search_f && info->result >= info->beta) {
+            if (info->this_task.valid())
+                info->this_task->abort_search();
+        }
     }
 
     virtual void abort_search() {}

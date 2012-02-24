@@ -115,6 +115,9 @@ void *qeval_pt(void *vptr)
   info->self = 0;
   info->set_done();
   mpi_task_array[0].add(1);
+  if(info->result >= info->beta) {
+    info->this_task->abort_search();
+  }
   return NULL;
 }
 

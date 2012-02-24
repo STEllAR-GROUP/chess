@@ -50,7 +50,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
     gen(workq, board); // Generate the moves
 
     DECL_SCORE(minf,-10000,board.hash);
-    max = minf; // Set the max score to -infinity
+    max = bad_min_score; // Set the max score to -infinity
 
     const int worksq = workq.size();
     std::vector<smart_ptr<task> > tasks;
