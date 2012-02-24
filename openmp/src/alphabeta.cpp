@@ -214,14 +214,12 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             assert(this_task.valid());
             for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
             {
-                //(*task)->info->this_task = 0;
                 (*task)->info = 0;
             }
             assert(this_task.valid());
             tasks.clear();
             if(alpha >= beta) {
                 break;
-                //return bad_min_score;
             }
         }
     }
@@ -240,8 +238,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             return z;
         }
     }
-
-    //if (board.ply == 0 && !chx_abort) {
 
     if (board.ply == 0) {
         assert(!this_task->parent_task.valid());

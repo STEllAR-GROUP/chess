@@ -99,7 +99,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                     }
                 }
             }
-            if(tasks.size()>=num_proc/2||last) {
+            if(tasks.size()>=num_proc||last) {
                 for(int n=0;n<tasks.size();n++) {
                     smart_ptr<search_info> info = tasks[n]->info;
                     tasks[n]->join();
