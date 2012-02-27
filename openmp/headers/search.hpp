@@ -33,7 +33,7 @@ int reps(const node_t& board);
 bool compare_moves(move a, move b);
 void sort_pv(std::vector<move>& workq, int ply);
 bool capture(const node_t& board,move& g);
-smart_ptr<task> parallel_task(int depth);
+smart_ptr<task> parallel_task(int depth, bool *parallel);
 int min(int a,int b);
 int max(int a,int b);
 void xboard();

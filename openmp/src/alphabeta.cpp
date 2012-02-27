@@ -159,10 +159,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     }
 
     // loop through the moves
-    bool last = false;
     for (; j < worksq; j++) {
-        assert(!last);
-        last = (j+1==worksq);
         move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
         
@@ -174,8 +171,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         }
 
         if (makemove(info->board, g.b)) {
+            bool parallel;
 
-            smart_ptr<task> t = parallel_task(depth);
+            smart_ptr<task> t = parallel_task(depth, &parallel);
 
             t->info = info;
             t->info->board.depth = info->depth = depth-1;
@@ -192,42 +190,42 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                 t->pfunc = search_ab_f;
             t->start();
             tasks.push_back(t);
+            if (parallel)
+                continue;
         }
-        if(tasks.size() >= num_proc || last) {
-            for(int n=0;n<tasks.size();n++) {
-                smart_ptr<search_info> info = tasks[n]->info;
-                tasks[n]->join();
-                val = -tasks[n]->info->result;
+        for(int n=tasks.size()-1;n>=0;n--) {
+            smart_ptr<search_info> info = tasks[n]->info;
+            tasks[n]->join();
+            val = -tasks[n]->info->result;
 
-                if (val == bad_max_score)
-                    continue;
+            if (val == bad_max_score)
+                continue;
 
-                if (val > max_val) {
-                    max_val = val;
-                    max_move = info->mv;
-                    if (val > alpha)
-                    {
-                        alpha = val;
+            if (val > max_val) {
+                max_val = val;
+                max_move = info->mv;
+                if (val > alpha)
+                {
+                    alpha = val;
 #ifdef PV_ON
-                        pv[board.ply].set(info->mv);
+                    pv[board.ply].set(info->mv);
 #endif
-                        if(alpha >= beta) {
-                            break;
-                        }
-                        
+                    if(alpha >= beta) {
+                        break;
                     }
+                    
                 }
             }
-            assert(this_task.valid());
-            for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
-            {
-                (*task)->info = 0;
-            }
-            assert(this_task.valid());
-            tasks.clear();
-            if(alpha >= beta) {
-                break;
-            }
+        }
+        assert(this_task.valid());
+        for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
+        {
+            (*task)->info = 0;
+        }
+        assert(this_task.valid());
+        tasks.clear();
+        if(alpha >= beta) {
+            break;
         }
     }
     assert(tasks.size()==0);

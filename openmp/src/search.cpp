@@ -121,11 +121,12 @@ void *qeval_pt(void *vptr)
   return NULL;
 }
 
-smart_ptr<task> parallel_task(int depth) {
+smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
     if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
             smart_ptr<task> t = new pthread_task;
+            *parallel = true;
             return t;
         }
     }
@@ -133,10 +134,12 @@ smart_ptr<task> parallel_task(int depth) {
         for(int i=1;i<mpi_size;i++) {
             if(mpi_task_array[i].dec()) {
                 smart_ptr<task> t = new mpi_task(i);
+                *parallel = true;
                 return t;
             }
         }
     }
+    *parallel = false;
     smart_ptr<task> t = new serial_task;
     return t;
 }
@@ -271,10 +274,11 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
         mpi_task_array[0].wait_dec();
     }
     for(int i=-max_parallel;i<=max_parallel;i++) {
+        bool parallel;
         DECL_SCORE(alpha,i==-max_parallel ? -10000 : fac*(i)  ,0);
         DECL_SCORE(beta, i== max_parallel ?  10000 : fac*(i+1),0);
         beta++;
-        smart_ptr<task> t = parallel_task(depth);
+        smart_ptr<task> t = parallel_task(depth, &parallel);
         t->info = new search_info(board);
         t->info->alpha = alpha;
         t->info->beta = beta;

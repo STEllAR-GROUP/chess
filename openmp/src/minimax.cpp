@@ -81,10 +81,11 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                 info->depth = depth-1;
                 info->mv.u = g.u;
                 info->result = z;
+                bool parallel;
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
                         smart_ptr<task> t = 
-                            parallel_task(depth);
+                            parallel_task(depth, &parallel);
                         t->info = info;
                         DECL_SCORE(lo,-10000,0);
                         t->info->beta = -max;
@@ -98,7 +99,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                 } else {
                     if(mm==0) {
                         smart_ptr<task> t = 
-                            parallel_task(depth);
+                            parallel_task(depth, &parallel);
                         t->info = info;
                         t->pfunc = search_f;
                         tasks.push_back(t);
