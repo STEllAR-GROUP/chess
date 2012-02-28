@@ -111,7 +111,8 @@ inline void search_info::wait_for_done() {
 }
 
 struct serial_task : public task {
-    serial_task() {}
+    bool joined;
+    serial_task(): joined(false) {}
     ~serial_task() {
         info = 0;
         parent_task = 0;
@@ -120,6 +121,8 @@ struct serial_task : public task {
     virtual void start() { }
 
     virtual void join() {
+        if (joined)
+            return;
         if(!info.valid())
             return;
         info->self=0;
@@ -138,6 +141,7 @@ struct serial_task : public task {
             if (info->this_task.valid())
                 info->this_task->abort_search();
         }
+        joined = true;
     }
 
     virtual void abort_search() {}

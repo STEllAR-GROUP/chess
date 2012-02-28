@@ -190,10 +190,12 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
                 t->pfunc = search_ab_f;
             t->start();
             tasks.push_back(t);
-            if (parallel)
+            if (parallel && (j < worksq - 1))
                 continue;
+            if (!parallel)
+                t->join(); // Serial task
         }
-        for(int n=tasks.size()-1;n>=0;n--) {
+        for(int n=0;n<tasks.size();n++) {
             smart_ptr<search_info> info = tasks[n]->info;
             tasks[n]->join();
             val = -tasks[n]->info->result;
@@ -222,7 +224,6 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         {
             (*task)->info = 0;
         }
-        assert(this_task.valid());
         tasks.clear();
         if(alpha >= beta) {
             break;
