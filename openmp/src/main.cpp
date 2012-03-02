@@ -129,12 +129,13 @@ int chx_main(int argc, char **argv)
             continue;
         }
         // get user input
+        std::string s;
 
 #ifdef READLINE_SUPPORT
         buf = readline("chx> ");
         if (buf == NULL)
           return 0;
-        std::string s(buf);
+        s = buf;
         free(buf);
         if (s != "")
             add_history(s.c_str());
