@@ -32,18 +32,18 @@ int max(int a,int b) { return a > b ? a : b; }
 
 struct safe_move {
     pthread_mutex_t mut;
-    move mv;
+    chess_move mv;
     safe_move() {
         pthread_mutex_init(&mut,NULL);
     }
-    void set(move mv_) {
+    void set(chess_move mv_) {
         pthread_mutex_lock(&mut);
         mv = mv_;
         pthread_mutex_unlock(&mut);
     }
-    move get() {
+    chess_move get() {
         pthread_mutex_lock(&mut);
-        move m = mv;
+        chess_move m = mv;
         pthread_mutex_unlock(&mut);
         return m;
     }
@@ -54,17 +54,17 @@ std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
  * This determines whether we have a capture. It's not sophisticated
  * enough to do en passant.
  */
-bool capture(const node_t& board,move& g) {
+bool capture(const node_t& board,chess_move& g) {
   return board.color[g.b.to] != EMPTY
       && board.color[g.b.to] != board.color[g.b.from];
 }
 
 /**
  * Quiescent evaluator. Originally we wished to avoid the complexity
- * of quiescent move searches, but MTD-f does not seem to work properly
- * without it. This particular search evaluates each move using the
- * evalutaor, unless the move is a capture then it calls itself
- * recursively. The quiescent move search uses alpha-beta to speed
+ * of quiescent chess_move searches, but MTD-f does not seem to work properly
+ * without it. This particular search evaluates each chess_move using the
+ * evalutaor, unless the chess_move is a capture then it calls itself
+ * recursively. The quiescent chess_move search uses alpha-beta to speed
  * itself along, and evaluates non-captures first to get the greatest
  * cutoff.
  **/
@@ -73,12 +73,12 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, sma
     evaluator ev;
     DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
     s = max(lower,s);
-    std::vector<move> workq;
+    std::vector<chess_move> workq;
     gen(workq, board); // Generate the moves
     /*if(chx_abort)
         return bad_min_score;*/
-    for(int j=0;j < workq.size(); j++) {
-        move g = workq[j];
+    for(size_t j=0;j < workq.size(); j++) {
+        chess_move g = workq[j];
         node_t p_board = board;
         if(!makemove(p_board,g.b))
             continue;
@@ -91,8 +91,8 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, sma
         if(s > upper)
             return s;
     }
-    for(int j=0;j < workq.size(); j++) {
-        move g = workq[j];
+    for(size_t j=0;j < workq.size(); j++) {
+        chess_move g = workq[j];
         node_t p_board = board;
         if(!makemove(p_board,g.b))
             continue;
@@ -165,9 +165,9 @@ int think(node_t& board,bool parallel)
 #ifdef PV_ON
   pv.clear();
   pv.resize(depth[board.side]);
-  move mvz;
+  chess_move mvz;
   mvz.u = INVALID_MOVE;
-  for(int i=0;i<pv.size();i++) {
+  for(size_t i=0;i<pv.size();i++) {
     pv[i].set(mvz);
   }
 #endif
@@ -268,8 +268,8 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
     assert(max_parallel > 0);
     const int fac = 600/max_parallel;//10*25/max_parallel;
     std::vector<smart_ptr<task> > tasks;
-    DECL_SCORE(lower,-10000,0);
-    DECL_SCORE(upper,10000,0);
+    // DECL_SCORE(lower,-10000,0);
+    // DECL_SCORE(upper,10000,0);
     for(int i=-max_parallel;i<=max_parallel;i++) {
         mpi_task_array[0].wait_dec();
     }
@@ -289,7 +289,7 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
         t->start();
         tasks.push_back(t);
     }
-    for(int i=0;i<tasks.size();i++) {
+    for(size_t i=0;i<tasks.size();i++) {
         tasks[i]->join();
         score_t result = tasks[i]->info->result;
         score_t alpha = tasks[i]->info->alpha;
@@ -367,17 +367,17 @@ int reps(const node_t& board)
   return r;
 }
 
-void sort_pv(std::vector<move>& workq, int index)
+void sort_pv(std::vector<chess_move>& workq, int index)
 {
-  if(index < pv.size())
+  if((size_t)index < pv.size())
     return;
-  move temp = pv[index].get();
+  chess_move temp = pv[index].get();
   if(temp.u == INVALID_MOVE)
     return;
-  for(int i = 0; i < workq.size() ; i++)
+  for(size_t i = 0; i < workq.size() ; i++)
   {
-    if (workq[i].u == temp.u) /* If we have a move in the work queue that is the 
-                                    same as the best move we have searched before */
+    if (workq[i].u == temp.u) /* If we have a chess_move in the work queue that is the 
+                                    same as the best chess_move we have searched before */
     {
       temp = workq[0];
       workq[0] = workq[i];

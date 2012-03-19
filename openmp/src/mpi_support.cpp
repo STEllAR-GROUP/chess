@@ -139,7 +139,7 @@ void *do_mpi_thread(void *voidp) {
 
 void *mpi_worker(void *)
 {
-    int result_data[2];
+    // int result_data[2];
 #ifdef MPI_SUPPORT
     if(mpi_rank==0) {
         int count = mpi_size -1;

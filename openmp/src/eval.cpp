@@ -257,7 +257,7 @@ int evaluator::eval_orig(const node_t& board)
     }
 
     /* the score[] array is set, now return the score relative
-       to the side to move */
+       to the side to chess_move */
     if (board.side == LIGHT)
         return score[LIGHT] - score[DARK];
     return score[DARK] - score[LIGHT];

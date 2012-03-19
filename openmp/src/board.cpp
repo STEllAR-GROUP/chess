@@ -13,7 +13,6 @@
 #include "here.hpp"
 #include <string.h>
 
-static int count, count2;
 // Make sure hashing works. Note
 // that the test is not thread safe.
 //#define CHECK_HASH 1
@@ -82,7 +81,7 @@ hash_t hash_rand()
    The way it works is to XOR random numbers that correspond to features of
    the position, e.g., if there's a black knight on B8, hash is XORed with
    hash_piece[BLACK][KNIGHT][B8]. All of the pieces are XORed together,
-   hash_side is XORed if it's black's move, and the en passant square is
+   hash_side is XORed if it's black's chess_move, and the en passant square is
    XORed if there is one. (A chess technicality is that one position can't
    be a repetition of another if the en passant state is different.) */
 
@@ -93,7 +92,7 @@ hash_t set_hash(node_t& board)
     hash_t hash(0);   
     for (i = 0; i < 64; ++i)
         if (board.color[i] != EMPTY)
-            hash ^= hash_piece[board.color[i]][board.piece[i]][i];
+            hash ^= hash_piece[(size_t)board.color[i]][(size_t)board.piece[i]][i];
     if (board.side == DARK)
         hash ^= hash_side;
     if (board.ep != -1)
@@ -103,7 +102,7 @@ hash_t set_hash(node_t& board)
 }
 
 /*  
-    This is the function for updating the hash instead of recomputing it based on a move.
+    This is the function for updating the hash instead of recomputing it based on a chess_move.
 
     For instance, if a pawn on a chessboard square is replaced by a rook from another square, 
     the resulting position would be produced by XORing the existing hash like this:
@@ -111,7 +110,7 @@ hash_t set_hash(node_t& board)
        1) XOR in the rook at the destination square
        2) XOR out the rook from the source square
     
-    Also because the move changes the side of the player, we will XOR the hash_side.
+    Also because the chess_move changes the side of the player, we will XOR the hash_side.
     This function is called at the beginning of makemove()
 */
 hash_t update_hash(node_t& board, const move_bytes m)
@@ -121,9 +120,9 @@ hash_t update_hash(node_t& board, const move_bytes m)
      hash_piece[][][] is indexed by piece [color][type][square] */
   hash_t hash(board.hash);
   if (board.color[m.to] != EMPTY)
-    hash ^= hash_piece[board.color[m.to]][board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square (or skip if empty)
-  hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
-  hash ^= hash_piece[board.color[m.from]][board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
+    hash ^= hash_piece[(size_t)board.color[m.to]][(size_t)board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square (or skip if empty)
+  hash ^= hash_piece[(size_t)board.color[m.from]][(size_t)board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
+  hash ^= hash_piece[(size_t)board.color[m.from]][(size_t)board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
   
   hash ^= hash_side;
   
@@ -194,10 +193,10 @@ bool attack(const node_t& board, int sq, int s)
 /* gen() generates pseudo-legal moves for the current position.
    It scans the board to find friendly pieces and then determines
    what squares they attack. When it finds a piece/square
-   combination, it calls gen_push to put the move on the "move
+   combination, it calls gen_push to put the chess_move on the "chess_move
    stack." */
 
-void gen(std::vector<move>& workq, const node_t& board)
+void gen(std::vector<chess_move>& workq, const node_t& board)
 {
   int i, j, n;
   do_data();
@@ -231,18 +230,18 @@ void gen(std::vector<move>& workq, const node_t& board)
               }
           }
           else if(board.piece[i] != EMPTY)
-              for (j = 0; j < offsets[board.piece[i]]; ++j)
+              for (j = 0; j < offsets[(size_t)board.piece[i]]; ++j)
                   for (n = i;;) {
-                      n = mailbox[mailbox64[n] + offset[board.piece[i]][j]];
+                      n = mailbox[mailbox64[n] + offset[(size_t)board.piece[i]][j]];
                       if (n == -1)
                           break;
                       if (board.color[n] != EMPTY) {
-                          if (board.color[n] == board.side ^ 1)
+                          if (board.color[n] == (board.side ^ 1))
                               gen_push(workq, board, i, n, 1);
                           break;
                       }
                       gen_push(workq, board, i, n, 0);
-                      if (!slide[board.piece[i]])
+                      if (!slide[(size_t)board.piece[i]])
                           break;
                   }
       }
@@ -280,18 +279,18 @@ void gen(std::vector<move>& workq, const node_t& board)
 }
 
 
-/* gen_push() puts a move on the move stack, unless it's a
+/* gen_push() puts a chess_move on the chess_move stack, unless it's a
    pawn promotion that needs to be handled by gen_promote().
-   It also assigns a score to the move for alpha-beta move
-   ordering. If the move is a capture, it uses MVV/LVA
+   It also assigns a score to the chess_move for alpha-beta chess_move
+   ordering. If the chess_move is a capture, it uses MVV/LVA
    (Most Valuable Victim/Least Valuable Attacker). Otherwise,
-   it uses the move's history heuristic value. Note that
-   1,000,000 is added to a capture move's score, so it
-   always gets ordered above a "normal" move. */
+   it uses the chess_move's history heuristic value. Note that
+   1,000,000 is added to a capture chess_move's score, so it
+   always gets ordered above a "normal" chess_move. */
 
-void gen_push(std::vector<move>& workq, const node_t& board, int from, int to, int bits)
+void gen_push(std::vector<chess_move>& workq, const node_t& board, int from, int to, int bits)
 {
-    move g;
+    chess_move g;
     
     if (bits & 16) {
         if (board.side == LIGHT) {
@@ -317,12 +316,12 @@ void gen_push(std::vector<move>& workq, const node_t& board, int from, int to, i
 
 
 /* gen_promote() is just like gen_push(), only it puts 4 moves
-   on the move stack, one for each possible promotion piece */
+   on the chess_move stack, one for each possible promotion piece */
 
-void gen_promote(std::vector<move>& workq, int from, int to, int bits)
+void gen_promote(std::vector<chess_move>& workq, int from, int to, int bits)
 {
     int i;
-    move g;
+    chess_move g;
     
     for (i = KNIGHT; i <= QUEEN; ++i) {
         g.b.from = (char)from;
@@ -334,7 +333,7 @@ void gen_promote(std::vector<move>& workq, int from, int to, int bits)
 }
 
 
-/* makemove() makes a move. If the move is illegal, it
+/* makemove() makes a chess_move. If the chess_move is illegal, it
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
 
@@ -344,8 +343,8 @@ bool makemove(node_t& board,const move_bytes m)
     if(board.ep != -1)
         board.hash ^= hash_ep[board.ep];
     board.hash = update_hash(board, m);
-    /* test to see if a castle move is legal and move the rook
-       (the king is moved with the usual move code later) */
+    /* test to see if a castle chess_move is legal and chess_move the rook
+       (the king is moved with the usual chess_move code later) */
     if (m.bits & 2) {
         int from, to;
         needs_set_hash = true;
@@ -402,7 +401,7 @@ bool makemove(node_t& board,const move_bytes m)
     board.hply++;
 
     /* update the castle, en passant, and
-       fifty-move-draw variables */
+       fifty-chess_move-draw variables */
     board.castle &= castle_mask[(int)m.from] & castle_mask[(int)m.to];
     if (m.bits & 8) {
         if (board.side == LIGHT)
@@ -423,7 +422,7 @@ bool makemove(node_t& board,const move_bytes m)
     else
         board.fifty++;
 
-    /* move the piece */
+    /* chess_move the piece */
     board.color[(int)m.to] = board.side;
     if (m.bits & 32)
     {
@@ -435,7 +434,7 @@ bool makemove(node_t& board,const move_bytes m)
     board.color[(int)m.from] = EMPTY;
     board.piece[(int)m.from] = EMPTY;
 
-    /* erase the pawn if this is an en passant move */
+    /* erase the pawn if this is an en passant chess_move */
     if (m.bits & 4) {
         if (board.side == LIGHT) {
             board.color[m.to + 8] = EMPTY;

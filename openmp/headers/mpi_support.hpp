@@ -67,9 +67,9 @@ struct worker_result {
 extern worker_result results[worker_result_size];
 
 struct mpi_task : public task {
-  int windex;
-  int dest;
   bool joined;
+  int dest;
+  int windex;
   mpi_task(int d) : joined(false), dest(d), windex(-1) {
     assert(d != 0);
   }
@@ -85,7 +85,7 @@ struct mpi_task : public task {
       return;
     joined = true;
     info->result = results[windex].get_result();
-    score_t s = info->result;
+    //score_t s = info->result;
     results[windex].depth = -1;
     mpi_task_array[dest].add(1);
   }

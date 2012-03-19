@@ -49,7 +49,7 @@ extern int mpi_depth;
 //                     in order to work properly.                         //
 ////////////////////////////////////////////////////////////////////////////
 
-extern move move_to_make;
+extern chess_move move_to_make;
 
 void do_data();
 #endif

@@ -34,7 +34,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
         return s;
     }
     /* if this isn't the root of the search tree (where we have
-       to pick a move and can't simply return 0) then check to
+       to pick a chess_move and can't simply return 0) then check to
        see if the position is a repeat. if so, we can assume that
        this line is a draw and return 0. */
     if (board.ply && reps(board)) {
@@ -42,7 +42,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
         return s;
     }
 
-    // fifty move draw rule
+    // fifty chess_move draw rule
     if (board.fifty >= 100) {
         DECL_SCORE(z,0,board.hash);
         return z;
@@ -50,16 +50,16 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
 
     score_t val, max;
 
-    std::vector<move> workq;
-    move max_move;
+    std::vector<chess_move> workq;
+    chess_move max_move;
     max_move.u = INVALID_MOVE;
 
     gen(workq, board); // Generate the moves
 
-    DECL_SCORE(minf,-10000,board.hash);
+    // DECL_SCORE(minf,-10000,board.hash);
     max = bad_min_score; // Set the max score to -infinity
 
-    const int worksq = workq.size();
+    // const int worksq = workq.size();
     std::vector<smart_ptr<task> > tasks;
 
     // loop through the moves
@@ -71,12 +71,12 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
     // Without doing this, minimax runs extremely
     // slowly.
     for(int mm=0;mm<2;mm++) {
-        for(int j=0;j < workq.size(); j++) {
+        for(size_t j=0;j < workq.size(); j++) {
             bool last = (j+1)==workq.size();
-            move g = workq[j];
+            chess_move g = workq[j];
             smart_ptr<search_info> info = new search_info(board);
 
-            if (makemove(info->board, g.b)) { // Make the move, if it isn't 
+            if (makemove(info->board, g.b)) { // Make the chess_move, if it isn't 
                 DECL_SCORE(z,0,board.hash);
                 info->depth = depth-1;
                 info->mv.u = g.u;
@@ -107,8 +107,8 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
                     }
                 }
             }
-            if(tasks.size()>=num_proc||last) {
-                for(int n=0;n<tasks.size();n++) {
+            if(tasks.size()>=(size_t)num_proc||last) {
+                for(size_t n=0;n<tasks.size();n++) {
                     smart_ptr<search_info> info = tasks[n]->info;
                     tasks[n]->join();
                     val = -tasks[n]->info->result;
@@ -148,7 +148,7 @@ score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
         pthread_mutex_unlock(&mutex);
     }
 
-    // fifty move draw rule
+    // fifty chess_move draw rule
     if (board.fifty >= 100) {
         DECL_SCORE(z,0,board.hash);
         return z;

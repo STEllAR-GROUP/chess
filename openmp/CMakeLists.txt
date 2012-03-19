@@ -1,11 +1,12 @@
-PROJECT( chx )
-cmake_minimum_required(VERSION 2.6)
+PROJECT( chx CXX )
+cmake_minimum_required(VERSION 2.8.4 FATAL_ERROR)
 SET (CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR};${HPX_INSTALL_DIR}/share/cmake-2.8/Modules)
 find_package(Readline)
 #find_package(MPI)
 find_package(Boost)
+find_package(HPX)
 
 IF (MPI_FOUND)
     MESSAGE("MPI was found. Configure MPI Support")
@@ -29,6 +30,6 @@ IF (Boost_FOUND)
 ENDIF (Boost_FOUND)
 
 include_directories ("${PROJECT_SOURCE_DIR}/headers")
-set (EXTRA_LIBS ${EXTRA_LIBS} ncurses pthread)
+set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 
 add_subdirectory (src)

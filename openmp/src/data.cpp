@@ -14,7 +14,7 @@
 
 int depth[2] = {3,3};
 
-move move_to_make; // Global variable keeping track of the next move to
+chess_move move_to_make; // Global variable keeping track of the next chess_move to
                    // make at the root level
 
 int output = 1; //Used to tell the engine whether to output or not.
@@ -39,9 +39,9 @@ hash_t hash_ep[64];
 /* Now we have the mailbox array, so called because it looks like a
    mailbox, at least according to Bob Hyatt. This is useful when we
    need to figure out what pieces can go where. Let's say we have a
-   rook on square a4 (32) and we want to know if it can move one
+   rook on square a4 (32) and we want to know if it can chess_move one
    square to the left. We subtract 1, and we get 31 (h5). The rook
-   obviously can't move to h5, but we don't know that without doing
+   obviously can't chess_move to h5, but we don't know that without doing
    a lot of annoying work. Sooooo, what we do is figure out a4's
    mailbox number, which is 61. Then we subtract 1 from 61 (60) and
    see what mailbox[60] is. In this case, it's -1, so it's out of
@@ -75,9 +75,9 @@ int mailbox64[64] = {
 };
 
 /* slide, offsets, and offset are basically the vectors that
-   pieces can move in. If slide for the piece is FALSE, it can
-   only move one square in any one direction. offsets is the
-   number of directions it can move in, and offset is an array
+   pieces can chess_move in. If slide for the piece is FALSE, it can
+   only chess_move one square in any one direction. offsets is the
+   number of directions it can chess_move in, and offset is an array
    of the actual directions. */
 
 bool slide[6] = {
@@ -99,10 +99,10 @@ int offset[6][8] = {
 
 
 /* This is the castle_mask array. We can use it to determine
-   the castling permissions after a move. What we do is
+   the castling permissions after a chess_move. What we do is
    logical-AND the castle bits with the castle_mask bits for
-   both of the move's squares. Let's say castle is 1, meaning
-   that white can still castle kingside. Now we play a move
+   both of the chess_move's squares. Let's say castle is 1, meaning
+   that white can still castle kingside. Now we play a chess_move
    where the rook on h1 gets captured. We AND castle with
    castle_mask[63], so we have 1&14, and castle becomes 0 and
    white can't castle kingside anymore. */

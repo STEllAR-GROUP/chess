@@ -34,7 +34,7 @@ struct FixedVec {
     void push_back(T t) {
         if(_size == N) {
             // We're only using this for
-            // move history, and only the
+            // chess_move history, and only the
             // last N moves matter.
             for(int i=1;i<N;i++)
                 data[i-1] = data[i];

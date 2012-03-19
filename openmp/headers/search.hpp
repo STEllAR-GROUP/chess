@@ -30,9 +30,9 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, smart_ptr<task> this_task);
 score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> this_task);
 int reps(const node_t& board);
-bool compare_moves(move a, move b);
-void sort_pv(std::vector<move>& workq, int ply);
-bool capture(const node_t& board,move& g);
+bool compare_moves(chess_move a, chess_move b);
+void sort_pv(std::vector<chess_move>& workq, int ply);
+bool capture(const node_t& board,chess_move& g);
 smart_ptr<task> parallel_task(int depth, bool *parallel);
 int min(int a,int b);
 int max(int a,int b);

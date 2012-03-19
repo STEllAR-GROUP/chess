@@ -7,6 +7,12 @@
 /*
  *  main.cpp
  */
+#if 0
+#include <hpx/hpx_init.hpp>
+#include <hpx/include/actions.hpp>
+#include <hpx/include/components.hpp>
+#endif
+
 #ifdef HAS_BOOST
 #include <boost/algorithm/string.hpp>
 #endif
@@ -61,10 +67,14 @@ void mpi_terminate() {
 int auto_move = 0;
 int computer_side;
 
-int chx_main(int argc, char **argv)
+//int hpx_main(boost::program_options::variables_map& vm)
+//{
+//    chx_main();
+//}
+
+int chx_main()
 {
 
-    int m;
 #ifdef READLINE_SUPPORT
     char *buf;
 #else
@@ -84,7 +94,7 @@ int chx_main(int argc, char **argv)
     init_hash();  /* Init hash sets up the hashing function
                      which is used for determining repeated moves */
     init_board(board);  // Initialize the board to its default state
-    std::vector<move> workq;  /* workq is a standard vector which contains
+    std::vector<chess_move> workq;  /* workq is a standard vector which contains
                                  all possible psuedo-legal moves for the
                                  current board position */
     gen(workq, board);  /* gen() takes the current board position and
@@ -94,7 +104,7 @@ int chx_main(int argc, char **argv)
     for (;;) {
         if (board.side == computer_side) {  // computer's turn
 
-            // think about the move and make it
+            // think about the chess_move and make it
             think(board,false);
             if (move_to_make.u == 0) {
                 std::cout << "(no legal moves)" << std::endl;
@@ -102,12 +112,12 @@ int chx_main(int argc, char **argv)
                 continue;
             }
             if (output)
-                std::cout << "Computer's move: " << move_str(move_to_make.b)
+                std::cout << "Computer's chess_move: " << move_str(move_to_make.b)
                     << std::endl;
-            makemove(board, move_to_make.b); // Make the move for our master board
+            makemove(board, move_to_make.b); // Make the chess_move for our master board
             board.ply = 0; // Reset the board ply to 0
 
-            workq.clear(); // Clear the work queue in preparation for next move
+            workq.clear(); // Clear the work queue in preparation for next chess_move
             gen(workq, board); /* Populate the work queue with the moves for
                                   the next board position */
 
@@ -118,7 +128,7 @@ int chx_main(int argc, char **argv)
             else
                 print_result(workq, board);
 
-            move_to_make.u = 0; // Reset the move to make
+            move_to_make.u = 0; // Reset the chess_move to make
 
             continue;
         }
@@ -335,9 +345,9 @@ int chx_main(int argc, char **argv)
         if (input[0] == "help") {
           std::cout << std::endl;
           std::cout << "  bench <name of file> <search depth> <number of runs>\n\tstarts the benchmark" << std::endl;
-          std::cout << "  eval <evaluator>\n\tswitches the current move evaluator in use (default original)" << std::endl;
+          std::cout << "  eval <evaluator>\n\tswitches the current chess_move evaluator in use (default original)" << std::endl;
           std::cout << "  search <function>\n\tswitches the current search method in use (default minimax)" << std::endl;
-          std::cout << "  go\n\tcomputer makes a move" << std::endl;
+          std::cout << "  go\n\tcomputer makes a chess_move" << std::endl;
           std::cout << "  auto\n\tcomputer will continue to make moves until game is over" << std::endl;
           std::cout << "  new\n\tstarts a new game" << std::endl;
 #ifdef HAS_BOOST
@@ -354,11 +364,11 @@ int chx_main(int argc, char **argv)
 
         int m;
         m = parse_move(workq, s.c_str());
-        move mov;
+        chess_move mov;
         mov.u = m;
         node_t newboard = board;
         if (m == -1 || !makemove(newboard, mov.b))
-            std::cout << "Illegal move or command." << std::endl;
+            std::cout << "Illegal chess_move or command." << std::endl;
         else {
             makemove(board, mov.b);
             board.ply = 0;
@@ -386,7 +396,6 @@ pthread_attr_t pth_attr;
 
 int main(int argc, char *argv[])
 {
-    int retcode = 0;
     pthread_attr_init(&pth_attr);
     pthread_attr_setdetachstate(&pth_attr, PTHREAD_CREATE_DETACHED);
 #ifdef MPI_SUPPORT
@@ -414,9 +423,11 @@ int main(int argc, char *argv[])
         mpi_worker(NULL);
         return 255;
     }
-    retcode = chx_main(argc, argv);
     mpi_terminate();
-    return retcode;
+    //boost::program_options::options_description
+    //    desc_commandline("usage: " HPX_APPLICATION_STRING " [options]");
+    //return hpx::init(desc_commandline, argc, argv);
+    return chx_main();
 }
 
 void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel)
@@ -485,7 +496,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
     getline (benchfile,line);
     line_num++;
     int i = -1;
-    for (int j = 0; j < line.size(); j++)
+    for (size_t j = 0; j < line.size(); j++)
     {
       c = line.at(j);
       if (j == 0 && c == '#') {
@@ -578,7 +589,7 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
   //At this point we have the board position configured to the file specification
   print_board(board, std::cout);
   print_board(board, logfile);
-  std::vector<move> workq;
+  std::vector<chess_move> workq;
   gen(workq, board);
 
   int start_time;
@@ -609,10 +620,10 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
     }
     else
     {
-      std::cout << "  Computer's move: " << move_str(move_to_make.b)
+      std::cout << "  Computer's chess_move: " << move_str(move_to_make.b)
         << std::endl;
 
-      logfile << "  Computer's move: " << move_str(move_to_make.b)
+      logfile << "  Computer's chess_move: " << move_str(move_to_make.b)
         << std::endl;
     }
     // Allow time for aborted threads to get cleaned up
@@ -643,14 +654,14 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
 
 }
 
-/* parse the move s (in coordinate notation) and return the move's
-   int value, or -1 if the move is illegal */
+/* parse the chess_move s (in coordinate notation) and return the chess_move's
+   int value, or -1 if the chess_move is illegal */
 
-int parse_move(std::vector<move>& workq, const char *s)
+int parse_move(std::vector<chess_move>& workq, const char *s)
 {
-  int from, to, i;
+  int from, to;
 
-  // make sure the string looks like a move
+  // make sure the string looks like a chess_move
   if (s[0] < 'a' || s[0] > 'h' ||
       s[1] < '0' || s[1] > '9' ||
       s[2] < 'a' || s[2] > 'h' ||
@@ -662,7 +673,7 @@ int parse_move(std::vector<move>& workq, const char *s)
   to = s[2] - 'a';
   to += 8 * (8 - (s[3] - '0'));
 
-  for (int i = 0; i < workq.size(); i++) {
+  for (size_t i = 0; i < workq.size(); i++) {
     if (workq[i].b.from == from && workq[i].b.to == to) {
       if (workq[i].b.bits & 32)
         switch (s[4]) {
@@ -682,12 +693,12 @@ int parse_move(std::vector<move>& workq, const char *s)
     }
   }
 
-  // didn't find the move
+  // didn't find the chess_move
   return -1;
 }
 
 
-// move_str returns a string with move m in coordinate notation
+// move_str returns a string with chess_move m in coordinate notation
 
 char *move_str(move_bytes m)
 {
@@ -739,10 +750,10 @@ void print_board(const node_t& board, std::ostream& out)
         out << " .";
         break;
       case LIGHT:
-        out << " " << piece_char[board.piece[i]];
+        out << " " << piece_char[(size_t)board.piece[i]];
         break;
       case DARK:
-        char ch = (piece_char[board.piece[i]] + ('a' - 'A'));
+        char ch = (piece_char[(size_t)board.piece[i]] + ('a' - 'A'));
         out << " " << ch;
         break;
     }
@@ -756,11 +767,11 @@ void print_board(const node_t& board, std::ostream& out)
 /* print_result() checks to see if the game is over, and if so,
    prints the result. */
 
-int print_result(std::vector<move>& workq, node_t& board)
+int print_result(std::vector<chess_move>& workq, node_t& board)
 {
-  int i;
+  size_t i;
 
-  // is there a legal move?
+  // is there a legal chess_move?
   for (i = 0; i < workq.size() ; ++i) { 
     node_t p_board = board;
     if (makemove(p_board, workq[i].b)) {
@@ -785,7 +796,7 @@ int print_result(std::vector<move>& workq, node_t& board)
   }
   else if (board.fifty >= 100)
   {
-    std::cout << "1/2-1/2 {Draw by fifty move rule}" << std::endl;
+    std::cout << "1/2-1/2 {Draw by fifty chess_move rule}" << std::endl;
     return 0;
   }
   return 1;
@@ -831,4 +842,3 @@ std::string get_log_name()
 
   return logfilename;
 }
-

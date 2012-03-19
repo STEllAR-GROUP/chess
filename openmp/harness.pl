@@ -108,7 +108,7 @@ for my $sm (("minimax","alphabeta","mtdf")) {
             my $doc = "";
             while(<$fd>) {
                 $doc .= $_;
-                if(/Computer's move: ([a-h][1-8][a-h][1-8])/) {
+                if(/Computer's chess_move: ([a-h][1-8][a-h][1-8])/) {
                     if($ans ne "" and $ans ne $1) {
                         $st = "VARIABLE($ans != $1) ";
                         #last;
@@ -182,6 +182,8 @@ print $fd qq{
 search $sm
 eval original
 bench inputs/board$b $ply $runs
+quit
+
 };
     close($fd);
 }

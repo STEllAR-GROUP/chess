@@ -36,16 +36,16 @@ struct search_info {
     
     smart_ptr<task> this_task;
     
+    node_t board;
+    bool par_done;
+    chess_move mv;
     pthread_mutex_t mut;
     pthread_cond_t cond;
-    bool par_done;
     score_t result;
     int depth;
     int incr;
     score_t alpha;
     score_t beta;
-    node_t board;
-    move mv;
 
     void set_parallel() {
         par_done = false;

@@ -10,8 +10,8 @@ void xboard()
     int computer_side;
     std::string command;
     int m;
-    int post = 0;
-    std::vector<move> workq;
+    //int post = 0;
+    std::vector<chess_move> workq;
 
     signal(SIGINT, SIG_IGN);
     
@@ -34,7 +34,7 @@ void xboard()
                 computer_side = EMPTY;
                 continue;
             }
-            std::cout << "move " << move_str(move_to_make.b) << std::endl;
+            std::cout << "chess_move " << move_str(move_to_make.b) << std::endl;
             std::cout.flush();
             makemove(board, move_to_make.b);
             board.ply = 0;
@@ -96,7 +96,7 @@ void xboard()
         }
 
         m = parse_move(workq, command.c_str());
-        move mov;
+        chess_move mov;
         mov.u = m;
         node_t newboard = board;
         if (m == -1 || !makemove(newboard, mov.b))

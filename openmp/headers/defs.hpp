@@ -56,16 +56,16 @@
 #define COL(x)          (x & 7)
 
 
-/* This is the basic description of a move. promote is what
-   piece to promote the pawn to, if the move is a pawn
-   promotion. bits is a bitfield that describes the move,
+/* This is the basic description of a chess_move. promote is what
+   piece to promote the pawn to, if the chess_move is a pawn
+   promotion. bits is a bitfield that describes the chess_move,
    with the following bits:
 
    1    capture
    2    castle
    4    en passant capture
    8    pushing a pawn 2 squares
-   16   pawn move
+   16   pawn chess_move
    32   promote
 
    It's union'ed with an integer so two moves can easily
@@ -81,7 +81,7 @@ typedef struct {
 typedef union {
   move_bytes b;
   int32_t u;
-} move;
+} chess_move;
 
 const int INVALID_MOVE = 0xFFFFFFFF;
 

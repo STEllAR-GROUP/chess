@@ -13,14 +13,14 @@
 
 /*
    Alpha Beta search function. Uses OpenMP parallelization by the 
-   'Young Brothers Wait' algorithm which searches the eldest brother (i.e. move)
+   'Young Brothers Wait' algorithm which searches the eldest brother (i.e. chess_move)
    serially to determine alpha-beta bounds and then searches the rest of the
    brothers in parallel.
 
-   In order for this to be effective, move ordering is crucial. In theory,
-   if the best move is ordered first, then it will produce a cutoff which leads
+   In order for this to be effective, chess_move ordering is crucial. In theory,
+   if the best chess_move is ordered first, then it will produce a cutoff which leads
    to smaller search spaces which can be searched faster than standard minimax.
-   However we don't know what a "good move" is until we have searched it, which
+   However we don't know what a "good chess_move" is until we have searched it, which
    is what iterative deepening is for.
 
    The algorithm maintains two values, alpha and beta, which represent the minimum 
@@ -63,7 +63,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     }
 
     /* if this isn't the root of the search tree (where we have
-       to pick a move and can't simply return 0) then check to
+       to pick a chess_move and can't simply return 0) then check to
        see if the position is a repeat. if so, we can assume that
        this line is a draw and return 0. */
     if (board.ply && reps(board)) {
@@ -71,7 +71,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         return z;
     }
 
-    // fifty move draw rule
+    // fifty chess_move draw rule
     if (board.fifty >= 100) {
         DECL_SCORE(z,0,board.hash);
         return z;
@@ -104,8 +104,8 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         return alpha;
     }
 
-    std::vector<move> workq;
-    move max_move;
+    std::vector<chess_move> workq;
+    chess_move max_move;
     max_move.u = INVALID_MOVE; 
 
     gen(workq, board); // Generate the moves
@@ -128,10 +128,10 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
     for(;j < worksq;j++) {
         if(alpha >= beta)
             continue;
-        move g = workq[j];
+        chess_move g = workq[j];
         node_t p_board = board;
 
-        if (!makemove(p_board, g.b)) { // Make the move, if it isn't 
+        if (!makemove(p_board, g.b)) { // Make the chess_move, if it isn't 
             continue;                    // legal, then go to the next one
         }
 
@@ -160,7 +160,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 
     // loop through the moves
     for (; j < worksq; j++) {
-        move g = workq[j];
+        chess_move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
         
         if (this_task->check_abort()) {
@@ -195,7 +195,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
             if (!parallel)
                 t->join(); // Serial task
         }
-        for(int n=0;n<tasks.size();n++) {
+        for(size_t n=0;n<tasks.size();n++) {
             smart_ptr<search_info> info = tasks[n]->info;
             tasks[n]->join();
             val = -tasks[n]->info->result;
@@ -253,7 +253,7 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
         pthread_mutex_unlock(&mutex);
     }
 
-    // fifty move draw rule
+    // fifty chess_move draw rule
     if (board.fifty >= 100) {
         DECL_SCORE(z,0,board.hash);
         return z;
