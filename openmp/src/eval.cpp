@@ -128,22 +128,22 @@ int evaluator::eval_simple(const node_t& board)
             continue;
         switch (board.piece[i]) {
             case KING:
-                score[board.color[i]]+=KING_WEIGHT;
+                score[(int)board.color[i]]+=KING_WEIGHT;
                 break;
             case QUEEN:
-                score[board.color[i]]+=QUEEN_WEIGHT;
+                score[(int)board.color[i]]+=QUEEN_WEIGHT;
                 break;
             case ROOK:
-                score[board.color[i]]+=ROOK_WEIGHT;
+                score[(int)board.color[i]]+=ROOK_WEIGHT;
                 break;
             case BISHOP:
-                score[board.color[i]]+=BISHOP_WEIGHT;
+                score[(int)board.color[i]]+=BISHOP_WEIGHT;
                 break;
             case KNIGHT:
-                score[board.color[i]]+=KNIGHT_WEIGHT;
+                score[(int)board.color[i]]+=KNIGHT_WEIGHT;
                 break;
             case PAWN:
-                score[board.color[i]]+=PAWN_WEIGHT;
+                score[(int)board.color[i]]+=PAWN_WEIGHT;
                 break;
         }
     }
@@ -175,7 +175,7 @@ int evaluator::eval_orig(const node_t& board)
         if (board.color[i] == EMPTY)
             continue;
         if (board.piece[i] == PAWN) {
-            pawn_mat[board.color[i]] += piece_value[PAWN];
+            pawn_mat[(int)board.color[i]] += piece_value[PAWN];
             f = COL(i) + 1;  // add 1 because of the extra file in the array
             if (board.color[i] == LIGHT) {
                 if (pawn_rank[LIGHT][f] < ROW(i))
@@ -187,7 +187,7 @@ int evaluator::eval_orig(const node_t& board)
             }
         }
         else
-            piece_mat[board.color[i]] += piece_value[board.piece[i]];
+            piece_mat[(int)board.color[i]] += piece_value[(int)board.piece[i]];
     }
 
     // this is the second pass: evaluate each piece
