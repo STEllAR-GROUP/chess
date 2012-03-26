@@ -13,7 +13,7 @@
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
     //assert(info->depth == info->board.depth);
-    info->result = search(info->board,info->depth,info->this_task);
+    info->result = search(info);
     if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
@@ -23,8 +23,11 @@ void *search_pt(void *vptr) {
     return NULL;
 }
 
-score_t search(const node_t& board, int depth, smart_ptr<task> this_task)
+score_t search(search_info* info)
 {
+    node_t board = info->board;
+    int depth = info->depth;
+    smart_ptr<task> this_task = info->this_task;
     assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
     if (depth == 0)

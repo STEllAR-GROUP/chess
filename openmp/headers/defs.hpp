@@ -35,22 +35,22 @@
 #define MULTISTRIKE     3
 
 /* useful squares */
-#define A1              56
-#define B1              57
-#define C1              58
-#define D1              59
-#define E1              60
-#define F1              61
-#define G1              62
-#define H1              63
-#define A8              0
-#define B8              1
-#define C8              2
-#define D8              3
-#define E8              4
-#define F8              5
-#define G8              6
-#define H8              7
+#define A1_CHESS              56
+#define B1_CHESS              57
+#define C1_CHESS              58
+#define D1_CHESS              59
+#define E1_CHESS              60
+#define F1_CHESS              61
+#define G1_CHESS              62
+#define H1_CHESS              63
+#define A8_CHESS              0
+#define B8_CHESS              1
+#define C8_CHESS              2
+#define D8_CHESS              3
+#define E8_CHESS              4
+#define F8_CHESS              5
+#define G8_CHESS              6
+#define H8_CHESS              7
 
 #define ROW(x)          (x >> 3)
 #define COL(x)          (x & 7)

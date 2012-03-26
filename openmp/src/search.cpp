@@ -20,8 +20,6 @@
 
 #define PV_ON 1
 
-score_t multistrike(const node_t& board,score_t f,int depth);
-
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 const int num_proc = chx_threads_per_proc();
 
@@ -68,8 +66,12 @@ bool capture(const node_t& board,chess_move& g) {
  * itself along, and evaluates non-captures first to get the greatest
  * cutoff.
  **/
-score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, smart_ptr<task> this_task)
+score_t qeval(search_info* info)
 {
+    node_t board = info->board;
+    score_t lower = info->alpha;
+    score_t upper = info->beta;
+    smart_ptr<task> this_task = info->this_task;
     evaluator ev;
     DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
     s = max(lower,s);
@@ -97,7 +99,13 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, sma
         if(!makemove(p_board,g.b))
             continue;
         if(capture(board,g)) {
-            s = max(-qeval(p_board,-upper,-lower, this_task),s);
+            search_info* new_info = new search_info;
+            new_info->board = p_board;
+            new_info->alpha = -upper;
+            new_info->beta = -lower;
+            new_info->this_task = this_task;
+            s = max(-qeval(new_info),s);
+            delete new_info;
         } else {
             //DECL_SCORE(v,ev.eval(p_board,chosen_evaluator),p_board.hash);
             //s = max(v,s);
@@ -111,7 +119,7 @@ score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, sma
 void *qeval_pt(void *vptr)
 {
   search_info *info = (search_info *)vptr;
-  info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
+  info->result = qeval(info);
   info->self = 0;
   info->set_done();
   mpi_task_array[0].add(1);
@@ -126,6 +134,8 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
     if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
             smart_ptr<task> t = new pthread_task;
+            // For now we create hpx_tasks
+            //smart_ptr<task> t = new hpx_task;
             *parallel = true;
             return t;
         }
@@ -146,7 +156,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
 void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
-  info->result = search_ab(info->board,info->depth,info->alpha,info->beta, info->this_task);
+  info->result = search_ab(info);
   info->self = 0;
   if(info->alpha < info->result && info->result < info->beta) {
     //std::cout << "FOUND: " << VAR(info->result) << std::endl;
@@ -182,7 +192,12 @@ int think(node_t& board,bool parallel)
   if (search_method == MINIMAX) {
     root->pfunc = search_f;
     
-    score_t f = search(board, depth[board.side], root);
+    search_info* info = new search_info;
+    info->board = board;
+    info->depth = depth[board.side];
+    info->this_task = root;
+    score_t f = search(info);
+    delete info;
     
     assert(move_to_make.u != INVALID_MOVE);
     if (bench_mode)
@@ -196,11 +211,24 @@ int think(node_t& board,bool parallel)
     if(d == 0)
         d = stepsize;
     board.depth = d;
-    score_t f(search_ab(board,d,alpha,beta, root));
+    search_info* info = new search_info;
+    info->board = board;
+    info->depth = d;
+    info->alpha = alpha;
+    info->beta = beta;
+    info->this_task = root;
+    score_t f(search_ab(info));
+    delete info;
     while(d < depth[board.side]) {
         d+=stepsize;
         board.depth = d;
-        f = mtdf(board,f,d, root);
+        search_info* info = new search_info;
+        info->board = board;
+        info->alpha = f;
+        info->depth = d;
+        info->this_task = root;
+        f = mtdf(info);
+        delete info;
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
@@ -223,7 +251,13 @@ int think(node_t& board,bool parallel)
     }
     */
     board.depth = depth[board.side];
-    score_t f = multistrike(board,0,depth[board.side], root);
+    search_info* info = new search_info;
+    info->board = board;
+    info->alpha = 0;
+    info->depth = depth[board.side];
+    info->this_task = root;
+    score_t f = multistrike(info);
+    delete info;
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
@@ -241,7 +275,14 @@ int think(node_t& board,bool parallel)
     for (int i = low; i <= depth[board.side]; i++) // Iterative deepening
     {
       board.depth = i;
-      f = search_ab(board, i, alpha, beta, root);
+      search_info* info = new search_info;
+      info->board = board;
+      info->depth = i;
+      info->alpha = alpha;
+      info->beta = beta;
+      info->this_task = root; 
+      f = search_ab(info);
+      delete info;
 
       if (i >= iter_depth)  // if our ply is greater than the iter_depth, then break
       {
@@ -251,20 +292,31 @@ int think(node_t& board,bool parallel)
       root = new serial_task;
     }
 
-    if (brk)
-      f=search_ab(board, depth[board.side], alpha, beta, root);
+    if (brk) {
+      search_info* info = new search_info;
+      info->board = board;
+      info->depth = depth[board.side];
+      info->alpha = alpha;
+      info->beta = beta;
+      info->this_task = root;
+      f=search_ab(info);
+      delete info;
+    }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   }
   return 1;
 }
 
-score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
+score_t multistrike(search_info* info)
 {
+    node_t board = info->board;
+    int depth = info->depth;
+    smart_ptr<task> this_task = info->this_task;
     //std::cout << VAR(num_proc) << VAR(mpi_task_array[0].add(0)) << std::endl;
     //chx_abort = false;
     score_t ret=0;
-    const int max_parallel = (num_proc-1)/2;
+    const int max_parallel = (num_proc-1)/2 ? (num_proc-1)/2 : 1 ;
     assert(max_parallel > 0);
     const int fac = 600/max_parallel;//10*25/max_parallel;
     std::vector<smart_ptr<task> > tasks;
@@ -273,12 +325,17 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
     for(int i=-max_parallel;i<=max_parallel;i++) {
         mpi_task_array[0].wait_dec();
     }
+    std::cerr << "Checkpoint #1" << std::endl;
     for(int i=-max_parallel;i<=max_parallel;i++) {
         bool parallel;
         DECL_SCORE(alpha,i==-max_parallel ? -10000 : fac*(i)  ,0);
         DECL_SCORE(beta, i== max_parallel ?  10000 : fac*(i+1),0);
         beta++;
         smart_ptr<task> t = parallel_task(depth, &parallel);
+        if (parallel)
+            std::cerr << "Checkpoint #1.1 parallel:" << i << std::endl;
+        else
+            std::cerr << "Checkpoint #1.1:" << i << std::endl;
         t->info = new search_info(board);
         t->info->alpha = alpha;
         t->info->beta = beta;
@@ -289,8 +346,11 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
         t->start();
         tasks.push_back(t);
     }
+    std::cerr << "Checkpoint #2" << std::endl;
     for(size_t i=0;i<tasks.size();i++) {
+        std::cerr << "Checkpoint #3:" << i << ":" << tasks.size() << std::endl;
         tasks[i]->join();
+        std::cerr << "Checkpoint #3:" << i << ":" << tasks.size() << std::endl;
         score_t result = tasks[i]->info->result;
         score_t alpha = tasks[i]->info->alpha;
         score_t beta = tasks[i]->info->beta;
@@ -304,8 +364,12 @@ score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> thi
 
 
 /** MTD-f */
-score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
+score_t mtdf(search_info* info)
 {
+    node_t board = info->board;
+    score_t f = info->alpha;
+    int depth = info->depth;
+    smart_ptr<task> this_task = info->this_task;
     score_t g = f;
     DECL_SCORE(upper,10000,board.hash);
     DECL_SCORE(lower,-10000,board.hash);
@@ -328,13 +392,27 @@ score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
     score_t alpha = lower, beta = upper;
     while(lower < upper) {
         if(width >= max_width) {
-            g = search_ab(board,depth,lower,upper, this_task);
+            search_info* info = new search_info;
+            info->board = board;
+            info->depth = depth;
+            info->alpha = lower;
+            info->beta = upper;
+            info->this_task = this_task;
+            g = search_ab(info);
+            delete info;
             break;
         } else {
             alpha = max(g == lower ? lower+1 : lower,ADD_SCORE(g,    -(1+width/2)));
             beta  = min(g == upper ? upper-1 : upper,ADD_SCORE(alpha, (1+width)));
         }
-        g = search_ab(board,depth,alpha,beta, this_task);
+        search_info* info = new search_info;
+        info->board = board;
+        info->depth = depth;
+        info->alpha = lower;
+        info->beta = upper;
+        info->this_task = this_task;
+        g = search_ab(info);
+        delete info;
         if(g < beta) {
             if(g > alpha)
                 break;

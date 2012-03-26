@@ -25,9 +25,6 @@ void *search_pt(void *);
 void *search_ab_pt(void *);
 void *strike(void *);
 void *qeval_pt(void *);
-score_t search(const node_t& board, int depth, smart_ptr<task> this_task);
-score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, smart_ptr<task> this_task);
-score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, smart_ptr<task> this_task);
 
 struct search_info {
     // self-reference used
@@ -64,10 +61,17 @@ struct search_info {
         this_task = 0;
     }
 
+    search_info() {
+    }
+
     ~search_info() {
         this_task = 0;
     }
 };
+
+score_t search(search_info*);
+score_t search_ab(search_info*);
+score_t qeval(search_info*);
 
 enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
 
@@ -127,13 +131,13 @@ struct serial_task : public task {
             return;
         info->self=0;
         if(pfunc == search_f)
-            info->result = search(info->board,info->depth,info->this_task);
+            info->result = search(info.ptr());
         else if(pfunc == search_ab_f)
-            info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
+            info->result = search_ab(info.ptr());
         else if(pfunc == strike_f)
-            info->result = search_ab(info->board,info->depth,info->alpha,info->beta, info->this_task);
+            info->result = search_ab(info.ptr());
         else if(pfunc == qeval_f)
-            info->result = qeval(info->board,info->alpha, info->beta, info->this_task);
+            info->result = qeval(info.ptr());
         else
             abort();
         info->set_done();
@@ -190,6 +194,10 @@ public:
         }
         pthread_mutex_unlock(&mut);
         return ret;
+    }
+};
+struct hpx_task : public task {
+    hpx_task()  {
     }
 };
 extern std::vector<pcounter> mpi_task_array;
@@ -262,4 +270,7 @@ struct pthread_task : public task {
         return ret;
     }
 };
+
+#include "chx_hpx.hpp"
+
 #endif

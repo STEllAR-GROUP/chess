@@ -26,5 +26,6 @@ int print_result(std::vector<chess_move>& workq, node_t& board);
 void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel);
 int get_ms();
 std::string get_log_name();
+int chx_main();
 
 #endif

@@ -79,8 +79,8 @@ hash_t hash_rand()
    not really unique, but they're unique enough for our purposes (to detect
    repetitions of the position). 
    The way it works is to XOR random numbers that correspond to features of
-   the position, e.g., if there's a black knight on B8, hash is XORed with
-   hash_piece[BLACK][KNIGHT][B8]. All of the pieces are XORed together,
+   the position, e.g., if there's a black knight on B8_CHESS, hash is XORed with
+   hash_piece[BLACK][KNIGHT][B8_CHESS]. All of the pieces are XORed together,
    hash_side is XORed if it's black's chess_move, and the en passant square is
    XORed if there is one. (A chess technicality is that one position can't
    be a repetition of another if the en passant state is different.) */
@@ -250,15 +250,15 @@ void gen(std::vector<chess_move>& workq, const node_t& board)
   // generate castle moves
   if (board.side == LIGHT) {
       if (board.castle & 1)
-          gen_push(workq, board, E1, G1, 2);
+          gen_push(workq, board, E1_CHESS, G1_CHESS, 2);
       if (board.castle & 2)
-          gen_push(workq, board, E1, C1, 2);
+          gen_push(workq, board, E1_CHESS, C1_CHESS, 2);
   }
   else {
       if (board.castle & 4)
-          gen_push(workq, board, E8, G8, 2);
+          gen_push(workq, board, E8_CHESS, G8_CHESS, 2);
       if (board.castle & 8)
-          gen_push(workq, board, E8, C8, 2);
+          gen_push(workq, board, E8_CHESS, C8_CHESS, 2);
   }
   
   // generate en passant moves
@@ -294,13 +294,13 @@ void gen_push(std::vector<chess_move>& workq, const node_t& board, int from, int
     
     if (bits & 16) {
         if (board.side == LIGHT) {
-            if (to <= H8) {
+            if (to <= H8_CHESS) {
                 gen_promote(workq, from, to, bits);
                 return;
             }
         }
         else {
-            if (to >= A1) {
+            if (to >= A1_CHESS) {
                 gen_promote(workq, from, to, bits);
                 return;
             }
@@ -358,32 +358,32 @@ bool makemove(node_t& board,const move_bytes m)
             return false;
         switch (m.to) {
             case 62:
-                if (board.color[F1] != EMPTY || board.color[G1] != EMPTY ||
-                        attack(board, F1, board.side ^ 1) || attack(board, G1, board.side ^ 1))
+                if (board.color[F1_CHESS] != EMPTY || board.color[G1_CHESS] != EMPTY ||
+                        attack(board, F1_CHESS, board.side ^ 1) || attack(board, G1_CHESS, board.side ^ 1))
                     return false;
-                from = H1;
-                to = F1;
+                from = H1_CHESS;
+                to = F1_CHESS;
                 break;
             case 58:
-                if (board.color[B1] != EMPTY || board.color[C1] != EMPTY || board.color[D1] != EMPTY ||
-                        attack(board, C1, board.side ^ 1) || attack(board, D1, board.side ^ 1))
+                if (board.color[B1_CHESS] != EMPTY || board.color[C1_CHESS] != EMPTY || board.color[D1_CHESS] != EMPTY ||
+                        attack(board, C1_CHESS, board.side ^ 1) || attack(board, D1_CHESS, board.side ^ 1))
                     return false;
-                from = A1;
-                to = D1;
+                from = A1_CHESS;
+                to = D1_CHESS;
                 break;
             case 6:
-                if (board.color[F8] != EMPTY || board.color[G8] != EMPTY ||
-                        attack(board, F8, board.side ^ 1) || attack(board, G8, board.side ^ 1))
+                if (board.color[F8_CHESS] != EMPTY || board.color[G8_CHESS] != EMPTY ||
+                        attack(board, F8_CHESS, board.side ^ 1) || attack(board, G8_CHESS, board.side ^ 1))
                     return false;
-                from = H8;
-                to = F8;
+                from = H8_CHESS;
+                to = F8_CHESS;
                 break;
             case 2:
-                if (board.color[B8] != EMPTY || board.color[C8] != EMPTY || board.color[D8] != EMPTY ||
-                        attack(board, C8, board.side ^ 1) || attack(board, D8, board.side ^ 1))
+                if (board.color[B8_CHESS] != EMPTY || board.color[C8_CHESS] != EMPTY || board.color[D8_CHESS] != EMPTY ||
+                        attack(board, C8_CHESS, board.side ^ 1) || attack(board, D8_CHESS, board.side ^ 1))
                     return false;
-                from = A8;
-                to = D8;
+                from = A8_CHESS;
+                to = D8_CHESS;
                 break;
             default:  /* shouldn't get here */
                 from = -1;

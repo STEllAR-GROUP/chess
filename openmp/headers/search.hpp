@@ -24,11 +24,11 @@
 #include "parallel_support.hpp"
 
 int think(node_t& board,bool parallel);
-score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task);
-score_t search(const node_t& board, int depth, smart_ptr<task> this_task);
-score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, smart_ptr<task> this_task);
-score_t qeval(const node_t& board,const score_t& lower,const score_t& upper, smart_ptr<task> this_task);
-score_t multistrike(const node_t& board,score_t f,int depth, smart_ptr<task> this_task);
+score_t search(search_info*);
+score_t search_ab(search_info*);
+score_t mtdf(search_info*);
+score_t qeval(search_info*);
+score_t multistrike(search_info*);
 int reps(const node_t& board);
 bool compare_moves(chess_move a, chess_move b);
 void sort_pv(std::vector<chess_move>& workq, int ply);

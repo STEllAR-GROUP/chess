@@ -38,7 +38,7 @@ void *search_ab_pt(void *vptr)
     assert(info->self.valid());
     {
         assert(info->depth == info->board.depth);
-        info->result = search_ab(info->board,info->depth, info->alpha, info->beta, info->this_task);
+        info->result = search_ab(info);
         info->set_done();
         mpi_task_array[0].add(1);
         smart_ptr<search_info> eg = info->self;
@@ -51,8 +51,14 @@ void *search_ab_pt(void *vptr)
     return NULL;
 }
 
-score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, smart_ptr<task> this_task)
+score_t search_ab(search_info *info)
 {
+    // Unmarshall the info struct
+    node_t board = info->board;
+    int depth = info->depth;
+    score_t alpha = info->alpha;
+    score_t beta = info->beta;
+    smart_ptr<task> this_task = info->this_task;
     assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
     if (depth == 0)
@@ -137,10 +143,17 @@ score_t search_ab(const node_t& board, int depth, score_t alpha, score_t beta, s
 
         assert(depth >= 1);
         p_board.depth = depth-1;
+        
+        search_info* info = new search_info;
+        info->board = p_board;
+        info->alpha = -beta;
+        info->beta = -alpha;
+        info->this_task = this_task;
         if(depth == 1 && capture(board,g)) {
-            val = -qeval(p_board, -beta, -alpha, this_task);
+            val = -qeval(info);
         } else
-            val = -search_ab(p_board, depth-1, -beta, -alpha, this_task);
+            val = -search_ab(info);
+        delete info;
 
         if (val > max_val)
         {
