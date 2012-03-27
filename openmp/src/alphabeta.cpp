@@ -149,6 +149,7 @@ score_t search_ab(search_info *info)
         info->alpha = -beta;
         info->beta = -alpha;
         info->this_task = this_task;
+        info->depth = depth-1;
         if(depth == 1 && capture(board,g)) {
             val = -qeval(info);
         } else

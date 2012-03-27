@@ -7,9 +7,12 @@
 /*
  *  main.cpp
  */
+
+#ifdef HPX_ENABLED
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/components.hpp>
+#endif
 
 #ifdef HAS_BOOST
 #include <boost/algorithm/string.hpp>
@@ -65,12 +68,14 @@ void mpi_terminate() {
 int auto_move = 0;
 int computer_side;
 
+#ifdef HPX_ENABLED
 int hpx_main(boost::program_options::variables_map& vm)
 {
     int ret = chx_main();
     hpx::finalize();
     return ret;
 }
+#endif
 
 int chx_main()
 {
@@ -424,10 +429,13 @@ int main(int argc, char *argv[])
         return 255;
     }
     mpi_terminate();
+#ifdef HPX_ENABLED
     boost::program_options::options_description
         desc_commandline("usage: " HPX_APPLICATION_STRING " [options]");
     return hpx::init(desc_commandline, argc, argv);
-    //return chx_main();
+#else
+    return chx_main();
+#endif
 }
 
 void start_benchmark(std::string filename, int ply_level, int num_runs,bool parallel)

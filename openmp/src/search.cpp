@@ -133,9 +133,11 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
     if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
+#ifdef HPX_ENABLED
+            smart_ptr<task> t = new hpx_task;
+#else
             smart_ptr<task> t = new pthread_task;
-            // For now we create hpx_tasks
-            //smart_ptr<task> t = new hpx_task;
+#endif
             *parallel = true;
             return t;
         }
