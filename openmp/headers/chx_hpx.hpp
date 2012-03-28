@@ -5,45 +5,48 @@
 #include <hpx/hpx_init.hpp>
 #include <hpx/runtime/actions/plain_action.hpp>
 #include "node.hpp"
-#include "parallel_support.hpp"
 
-score_t search(search_info*);
-score_t search_ab(search_info*);
-score_t mtdf(search_info*);
-score_t qeval(search_info*);
-score_t multistrike(search_info*);
-
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
-    search             // function name
-> minimax_action;
+//typedef hpx::actions::plain_result_action1<
+//    score_t,           // return type
+//    search_info*,      // arguments
+//    search             // function name
+//> minimax_action;
     
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
-    search_ab             // function name
-> alphabeta_action;
-    
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
-    search             // function name
-> mtdf_action;
-    
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
-    search             // function name
-> qeval_action;
-    
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
-    search             // function name
-> multistrike_action;
+//typedef hpx::actions::plain_result_action1<
+//    score_t,           // return type
+//    search_info*,      // arguments
+//    qeval             // function name
+//> qeval_action;
     
     
+//HPX_REGISTER_PLAIN_ACTION(minimax_action);    
+//HPX_REGISTER_PLAIN_ACTION(qeval_action);    
     
+namespace boost { namespace serialization
+{
+template <typename Archive>
+void serialize(Archive &ar, search_info& info, const unsigned int)
+{
+    
+}
+template <typename Archive>
+void serialize(Archive &ar, smart_ptr<search_info>& info, const unsigned int)
+{}
+template <typename Archive>
+void serialize(Archive &ar, smart_ptr<task>& info, const unsigned int)
+{}
+template <typename Archive>
+void serialize(Archive &ar, node_t& board, const unsigned int)
+{}
+template <typename Archive>
+void serialize(Archive &ar, chess_move& m, const unsigned int)
+{}
+template <typename Archive>
+void serialize(Archive &ar, pthread_mutex_t mut, const unsigned int)
+{}
+template <typename Archive>
+void serialize(Archive &ar, pthread_cond_t c, const unsigned int)
+{}
+}}
 
 #endif

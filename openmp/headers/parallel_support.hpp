@@ -196,25 +196,6 @@ public:
         return ret;
     }
 };
-#ifdef HPX_ENABLED
-struct hpx_task : public task {
-    hpx_task()  {
-    }
-
-    virtual void start() {
-    }
-
-    virtual void join() {
-    }
-
-    virtual void abort_search() {
-    }
-
-    virtual bool check_abort() {
-        return false;
-    }
-};
-#endif
 extern std::vector<pcounter> mpi_task_array;
 struct pthread_task : public task {
     pthread_t thread;
@@ -288,6 +269,54 @@ struct pthread_task : public task {
 
 #ifdef HPX_ENABLED
 #include "chx_hpx.hpp"
+struct hpx_task : public task {
+    hpx::lcos::future<score_t> result;
+    hpx_task()  {
+    }
+
+/*
+    virtual void start() {
+        assert(info.valid());
+        info->self = 0;
+
+        // For now we only run on this node, until I find a better way
+        hpx::naming::id_type const locality_id = hpx::find_here();
+        result = hpx::lcos::async<alphabeta_action>(locality_id, info.ptr());
+        //if (pfunc == search_f)
+        //{
+        //    result = hpx::lcos::async<minimax_action>(locality_id, info.ptr());
+        //}
+        //else if (pfunc == search_ab_f)
+        //{
+        //    result = hpx::lcos::async<alphabeta_action>(locality_id, info.ptr());
+        //}
+        //else if (pfunc == strike_f)
+        //{
+        //    result = hpx::lcos::async<alphabeta_action>(locality_id, info.ptr());
+        //}
+        //else if (pfunc == qeval_f)
+        //{
+        //    result = hpx::lcos::async<qeval_action>(locality_id, info.ptr());
+        //}
+        //else
+        //    assert(false); // should never get here
+        
+    }
+*/
+    virtual void start();
+
+    virtual void join() {
+        info->result = result.get();
+        info->set_done();
+    }
+
+    virtual void abort_search() {
+    }
+
+    virtual bool check_abort() {
+        return false;
+    }
+};
 #endif
 
 #endif
