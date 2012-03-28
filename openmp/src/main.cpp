@@ -254,6 +254,29 @@ int chx_main()
             std::cout << "Thanks for using CHX!" << std::endl;
             break;
         }
+        if (input[0] == "parallel") {
+            std::string arg;
+#ifdef HAS_BOOST
+            try {
+                arg = input.at(1);
+            }
+            catch (out_of_range&) {
+#endif
+#ifdef READLINE_SUPPORT
+            buf = readline("Set number of threads: ");
+            arg.append(buf);
+            free(buf);
+#else
+            std::cout << "Set number of threads: ";
+            std::cin >> arg;
+#endif
+#ifdef HAS_BOOST
+            }
+#endif
+            mpi_task_array[0].set_max(atoi(arg.c_str()));
+            std::cout << "Set the number of threads to " << arg << std::endl;
+            continue; 
+        }
         if (input[0] == "bench") {
           bench_mode = true;
           int ply_level;
@@ -350,6 +373,7 @@ int chx_main()
         if (input[0] == "help") {
           std::cout << std::endl;
           std::cout << "  bench <name of file> <search depth> <number of runs>\n\tstarts the benchmark" << std::endl;
+          std::cout << "  parallel <number of threads> \n\tSets the max number of parallel threads (default 0)" << std::endl;
           std::cout << "  eval <evaluator>\n\tswitches the current chess_move evaluator in use (default original)" << std::endl;
           std::cout << "  search <function>\n\tswitches the current search method in use (default minimax)" << std::endl;
           std::cout << "  go\n\tcomputer makes a chess_move" << std::endl;

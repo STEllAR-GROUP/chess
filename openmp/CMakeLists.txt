@@ -7,8 +7,6 @@ find_package(Readline)
 #find_package(MPI)
 find_package(Boost)
 find_package(HPX)
-set(HPX_FOUND true)
-#we set HPX_FOUND manually until it works
 
 IF (HPX_FOUND)
     MESSAGE("HPX was found.")
