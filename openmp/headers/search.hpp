@@ -26,7 +26,7 @@
 int think(node_t& board,bool parallel);
 score_t search(search_info*);
 score_t search_ab(search_info*);
-score_t mtdf(search_info*);
+score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task);
 score_t qeval(search_info*);
 score_t multistrike(search_info*);
 int reps(const node_t& board);

@@ -224,13 +224,8 @@ int think(node_t& board,bool parallel)
     while(d < depth[board.side]) {
         d+=stepsize;
         board.depth = d;
-        search_info* info = new search_info;
-        info->board = board;
-        info->alpha = f;
-        info->depth = d;
-        info->this_task = root;
-        f = mtdf(info);
-        delete info;
+        f = mtdf(board,f,d, root);
+        root = new serial_task;
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
@@ -366,12 +361,8 @@ score_t multistrike(search_info* info)
 
 
 /** MTD-f */
-score_t mtdf(search_info* info)
+score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
 {
-    node_t board = info->board;
-    score_t f = info->alpha;
-    int depth = info->depth;
-    smart_ptr<task> this_task = info->this_task;
     score_t g = f;
     DECL_SCORE(upper,10000,board.hash);
     DECL_SCORE(lower,-10000,board.hash);
@@ -410,8 +401,8 @@ score_t mtdf(search_info* info)
         search_info* info = new search_info;
         info->board = board;
         info->depth = depth;
-        info->alpha = lower;
-        info->beta = upper;
+        info->alpha = alpha;
+        info->beta = beta;
         info->this_task = this_task;
         g = search_ab(info);
         delete info;
