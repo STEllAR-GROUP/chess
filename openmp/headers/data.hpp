@@ -11,6 +11,7 @@
 #include "here.hpp"
 #include <iostream>
 #include <stdlib.h>
+#include "chess_move.hpp"
 /*
  *  data.hpp
  */

@@ -11,6 +11,7 @@
 #include "smart_ptr.hpp"
 #include "node.hpp"
 #include "score.hpp"
+#include "chess_move.hpp"
 
 extern bool par_enabled;
 int chx_threads_per_proc();

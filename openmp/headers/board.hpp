@@ -11,6 +11,7 @@
 #include "defs.hpp"
 #include "data.hpp"
 #include "hash.hpp"
+#include "chess_move.hpp"
 
 void init_board(node_t& board);
 void init_hash();

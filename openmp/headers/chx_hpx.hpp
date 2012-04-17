@@ -13,6 +13,7 @@ template <typename Archive>
 void serialize(Archive &ar, search_info& info, const unsigned int)
 {
     ar & info.board;
+    ar & info.mv;
     ar & info.result;
     ar & info.depth;
     ar & info.incr;
@@ -32,6 +33,18 @@ void serialize(Archive &ar, node_t& board, const unsigned int)
     ar & board.fifty;
     ar & board.ply;
     ar & board.hply;
+    ar & board.hist_dat;
+}
+template <typename Archive>
+void serialize(Archive &ar, FixedVec<unsigned int, 50> vec, const unsigned int)
+{
+    ar & vec.data;
+    ar & vec._size;
+}
+template <typename Archive>
+void serialize(Archive &ar, chess_move& mv, const unsigned int)
+{
+    ar & mv.u;
 }
 }}
 

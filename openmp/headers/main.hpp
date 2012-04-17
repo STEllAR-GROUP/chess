@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-//  Copyright (c) 2011 Steve Brandt and Philip LeBlanc
+//  Copyright (c) 2011 Steve Brandt and Phillip LeBlanc
 //
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file BOOST_LICENSE_1_0.rst or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -14,10 +14,8 @@
 #include "defs.hpp"
 #include "data.hpp"
 #include "search.hpp"
+#include "chess_move.hpp"
 
-void shutdown();
-int parseArgs(int, char**);
-bool parseIni(const char * filename);
 int main(int argc, char *argv[]);
 int parse_move(std::vector<chess_move>& workq, const char *s);
 char *move_str(move_bytes m);

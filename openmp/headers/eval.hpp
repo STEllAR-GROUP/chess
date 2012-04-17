@@ -11,6 +11,7 @@
 #include "node.hpp"
 #include "defs.hpp"
 #include "data.hpp"
+#include "chess_move.hpp"
 
 
 #define DOUBLED_PAWN_PENALTY        10
