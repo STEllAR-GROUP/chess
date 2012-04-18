@@ -5,9 +5,10 @@
 //  file BOOST_LICENSE_1_0.rst or copy at http://www.boost.org/LICENSE_1_0.txt)
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef  CHESS_MOVE_HPP_C1BEDE43_B47B_4694_ACF4_F41143D72B97
+#ifndef  CHESS_MOVE_HPP_C1BEDE43_B47B_4694_ACF4_F41143D72B97
 #define CHESS_MOVE_HPP_C1BEDE43_B47B_4694_ACF4_F41143D72B97
 
+#include <boost/serialization/base_object.hpp>
 #include <stdint.h>
 /* This is the basic description of a chess_move. promote is what
    piece to promote the pawn to, if the chess_move is a pawn
@@ -57,6 +58,10 @@ public:
     uint8_t getTo() { return to; }
     uint8_t getPromote() { return promote; }
     uint8_t getBits() { return bits; }
+    void operator=(const uint32_t mv)
+    {
+        set32BitMove(mv);
+    }
     void operator=(const chess_move& mv)
     {
         u = mv.u;
@@ -68,6 +73,19 @@ public:
     bool operator==(const chess_move& mv)
     {
         return (mv.u == u);
+    }
+    bool operator==(const uint32_t mv)
+    {
+        return (mv == u);
+    }
+    template <class Archive>
+    void serialize(Archive &ar, const unsigned int)
+    {
+        ar & this->u;
+        ar & this->from;
+        ar & this->to;
+        ar & this->promote;
+        ar & this->bits;
     }
 };
 

@@ -111,15 +111,15 @@ int chx_main()
 
             // think about the chess_move and make it
             think(board,false);
-            if (move_to_make.u == 0) {
+            if (move_to_make.get32BitMove() == 0) {
                 std::cout << "(no legal moves)" << std::endl;
                 computer_side = EMPTY;
                 continue;
             }
             if (output)
-                std::cout << "Computer's chess_move: " << move_str(move_to_make.b)
+                std::cout << "Computer's chess_move: " << move_str(move_to_make)
                     << std::endl;
-            makemove(board, move_to_make.b); // Make the chess_move for our master board
+            makemove(board, move_to_make); // Make the chess_move for our master board
             board.ply = 0; // Reset the board ply to 0
 
             workq.clear(); // Clear the work queue in preparation for next chess_move
@@ -133,7 +133,7 @@ int chx_main()
             else
                 print_result(workq, board);
 
-            move_to_make.u = 0; // Reset the chess_move to make
+            move_to_make.set32BitMove(0); // Reset the chess_move to make
 
             continue;
         }
@@ -169,10 +169,6 @@ int chx_main()
         input.push_back(s);
 #endif
 
-        if (input[0] == "xboard") {
-            xboard();
-            break;
-        }
         if (input[0] == "go") {
             computer_side = board.side;
             auto_move = 0;
@@ -394,12 +390,12 @@ int chx_main()
         int m;
         m = parse_move(workq, s.c_str());
         chess_move mov;
-        mov.u = m;
+        mov = m;
         node_t newboard = board;
-        if (m == -1 || !makemove(newboard, mov.b))
+        if (m == -1 || !makemove(newboard, mov))
             std::cout << "Illegal chess_move or command." << std::endl;
         else {
-            makemove(board, mov.b);
+            makemove(board, mov);
             board.ply = 0;
             workq.clear();
             gen(workq, board);
@@ -646,16 +642,16 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
     std::cout << "time: " << t[i] << " ms" << std::endl;
     logfile << "time: " << t[i] << " ms" << std::endl;
 
-    if (move_to_make.u == 0) {
+    if (move_to_make.get32BitMove() == 0) {
       std::cout << "(no legal moves)" << std::endl;
       logfile << "(no legal moves)" << std::endl;
     }
     else
     {
-      std::cout << "  Computer's chess_move: " << move_str(move_to_make.b)
+      std::cout << "  Computer's chess_move: " << move_str(move_to_make)
         << std::endl;
 
-      logfile << "  Computer's chess_move: " << move_str(move_to_make.b)
+      logfile << "  Computer's chess_move: " << move_str(move_to_make)
         << std::endl;
     }
     // Allow time for aborted threads to get cleaned up
@@ -706,22 +702,22 @@ int parse_move(std::vector<chess_move>& workq, const char *s)
   to += 8 * (8 - (s[3] - '0'));
 
   for (size_t i = 0; i < workq.size(); i++) {
-    if (workq[i].b.from == from && workq[i].b.to == to) {
-      if (workq[i].b.bits & 32)
+    if (workq[i].getFrom() == from && workq[i].getTo() == to) {
+      if (workq[i].getBits() & 32)
         switch (s[4]) {
           case 'N':
-            if (workq[i].b.promote == KNIGHT)
-              return workq[i].u;
+            if (workq[i].getPromote() == KNIGHT)
+              return workq[i].get32BitMove();
           case 'B':
-            if (workq[i].b.promote == BISHOP)
-              return workq[i].u;
+            if (workq[i].getPromote() == BISHOP)
+              return workq[i].get32BitMove();
           case 'R':
-            if (workq[i].b.promote == ROOK)
-              return workq[i].u;
+            if (workq[i].getPromote() == ROOK)
+              return workq[i].get32BitMove();
           default:
-            return workq[i].u;
+            return workq[i].get32BitMove();
         }
-      return workq[i].u;
+      return workq[i].get32BitMove();
     }
   }
 
@@ -732,14 +728,14 @@ int parse_move(std::vector<chess_move>& workq, const char *s)
 
 // move_str returns a string with chess_move m in coordinate notation
 
-char *move_str(move_bytes m)
+char *move_str(chess_move& m)
 {
   static char str[6];
 
   char c;
 
-  if (m.bits & 32) {
-    switch (m.promote) {
+  if (m.getBits() & 32) {
+    switch (m.getPromote()) {
       case KNIGHT:
         c = 'n';
         break;
@@ -754,18 +750,18 @@ char *move_str(move_bytes m)
         break;
     }
     sprintf(str, "%c%d%c%d%c",
-        COL(m.from) + 'a',
-        8 - ROW(m.from),
-        COL(m.to) + 'a',
-        8 - ROW(m.to),
+        COL(m.getFrom()) + 'a',
+        8 - ROW(m.getFrom()),
+        COL(m.getTo()) + 'a',
+        8 - ROW(m.getTo()),
         c);
   }
   else
     sprintf(str, "%c%d%c%d",
-        COL(m.from) + 'a',
-        8 - ROW(m.from),
-        COL(m.to) + 'a',
-        8 - ROW(m.to));
+        COL(m.getFrom()) + 'a',
+        8 - ROW(m.getFrom()),
+        COL(m.getTo()) + 'a',
+        8 - ROW(m.getTo()));
   return str;
 }
 
@@ -806,7 +802,7 @@ int print_result(std::vector<chess_move>& workq, node_t& board)
   // is there a legal chess_move?
   for (i = 0; i < workq.size() ; ++i) { 
     node_t p_board = board;
-    if (makemove(p_board, workq[i].b)) {
+    if (makemove(p_board, workq[i])) {
       break;
     }
   }

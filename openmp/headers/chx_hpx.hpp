@@ -41,11 +41,6 @@ void serialize(Archive &ar, FixedVec<unsigned int, 50> vec, const unsigned int)
     ar & vec.data;
     ar & vec._size;
 }
-template <typename Archive>
-void serialize(Archive &ar, chess_move& mv, const unsigned int)
-{
-    ar & mv.u;
-}
 }}
 
 #endif

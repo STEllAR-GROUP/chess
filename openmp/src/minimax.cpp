@@ -55,7 +55,7 @@ score_t search(search_info* info)
 
     std::vector<chess_move> workq;
     chess_move max_move;
-    max_move.u = INVALID_MOVE;
+    max_move = INVALID_MOVE;
 
     gen(workq, board); // Generate the moves
 
@@ -79,10 +79,10 @@ score_t search(search_info* info)
             chess_move g = workq[j];
             smart_ptr<search_info> info = new search_info(board);
 
-            if (makemove(info->board, g.b)) { // Make the chess_move, if it isn't 
+            if (makemove(info->board, g)) {  
                 DECL_SCORE(z,0,board.hash);
                 info->depth = depth-1;
-                info->mv.u = g.u;
+                info->mv = g;
                 info->result = z;
                 bool parallel;
                 if(depth == 1 && capture(board,g)) {
@@ -131,7 +131,7 @@ score_t search(search_info* info)
     assert(tasks.size()==0);
 
     // no legal moves? then we're in checkmate or stalemate
-    if (max_move.u == INVALID_MOVE) {
+    if (max_move == INVALID_MOVE) {
         if (in_check(board, board.side))
         {
             DECL_SCORE(s,-10000 + board.ply,board.hash);
@@ -145,13 +145,13 @@ score_t search(search_info* info)
     }
 
     if (board.ply == 0) {
-        assert(max_move.u != INVALID_MOVE);
+        assert(max_move != INVALID_MOVE);
         pthread_mutex_lock(&mutex);
         move_to_make = max_move;
         pthread_mutex_unlock(&mutex);
     }
 
-    // fifty chess_move draw rule
+    // fifty move draw rule
     if (board.fifty >= 100) {
         DECL_SCORE(z,0,board.hash);
         return z;

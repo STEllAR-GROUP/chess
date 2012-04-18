@@ -22,6 +22,7 @@
 #include "hash.hpp"
 #include "score.hpp"
 #include "parallel_support.hpp"
+#include "chess_move.hpp"
 
 int think(node_t& board,bool parallel);
 score_t search(search_info*);

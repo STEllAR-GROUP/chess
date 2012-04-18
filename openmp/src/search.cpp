@@ -53,8 +53,8 @@ std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
  * enough to do en passant.
  */
 bool capture(const node_t& board,chess_move& g) {
-  return board.color[g.b.to] != EMPTY
-      && board.color[g.b.to] != board.color[g.b.from];
+  return board.color[g.getTo()] != EMPTY
+      && board.color[g.getTo()] != board.color[g.getFrom()];
 }
 
 /**
@@ -82,7 +82,7 @@ score_t qeval(search_info* info)
     for(size_t j=0;j < workq.size(); j++) {
         chess_move g = workq[j];
         node_t p_board = board;
-        if(!makemove(p_board,g.b))
+        if(!makemove(p_board,g))
             continue;
         if(capture(board,g)) {
             //s = max(-qeval(p_board,-upper,-lower),s);
@@ -96,7 +96,7 @@ score_t qeval(search_info* info)
     for(size_t j=0;j < workq.size(); j++) {
         chess_move g = workq[j];
         node_t p_board = board;
-        if(!makemove(p_board,g.b))
+        if(!makemove(p_board,g))
             continue;
         if(capture(board,g)) {
             search_info* new_info = new search_info;
@@ -178,7 +178,7 @@ int think(node_t& board,bool parallel)
   pv.clear();
   pv.resize(depth[board.side]);
   chess_move mvz;
-  mvz.u = INVALID_MOVE;
+  mvz = INVALID_MOVE;
   for(size_t i=0;i<pv.size();i++) {
     pv[i].set(mvz);
   }
@@ -201,7 +201,7 @@ int think(node_t& board,bool parallel)
     score_t f = search(info);
     delete info;
     
-    assert(move_to_make.u != INVALID_MOVE);
+    assert(move_to_make != INVALID_MOVE);
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == MTDF) {
@@ -443,11 +443,11 @@ void sort_pv(std::vector<chess_move>& workq, int index)
   if((size_t)index < pv.size())
     return;
   chess_move temp = pv[index].get();
-  if(temp.u == INVALID_MOVE)
+  if(temp == INVALID_MOVE)
     return;
   for(size_t i = 0; i < workq.size() ; i++)
   {
-    if (workq[i].u == temp.u) /* If we have a chess_move in the work queue that is the 
+    if (workq[i] == temp) /* If we have a chess_move in the work queue that is the 
                                     same as the best chess_move we have searched before */
     {
       temp = workq[0];
@@ -459,6 +459,8 @@ void sort_pv(std::vector<chess_move>& workq, int index)
 }
 
 #define TRANSPOSE_ON 1
+
+// TODO: fix use of pthread mutex here
 
 zkey_t transposition_table[table_size];
 

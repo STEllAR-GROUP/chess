@@ -7,7 +7,6 @@ set( chx_SRCS
         mpi_support.cpp
         minimax.cpp
         alphabeta.cpp
-        xboard.cpp
         hpx_task.cpp)
 
 IF(HPX_FOUND)

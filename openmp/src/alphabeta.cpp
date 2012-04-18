@@ -112,7 +112,7 @@ score_t search_ab(search_info *info)
 
     std::vector<chess_move> workq;
     chess_move max_move;
-    max_move.u = INVALID_MOVE; 
+    max_move = INVALID_MOVE; 
 
     gen(workq, board); // Generate the moves
 
@@ -137,7 +137,7 @@ score_t search_ab(search_info *info)
         chess_move g = workq[j];
         node_t p_board = board;
 
-        if (!makemove(p_board, g.b)) { // Make the chess_move, if it isn't 
+        if (!makemove(p_board, g)) { // Make the chess_move, if it isn't 
             continue;                    // legal, then go to the next one
         }
 
@@ -184,7 +184,7 @@ score_t search_ab(search_info *info)
           return alpha;
         }
 
-        if (makemove(info->board, g.b)) {
+        if (makemove(info->board, g)) {
             bool parallel;
 
             smart_ptr<task> t = parallel_task(depth, &parallel);
@@ -246,7 +246,7 @@ score_t search_ab(search_info *info)
     assert(tasks.size()==0);
 
     // no legal moves? then we're in checkmate or stalemate
-    if (max_move.u == INVALID_MOVE) {
+    if (max_move == INVALID_MOVE) {
         if (in_check(board, board.side))
         {
             DECL_SCORE(s,-10000 + board.ply,board.hash);
@@ -261,7 +261,7 @@ score_t search_ab(search_info *info)
 
     if (board.ply == 0) {
         assert(!this_task->parent_task.valid());
-        assert(max_move.u != INVALID_MOVE);
+        assert(max_move != INVALID_MOVE);
         pthread_mutex_lock(&mutex);
         move_to_make = max_move;
         pthread_mutex_unlock(&mutex);

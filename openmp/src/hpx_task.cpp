@@ -34,6 +34,8 @@ HPX_REGISTER_PLAIN_ACTION(minimax_action);
 HPX_REGISTER_PLAIN_ACTION(strike_action);    
 HPX_REGISTER_PLAIN_ACTION(qeval_action);    
 
+using namespace hpx;
+
 void hpx_task::start() {
     assert(info.valid());
     info->self = 0;
@@ -41,19 +43,19 @@ void hpx_task::start() {
 
     if (pfunc == search_f)
     {
-        result = hpx::lcos::async<minimax_action>(locality_id, info.ptr());
+        result = async<minimax_action>(locality_id, info.ptr());
     }
     else if (pfunc == search_ab_f)
     {
-        result = hpx::lcos::async<alphabeta_action>(locality_id, info.ptr());
+        result = async<alphabeta_action>(locality_id, info.ptr());
     }
     else if (pfunc == strike_f)
     {
-        result = hpx::lcos::async<strike_action>(locality_id, info.ptr());
+        result = async<strike_action>(locality_id, info.ptr());
     }
     else if (pfunc == qeval_f)
     {
-        result = hpx::lcos::async<qeval_action>(locality_id, info.ptr());
+        result = async<qeval_action>(locality_id, info.ptr());
     }
     else
         assert(false); // should never get here

@@ -113,16 +113,16 @@ hash_t set_hash(node_t& board)
     Also because the chess_move changes the side of the player, we will XOR the hash_side.
     This function is called at the beginning of makemove()
 */
-hash_t update_hash(node_t& board, const move_bytes m)
+hash_t update_hash(node_t& board, chess_move& m)
 {
   /* m.from contains the location of the 'rook'
      m.to contains the location of the 'pawn'
      hash_piece[][][] is indexed by piece [color][type][square] */
   hash_t hash(board.hash);
-  if (board.color[m.to] != EMPTY)
-    hash ^= hash_piece[(size_t)board.color[m.to]][(size_t)board.piece[m.to]][m.to];    // XOR out the 'pawn' from the destination square (or skip if empty)
-  hash ^= hash_piece[(size_t)board.color[m.from]][(size_t)board.piece[m.from]][m.to];  // XOR in the 'rook' at the destination square
-  hash ^= hash_piece[(size_t)board.color[m.from]][(size_t)board.piece[m.from]][m.from];  // XOR out the 'rook' from the source square
+  if (board.color[m.getTo()] != EMPTY)
+    hash ^= hash_piece[(size_t)board.color[m.getTo()]][(size_t)board.piece[m.getTo()]][m.getTo()];    // XOR out the 'pawn' from the destination square (or skip if empty)
+  hash ^= hash_piece[(size_t)board.color[m.getFrom()]][(size_t)board.piece[m.getFrom()]][m.getTo()];  // XOR in the 'rook' at the destination square
+  hash ^= hash_piece[(size_t)board.color[m.getFrom()]][(size_t)board.piece[m.getFrom()]][m.getFrom()];  // XOR out the 'rook' from the source square
   
   hash ^= hash_side;
   
@@ -306,10 +306,7 @@ void gen_push(std::vector<chess_move>& workq, const node_t& board, int from, int
             }
         }
     }
-    g.b.from = (char)from;
-    g.b.to = (char)to;
-    g.b.promote = 0;
-    g.b.bits = (char)bits;
+    g.setBytes(from, to, 0, bits);
 
     workq.push_back(g);
 }
@@ -324,10 +321,7 @@ void gen_promote(std::vector<chess_move>& workq, int from, int to, int bits)
     chess_move g;
     
     for (i = KNIGHT; i <= QUEEN; ++i) {
-        g.b.from = (char)from;
-        g.b.to = (char)to;
-        g.b.promote = (char)i;
-        g.b.bits = (char)(bits | 32);
+        g.setBytes(from, to, i, (bits | 32));
         workq.push_back(g);
     }
 }
@@ -337,7 +331,7 @@ void gen_promote(std::vector<chess_move>& workq, int from, int to, int bits)
    undoes whatever it did and returns FALSE. Otherwise, it
    returns TRUE. */
 
-bool makemove(node_t& board,const move_bytes m)
+bool makemove(node_t& board,chess_move& m)
 {
     bool needs_set_hash = false;
     if(board.ep != -1)
@@ -345,18 +339,18 @@ bool makemove(node_t& board,const move_bytes m)
     board.hash = update_hash(board, m);
     /* test to see if a castle chess_move is legal and chess_move the rook
        (the king is moved with the usual chess_move code later) */
-    if (m.bits & 2) {
+    if (m.getBits() & 2) {
         int from, to;
         needs_set_hash = true;
         // It's not legal to castle if
         // the king is not on the from
         // square. SRB
-        if(board.piece[m.from] != KING || board.color[m.from] != board.side)
+        if(board.piece[m.getFrom()] != KING || board.color[m.getFrom()] != board.side)
             return false;
 
         if (in_check(board, board.side))
             return false;
-        switch (m.to) {
+        switch (m.getTo()) {
             case 62:
                 if (board.color[F1_CHESS] != EMPTY || board.color[G1_CHESS] != EMPTY ||
                         attack(board, F1_CHESS, board.side ^ 1) || attack(board, G1_CHESS, board.side ^ 1))
@@ -402,48 +396,48 @@ bool makemove(node_t& board,const move_bytes m)
 
     /* update the castle, en passant, and
        fifty-chess_move-draw variables */
-    board.castle &= castle_mask[(int)m.from] & castle_mask[(int)m.to];
-    if (m.bits & 8) {
+    board.castle &= castle_mask[m.getFrom()] & castle_mask[m.getTo()];
+    if (m.getBits() & 8) {
         if (board.side == LIGHT)
         {
-            board.ep = m.to + 8;
+            board.ep = m.getTo() + 8;
             board.hash ^= hash_ep[board.ep];
         }
         else
         {
-            board.ep = m.to - 8;
+            board.ep = m.getTo() - 8;
             board.hash ^= hash_ep[board.ep];
         }
     }
     else
         board.ep = -1;
-    if (m.bits & 17)
+    if (m.getBits() & 17)
         board.fifty = 0;
     else
         board.fifty++;
 
-    /* chess_move the piece */
-    board.color[(int)m.to] = board.side;
-    if (m.bits & 32)
+    /* move the piece */
+    board.color[m.getTo()] = board.side;
+    if (m.getBits() & 32)
     {
-        board.piece[(int)m.to] = m.promote;
+        board.piece[m.getTo()] = m.getPromote();
         needs_set_hash = true;
     }
     else
-        board.piece[(int)m.to] = board.piece[(int)m.from];
-    board.color[(int)m.from] = EMPTY;
-    board.piece[(int)m.from] = EMPTY;
+        board.piece[m.getTo()] = board.piece[m.getFrom()];
+    board.color[m.getFrom()] = EMPTY;
+    board.piece[m.getFrom()] = EMPTY;
 
     /* erase the pawn if this is an en passant chess_move */
-    if (m.bits & 4) {
+    if (m.getBits() & 4) {
         if (board.side == LIGHT) {
-            board.color[m.to + 8] = EMPTY;
-            board.piece[m.to + 8] = EMPTY;
+            board.color[m.getTo() + 8] = EMPTY;
+            board.piece[m.getTo() + 8] = EMPTY;
             needs_set_hash = true;
         }
         else {
-            board.color[m.to - 8] = EMPTY;
-            board.piece[m.to - 8] = EMPTY;
+            board.color[m.getTo() - 8] = EMPTY;
+            board.piece[m.getTo() - 8] = EMPTY;
             needs_set_hash = true;
         }
     }
