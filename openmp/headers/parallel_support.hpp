@@ -54,6 +54,9 @@ struct search_info {
         pthread_cond_signal(&cond);
         pthread_mutex_unlock(&mut);
     }
+    void set_done_serial() {
+        par_done = true;
+    }
     void wait_for_done();
     search_info(const node_t& board_) : board(board_), par_done(true),
             result(bad_min_score) {
@@ -141,7 +144,7 @@ struct serial_task : public task {
             info->result = qeval(info.ptr());
         else
             abort();
-        info->set_done();
+        info->set_done_serial();
         if(pfunc != search_f && info->result >= info->beta) {
             if (info->this_task.valid())
                 info->this_task->abort_search();
@@ -157,35 +160,36 @@ struct serial_task : public task {
 };
 class pcounter {
     int count, max_count;
-    pthread_mutex_t mut;
-    pthread_cond_t cond;
+    Mutex mut;
 public:
     pcounter() : count(0), max_count(0) {
-        pthread_mutex_init(&mut,NULL);
-        pthread_cond_init(&cond,NULL);
+    }
+    pcounter(const pcounter& pc) : count(pc.count), max_count(pc.max_count) {
     }
     void set_max(int n) {
         count = max_count = n;
     }
     int add(int n) {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         int old = count;
         count += n;
         assert(count <= max_count);
-        if(old == 0 && count > 0)
-            pthread_cond_broadcast(&cond);
+        //if(old == 0 && count > 0)
+            //pthread_cond_broadcast(&cond);
         int m = count;
-        pthread_mutex_unlock(&mut);
         return m;
     }
     void wait_dec() {
+        /*
         pthread_mutex_lock(&mut);
         while(count == 0)
             pthread_cond_wait(&cond,&mut);
         pthread_mutex_unlock(&mut);
+        */
+        assert(0);
     }
     bool dec() {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         bool ret;
         if(count > 0) {
             ret = true;
@@ -193,7 +197,6 @@ public:
         } else {
             ret = false;
         }
-        pthread_mutex_unlock(&mut);
         return ret;
     }
 };
@@ -279,7 +282,7 @@ struct hpx_task : public task {
 
     virtual void join() {
         info->result = result.get();
-        info->set_done();
+        info->set_done_serial();
     }
 
     virtual void abort_search() {

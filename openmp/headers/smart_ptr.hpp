@@ -7,31 +7,28 @@
 #ifndef SMART_PTR_HPP
 #define SMART_PTR_HPP
 #include <assert.h>
-#include <pthread.h>
+#include "parallel.hpp"
 
 template<typename T>
 class smart_ptr_guts {
-    pthread_mutex_t mut;
+    Mutex mut;
     int ref_count;
     public:
     T *ptr;
     smart_ptr_guts(int rc,T *p) : ref_count(rc), ptr(p) {
-        pthread_mutex_init(&mut,NULL);
     }
     ~smart_ptr_guts() {
         delete ptr;
     }
     void inc() {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         ref_count++;
-        pthread_mutex_unlock(&mut);
     }
     bool dec() {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         int r = ref_count;
         if(ref_count>0)
             ref_count--;
-        pthread_mutex_unlock(&mut);
         return r==1;
     }
 };

@@ -10,17 +10,16 @@
 #include "score.hpp"
 #include "node.hpp"
 #include <math.h>
-#include <pthread.h>
+#include "parallel.hpp"
 
 const int table_size = 4096;
 
 struct zkey_t {
   score_t lower, upper;
-  pthread_mutex_t mut;
+  Mutex mut;
   node_t board;
   int depth;
   zkey_t() : depth(-1) {
-    pthread_mutex_init(&mut,NULL);
   }
 };
 

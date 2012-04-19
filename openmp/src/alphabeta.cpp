@@ -8,7 +8,7 @@
 #include "parallel_support.hpp"
 #include "search.hpp"
 #include <assert.h>
-#include <pthread.h>
+#include "parallel.hpp"
 #include "zkey.hpp"
 
 /*
@@ -262,9 +262,8 @@ score_t search_ab(search_info *info)
     if (board.ply == 0) {
         assert(!this_task->parent_task.valid());
         assert(max_move != INVALID_MOVE);
-        pthread_mutex_lock(&mutex);
+        ScopedLock s(mutex);
         move_to_make = max_move;
-        pthread_mutex_unlock(&mutex);
     }
 
     // fifty chess_move draw rule

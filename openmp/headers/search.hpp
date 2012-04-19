@@ -15,7 +15,7 @@
 #include "main.hpp"
 #include "board.hpp"
 #include "eval.hpp"
-#include <pthread.h>
+#include "parallel.hpp"
 #include <list>
 #include <map>
 #include "smart_ptr.hpp"
@@ -39,7 +39,7 @@ int min(int a,int b);
 int max(int a,int b);
 void xboard();
 
-extern pthread_mutex_t mutex;
+extern Mutex mutex;
 extern const int num_proc;
 
 #endif

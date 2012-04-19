@@ -8,7 +8,7 @@
 #include "parallel_support.hpp"
 #include "search.hpp"
 #include <assert.h>
-#include <pthread.h>
+#include "parallel.hpp"
 
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
@@ -146,9 +146,8 @@ score_t search(search_info* info)
 
     if (board.ply == 0) {
         assert(max_move != INVALID_MOVE);
-        pthread_mutex_lock(&mutex);
+        ScopedLock s(mutex);
         move_to_make = max_move;
-        pthread_mutex_unlock(&mutex);
     }
 
     // fifty move draw rule

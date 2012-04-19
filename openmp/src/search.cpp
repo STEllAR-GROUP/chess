@@ -10,7 +10,7 @@
 
 #include "parallel_support.hpp"
 #include "search.hpp"
-#include <pthread.h>
+#include "parallel.hpp"
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
@@ -20,7 +20,7 @@
 
 #define PV_ON 1
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+Mutex mutex;
 const int num_proc = chx_threads_per_proc();
 
 bool multistrike_on = false;
@@ -29,22 +29,20 @@ int min(int a,int b) { return a < b ? a : b; }
 int max(int a,int b) { return a > b ? a : b; }
 
 struct safe_move {
-    pthread_mutex_t mut;
+    Mutex mut;
     chess_move mv;
-    safe_move() {
-        pthread_mutex_init(&mut,NULL);
-    }
+    safe_move() : mut(), mv() {}
+    safe_move(const safe_move& sm) : mut(), mv(sm.mv) {}
     void set(chess_move mv_) {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         mv = mv_;
-        pthread_mutex_unlock(&mut);
     }
     chess_move get() {
-        pthread_mutex_lock(&mut);
+        ScopedLock s(mut);
         chess_move m = mv;
-        pthread_mutex_unlock(&mut);
         return m;
     }
+private:
 };
 std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
 
@@ -469,7 +467,7 @@ bool get_transposition_value(const node_t& board,score_t& lower,score_t& upper) 
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
     zkey_t *z = &transposition_table[n];
-    pthread_mutex_lock(&z->mut);
+    ScopedLock s(z->mut);
     if(z->depth >= 0 && board_equals(board,z->board)) {
         lower = z->lower;
         upper = z->upper;
@@ -478,7 +476,6 @@ bool get_transposition_value(const node_t& board,score_t& lower,score_t& upper) 
         lower = bad_min_score;
         upper = bad_max_score;
     }
-    pthread_mutex_unlock(&z->mut);
 #endif
     return gotten;
 }
@@ -487,13 +484,12 @@ void set_transposition_value(const node_t& board,score_t lower,score_t upper) {
 #ifdef TRANSPOSE_ON
     int n = abs(board.hash^board.depth) % table_size;
     zkey_t *z = &transposition_table[n];
-    pthread_mutex_lock(&z->mut);
+    ScopedLock s(z->mut);
     if(board.depth >= z->depth) {
         z->board = board;
         z->lower = lower;
         z->upper = upper;
         z->depth = board.depth;
     }
-    pthread_mutex_unlock(&z->mut);
 #endif
 }
