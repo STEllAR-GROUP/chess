@@ -171,7 +171,7 @@ public:
     }
     int add(int n) {
         ScopedLock s(mut);
-        int old = count;
+        //int old = count;
         count += n;
         assert(count <= max_count);
         //if(old == 0 && count > 0)
@@ -274,8 +274,11 @@ struct pthread_task : public task {
 #ifdef HPX_ENABLED
 #include "chx_hpx.hpp"
 struct hpx_task : public task {
+    std::vector<hpx::naming::id_type> all_localities;
+    boost::uint32_t index;
     hpx::lcos::future<score_t> result;
-    hpx_task()  {
+    hpx_task() : index(0)  {
+        all_localities = hpx::find_all_localities();
     }
 
     virtual void start();
@@ -291,6 +294,8 @@ struct hpx_task : public task {
     virtual bool check_abort() {
         return false;
     }
+
+    virtual hpx::naming::id_type get_next_locality();
 };
 #endif
 

@@ -39,7 +39,7 @@ using namespace hpx;
 void hpx_task::start() {
     assert(info.valid());
     info->self = 0;
-    hpx::naming::id_type const locality_id = hpx::find_here();
+    hpx::naming::id_type const locality_id = get_next_locality();
 
     if (pfunc == search_f)
     {
@@ -60,4 +60,12 @@ void hpx_task::start() {
     else
         assert(false); // should never get here
         
+}
+
+hpx::naming::id_type hpx_task::get_next_locality() {
+    hpx::naming::id_type return_id = all_localities[index];
+    index = index + 1;
+    if (index > all_localities.size())
+        index=0;
+    return return_id;
 }
