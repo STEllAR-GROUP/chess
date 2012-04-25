@@ -23,13 +23,32 @@ struct ScopedLock {
     ScopedLock(Mutex& m) : l(m.mut) {}
     ~ScopedLock() {}
 };
-/*
 template<typename T>
 struct Future {
     hpx::lcos::future<T> fut;
     T& get() { return fut.get(); }
 };
-*/
+template<typename T>
+struct WaitAny {
+    typedef HPX_STD_TUPLE<int, hpx::lcos::future<T> > wait_type;
+    std::vector<hpx::lcos::future<T> > futs;
+
+    void add(Future<T>& f) {
+        futs.push_back(f.fut);
+    }
+
+    bool hasNext() {
+        return futs.size() > 0;
+    }
+
+    hpx::lcos::future<T> next() {
+        hpx::lcos::future<wait_type> r = hpx::wait_any(futs);
+        wait_type t = r.get();
+        int index = HPX_STD_GET(0,t);
+        futs.erase(futs.begin()+index);
+        return HPX_STD_GET(1,t);
+    }
+};
 #else
 #include <pthread.h>
 struct Mutex {
