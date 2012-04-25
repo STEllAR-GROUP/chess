@@ -273,12 +273,13 @@ struct pthread_task : public task {
 
 #ifdef HPX_ENABLED
 #include "chx_hpx.hpp"
+#include <time.h>
 struct hpx_task : public task {
     std::vector<hpx::naming::id_type> all_localities;
-    boost::uint32_t index;
     hpx::lcos::future<score_t> result;
-    hpx_task() : index(0)  {
+    hpx_task()  {
         all_localities = hpx::find_all_localities();
+        srand(time(NULL));
     }
 
     virtual void start();
@@ -295,7 +296,7 @@ struct hpx_task : public task {
         return false;
     }
 
-    virtual hpx::naming::id_type get_next_locality();
+    virtual hpx::naming::id_type get_random_locality();
 };
 #endif
 

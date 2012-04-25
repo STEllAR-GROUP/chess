@@ -1,4 +1,5 @@
 #include "parallel_support.hpp"
+#include <hpx/include/iostreams.hpp>
 
 score_t search(search_info*);
 score_t search_ab(search_info*);
@@ -39,7 +40,7 @@ using namespace hpx;
 void hpx_task::start() {
     assert(info.valid());
     info->self = 0;
-    hpx::naming::id_type const locality_id = get_next_locality();
+    hpx::naming::id_type const locality_id = get_random_locality();
 
     if (pfunc == search_f)
     {
@@ -62,10 +63,10 @@ void hpx_task::start() {
         
 }
 
-hpx::naming::id_type hpx_task::get_next_locality() {
-    hpx::naming::id_type return_id = all_localities[index];
-    index = index + 1;
-    if (index > all_localities.size())
-        index=0;
-    return return_id;
+hpx::naming::id_type hpx_task::get_random_locality() {
+   if (all_localities.size() == 0)
+       assert(false);
+   int randNum = rand()%all_localities.size();
+   std::cout << "RandNum = " << randNum << "\n"; 
+   return all_localities[randNum]; 
 }
