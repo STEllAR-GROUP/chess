@@ -18,4 +18,3 @@ HPX_REGISTER_ACTION_EX(task_component_type::wrapped_type::cancel_action,action_c
 HPX_REGISTER_ACTION_EX(task_component_type::wrapped_type::search_action,action_search);
 
 
-HPX_REGISTER_ACTION_EX(hpx::lcos::base_lco_with_value<bufptr>::set_result_action,set_result_action_score_t)
