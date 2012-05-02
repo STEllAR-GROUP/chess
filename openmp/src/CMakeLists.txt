@@ -4,6 +4,7 @@ set( chx_SRCS
         data.cpp
         eval.cpp
         search.cpp
+        task_component.cpp
         mpi_support.cpp
         minimax.cpp
         alphabeta.cpp
