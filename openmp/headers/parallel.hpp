@@ -61,10 +61,10 @@ struct ScopedLock {
     Mutex *m;
     ScopedLock(Mutex& m_) {
         m = &m_;
-        pthread_mutex_lock(m);
+        pthread_mutex_lock(&m->mut);
     }
     ~ScopedLock() {
-        pthread_mutex_unlock(m);
+        pthread_mutex_unlock(&m->mut);
     }
 };
 #endif

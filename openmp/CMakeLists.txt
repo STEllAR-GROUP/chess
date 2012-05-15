@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 2.8.4 FATAL_ERROR)
 SET (CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR};${HPX_INSTALL_DIR}/share/cmake-2.8/Modules)
-find_package(Readline)
+#find_package(Readline)
 #find_package(MPI)
-find_package(Boost)
-find_package(HPX)
+#find_package(Boost)
+#find_package(HPX)
 
 IF (HPX_FOUND)
     MESSAGE("HPX was found.")

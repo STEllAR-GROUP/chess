@@ -18,8 +18,6 @@
 #include "here.hpp"
 #include "zkey.hpp"
 
-#define PV_ON 1
-
 Mutex mutex;
 const int num_proc = chx_threads_per_proc();
 
@@ -28,22 +26,6 @@ bool multistrike_on = false;
 int min(int a,int b) { return a < b ? a : b; }
 int max(int a,int b) { return a > b ? a : b; }
 
-struct safe_move {
-    Mutex mut;
-    chess_move mv;
-    safe_move() : mut(), mv() {}
-    safe_move(const safe_move& sm) : mut(), mv(sm.mv) {}
-    void set(chess_move mv_) {
-        ScopedLock s(mut);
-        mv = mv_;
-    }
-    chess_move get() {
-        ScopedLock s(mut);
-        chess_move m = mv;
-        return m;
-    }
-private:
-};
 std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
 
 /**
