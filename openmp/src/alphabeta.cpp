@@ -11,6 +11,9 @@
 #include "parallel.hpp"
 #include "zkey.hpp"
 
+
+#include "wait_any.hpp"
+
 /*
    Alpha Beta search function. Uses OpenMP parallelization by the 
    'Young Brothers Wait' algorithm which searches the eldest brother (i.e. chess_move)
@@ -209,10 +212,16 @@ score_t search_ab(search_info *info)
             if (!parallel)
                 t->join(); // Serial task
         }
-        for(size_t n=0;n<tasks.size();n++) {
-            smart_ptr<search_info> info = tasks[n]->info;
-            tasks[n]->join();
-            val = -tasks[n]->info->result;
+        int total_tasks=tasks.size();
+        for(size_t n=0;n<total_tasks;n++) {
+            //smart_ptr<search_info> info = tasks[n]->info;
+            //tasks[n]->join();
+            //val = -tasks[n]->info->result;
+            smart_ptr<task> done_task=wait_any_busy(tasks);
+            smart_ptr<search_info> info=done_task->info;
+            val=-info->result;
+            done_task->info=0;
+
 
             if (val == bad_max_score)
                 continue;
