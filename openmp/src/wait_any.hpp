@@ -40,8 +40,8 @@ int get_done_index(std::vector< smart_ptr<task> > const& task_list){
 }
 
 smart_ptr<task> wait_any(std::vector< smart_ptr<task> >& task_list){
-   pthread_mutex_t* shared_mut=task_list[0]->info->mut;
-   pthread_cond_t* shared_cond=task_list[0]->info->cond;
+   pthread_mutex_t* shared_mut=task_list[0]->info->coord.mut;
+   pthread_cond_t* shared_cond=task_list[0]->info->coord.cond;
    int lock_return=pthread_mutex_lock(shared_mut);
    int done_index=get_done_index(task_list);
    if(done_index<0){

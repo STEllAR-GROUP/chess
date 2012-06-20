@@ -12,6 +12,7 @@
 #include "node.hpp"
 #include "score.hpp"
 #include "chess_move.hpp"
+#include "search_coordinator.hpp"
 
 extern bool par_enabled;
 int chx_threads_per_proc();
@@ -44,11 +45,18 @@ struct search_info {
     int incr;
     score_t alpha;
     score_t beta;
+    search_coordinator coord;
 
     void set_parallel() {
         par_done = false;
     }
     void set_done() {
+        if(coord.active){
+            pthread_mutex_lock(coord.mut);
+            par_done=true;
+            pthread_cond_signal(coord.cond);
+            pthread_mutex_unlock(coord.mut);
+        }
         pthread_mutex_lock(&mut);
         par_done = true;
         pthread_cond_signal(&cond);

@@ -125,6 +125,10 @@ score_t search_ab(search_info *info)
 
     const int worksq = workq.size();
     std::vector<smart_ptr<task> > tasks;
+    pthread_cond_t shared_cond;
+    pthread_mutex_t shared_mut;
+    pthread_mutex_init(&shared_mut,0);
+    pthread_cond_init(&shared_cond,0);
 
     int j=0;
     score_t val;
@@ -201,6 +205,10 @@ score_t search_ab(search_info *info)
             t->info->mv = g;
             t->info->this_task = t;
             t->parent_task = this_task;
+            
+            t->info->coord.active=true;
+            t->info->coord.mut=&shared_mut;
+            t->info->coord.cond=&shared_cond;
             if(depth == 1 && capture(board,g))
                 t->pfunc = qeval_f;
             else
@@ -217,11 +225,11 @@ score_t search_ab(search_info *info)
             //smart_ptr<search_info> info = tasks[n]->info;
             //tasks[n]->join();
             //val = -tasks[n]->info->result;
-            smart_ptr<task> done_task=wait_any_busy(tasks);
+            smart_ptr<task> done_task=wait_any(tasks);
             smart_ptr<search_info> info=done_task->info;
             val=-info->result;
+            done_task->info->coord.active=false;
             done_task->info=0;
-
 
             if (val == bad_max_score)
                 continue;
@@ -245,6 +253,7 @@ score_t search_ab(search_info *info)
         assert(this_task.valid());
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
+            (*task)->info->coord.active=false;
             (*task)->info = 0;
         }
         tasks.clear();
