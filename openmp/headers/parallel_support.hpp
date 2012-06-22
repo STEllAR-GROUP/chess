@@ -51,14 +51,16 @@ struct search_info {
         par_done = false;
     }
     void set_done() {
+        pthread_mutex_lock(&mut);
         if(coord.active){
             pthread_mutex_lock(coord.mut);
             par_done=true;
             pthread_cond_signal(coord.cond);
             pthread_mutex_unlock(coord.mut);
         }
-        pthread_mutex_lock(&mut);
-        par_done = true;
+        else{
+            par_done = true;
+        }
         pthread_cond_signal(&cond);
         pthread_mutex_unlock(&mut);
     }
