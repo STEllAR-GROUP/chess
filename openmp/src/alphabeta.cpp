@@ -254,6 +254,7 @@ score_t search_ab(search_info *info)
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
             (*task)->info->coord.active=false;
+            (*task)->abort_search();
             (*task)->info = 0;
         }
         tasks.clear();
