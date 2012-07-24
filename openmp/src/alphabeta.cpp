@@ -253,8 +253,10 @@ score_t search_ab(search_info *info)
         assert(this_task.valid());
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
+            pthread_mutex_lock(&(*task)->info->mut);
             (*task)->info->coord.active=false;
             (*task)->abort_search();
+            pthread_mutex_unlock(&(*task)->info->mut);
             (*task)->info = 0;
         }
         tasks.clear();
