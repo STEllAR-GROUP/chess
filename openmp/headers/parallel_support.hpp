@@ -229,8 +229,8 @@ struct pthread_task : public task {
         //pthread_mutex_lock(&mut);
         joined = false;
         //pthread_mutex_unlock(&mut);
-        //pthread_attr_init(&attr);
-        //pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+        pthread_attr_init(&pth_attr);
+        pthread_attr_setdetachstate(&pth_attr,PTHREAD_CREATE_JOINABLE);
         //pthread_create(&thread,&attr,pfunc,info.ptr());
         info->set_parallel();
         assert(info.valid());
