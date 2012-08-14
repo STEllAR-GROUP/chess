@@ -12,6 +12,7 @@
 #include "board.hpp"
 #include "here.hpp"
 #include <string.h>
+#include <iostream>
 
 // Make sure hashing works. Note
 // that the test is not thread safe.
@@ -125,6 +126,11 @@ hash_t update_hash(node_t& board, chess_move& m)
   hash ^= hash_piece[(size_t)board.color[m.getFrom()]][(size_t)board.piece[m.getFrom()]][m.getFrom()];  // XOR out the 'rook' from the source square
   
   hash ^= hash_side;
+
+  if(hash==0){
+      std::cout<<"Error in update_hash!"<<std::endl;
+      std::cin>>hash;
+  }
   
   return hash;
 }
@@ -333,7 +339,10 @@ void gen_promote(std::vector<chess_move>& workq, int from, int to, int bits)
 
 bool makemove(node_t& board,chess_move& m)
 {
+    node_t old_board=board;
+    chess_move old_move=m;
     bool needs_set_hash = false;
+    bool special_move=false;
     if(board.ep != -1)
         board.hash ^= hash_ep[board.ep];
     board.hash = update_hash(board, m);
@@ -430,6 +439,8 @@ bool makemove(node_t& board,chess_move& m)
 
     /* erase the pawn if this is an en passant chess_move */
     if (m.getBits() & 4) {
+        std::cout<<"En passant"<<std::endl;
+        special_move=true;
         if (board.side == LIGHT) {
             board.color[m.getTo() + 8] = EMPTY;
             board.piece[m.getTo() + 8] = EMPTY;
@@ -471,6 +482,14 @@ bool makemove(node_t& board,chess_move& m)
     }
 #endif
     //board.hash = set_hash(board);
+    if(board.hash==0){
+        std::cout<<"Error!"<<std::endl;
+        int i;
+        std::cin>>i;
+    }
     assert(board.hash != 0);
+    if(special_move){
+        std::cout<<"Done with make_move"<<std::endl;
+    }
     return true;
 }
