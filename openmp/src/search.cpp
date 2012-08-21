@@ -98,15 +98,21 @@ score_t qeval(search_info* info)
  
 void *qeval_pt(void *vptr)
 {
-  search_info *info = (search_info *)vptr;
-  info->result = qeval(info);
-  info->self = 0;
-  info->set_done();
-  mpi_task_array[0].add(1);
-  if(info->result >= info->beta) {
-    info->this_task->abort_search();
-  }
-  return NULL;
+    search_info *info=(search_info*)vptr;
+    assert(info!=0);
+    assert(info->self.valid());
+    {
+        info->result=qeval(info);
+        info->set_done();
+        mpi_task_array[0].add(1);
+        smart_ptr<search_info> eg=info->self;
+        if(info->result>=info->beta){
+            info->this_task->abort_search();
+        }
+        info->self=0;
+        pthread_exit(0);
+    }
+    return 0;
 }
 
 smart_ptr<task> parallel_task(int depth, bool *parallel) {
