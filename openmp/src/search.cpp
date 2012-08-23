@@ -128,6 +128,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
             return t;
         }
     }
+    /*
     if(depth >= 4) {
         for(int i=1;i<mpi_size;i++) {
             if(mpi_task_array[i].dec()) {
@@ -137,6 +138,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
             }
         }
     }
+    */
     *parallel = false;
     smart_ptr<task> t = new serial_task;
     return t;
