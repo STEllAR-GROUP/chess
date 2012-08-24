@@ -15,12 +15,14 @@ void *search_pt(void *vptr) {
     assert(info!=0);
     assert(info->self.valid());
     //assert(info->depth == info->board.depth);
-    info->result = search(info);
-    info->set_done();
-    mpi_task_array[0].add(1);
-    smart_ptr<search_info> eg=info->self;
-    info->self = 0;
-    pthread_exit(NULL);
+    {
+        info->result = search(info);
+        info->set_done();
+        mpi_task_array[0].add(1);
+        smart_ptr<search_info> eg=info->self;
+        info->self = 0;
+        pthread_exit(NULL);
+    }
     return NULL;
 }
 
