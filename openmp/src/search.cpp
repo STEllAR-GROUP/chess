@@ -95,23 +95,26 @@ score_t qeval(search_info* info)
     }
     return s;
 }
- 
+
 void *qeval_pt(void *vptr)
 {
   search_info *info = (search_info *)vptr;
   info->result = qeval(info);
+  assert(info == info->self.ptr());
+  smart_ptr<search_info> hold = info->self;
   info->self = 0;
   info->set_done();
   mpi_task_array[0].add(1);
   if(info->result >= info->beta) {
-    info->this_task->abort_search();
+	if(info->this_task.valid())
+    	info->this_task->abort_search();
   }
   return NULL;
 }
 
 smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
-    if(depth >= 3) {
+    if(depth >= 1) {
         if(mpi_task_array[0].dec()) {
 #ifdef HPX_ENABLED
             smart_ptr<task> t = new hpx_task;
@@ -122,6 +125,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
             return t;
         }
     }
+	/*
     if(depth >= 4) {
         for(int i=1;i<mpi_size;i++) {
             if(mpi_task_array[i].dec()) {
@@ -131,6 +135,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
             }
         }
     }
+	*/
     *parallel = false;
     smart_ptr<task> t = new serial_task;
     return t;

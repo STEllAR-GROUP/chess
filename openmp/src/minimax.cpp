@@ -17,6 +17,7 @@ void *search_pt(void *vptr) {
     if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
+		smart_ptr<search_info> hold = info->self;
         info->self = 0;
         pthread_exit(NULL);
     }

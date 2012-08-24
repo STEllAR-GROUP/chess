@@ -161,6 +161,14 @@ for my $sm (("minimax","alphabeta","mtdf")) {
                 print $doc;
                 die "error code returned r=($ret)";
             }
+			open($fd,"log.out");
+			while(<$fd>) {
+				if(/ERROR SUMMARY: (\d+) errors/) {
+					if($1 > 0) {
+						die $_;
+					}
+				}
+			}
         }
     }
 }

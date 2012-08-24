@@ -255,7 +255,8 @@ struct pthread_task : public task {
 
     virtual void abort_search() {
         pthread_mutex_lock(&mut);
-        parent_task->abort_search_parent();
+		if(parent_task.valid())
+        	parent_task->abort_search_parent();
         pthread_mutex_unlock(&mut);
     }
 
