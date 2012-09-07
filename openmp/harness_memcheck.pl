@@ -97,7 +97,7 @@ for my $sm (("mtdf","alphabeta","minimax")) {
             }
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
             #open($fd,"CHX_THREADS_PER_PROC=8; mpiexec -np 1 src/chx -s .bench.ini 2>/dev/null|");
-            open($fd,"CHX_THREADS_PER_PROC=8 valgrind --tool=memcheck --leak-check=full --log-file=log_memcheck.out src/chx < .bench 2>/dev/null|");
+            open($fd,"CHX_THREADS_PER_PROC=8 valgrind --tool=memcheck --leak-check=full src/chx < .bench 2>>log_memcheck.out");
 
             my $ans = "";
             my $score = $bad_score;
@@ -182,7 +182,7 @@ sub genbench {
     my $b = shift;
     my $ply = shift;
     my $fd = new FileHandle;
-    my $runs = 9;
+    my $runs = 1;
     $runs = 1 if($sm eq "minimax");
     $runs = 3 if($ply > 5);
     open($fd,">.bench");

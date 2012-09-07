@@ -106,6 +106,7 @@ void *qeval_pt(void *vptr)
   info->set_done();
   mpi_task_array[0].add(1);
   if(info->result >= info->beta) {
+	smart_ptr<task> hold_task = info->this_task;
 	if(info->this_task.valid())
     	info->this_task->abort_search();
   }
@@ -339,7 +340,6 @@ score_t multistrike(search_info* info)
         if(alpha < result && result < beta) {
             ret = result;
         }
-        tasks[i]->info->this_task = 0;
     }
     return ret;
 }

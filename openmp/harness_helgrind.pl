@@ -182,7 +182,7 @@ sub genbench {
     my $b = shift;
     my $ply = shift;
     my $fd = new FileHandle;
-    my $runs = 9;
+    my $runs = 1;
     $runs = 1 if($sm eq "minimax");
     $runs = 3 if($ply > 5);
     open($fd,">.bench");

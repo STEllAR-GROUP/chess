@@ -35,13 +35,13 @@ void *search_ab_pt(void *vptr)
 {
     search_info *info = (search_info *)vptr;
     assert(info != 0);
+    smart_ptr<search_info> hold = info->self;
     assert(info->self.valid());
     {
         assert(info->depth == info->board.depth);
         info->result = search_ab(info);
         info->set_done();
         mpi_task_array[0].add(1);
-        smart_ptr<search_info> eg = info->self;
         if(info->result >= info->beta) {
             info->this_task->abort_search();
         }
@@ -86,7 +86,6 @@ score_t search_ab(search_info *info)
     // Check if we should abort
     if (this_task->check_abort()) {
       this_task->abort_search();
-      this_task = 0;
       return beta;
     }
 
@@ -94,11 +93,9 @@ score_t search_ab(search_info *info)
     score_t zlo,zhi;
     if(get_transposition_value(board,zlo,zhi)) {
         if(zlo >= beta) {
-            this_task = 0;
             return zlo;
         }
         if(alpha >= zhi) {
-            this_task = 0;
             return zhi;
         }
         alpha = max(zlo,alpha);
@@ -106,7 +103,6 @@ score_t search_ab(search_info *info)
     }
     if(alpha >= beta) {
         this_task->abort_search();
-        this_task = 0;
         return alpha;
     }
 
@@ -179,7 +175,6 @@ score_t search_ab(search_info *info)
         
         if (this_task->check_abort()) {
           this_task->abort_search();
-          this_task = 0;
           info = 0;
           return alpha;
         }
@@ -233,7 +228,6 @@ score_t search_ab(search_info *info)
                 }
             }
         }
-        assert(this_task.valid());
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
             (*task)->info = 0;
@@ -260,7 +254,6 @@ score_t search_ab(search_info *info)
     }
 
     if (board.ply == 0) {
-        assert(!this_task->parent_task.valid());
         assert(max_move != INVALID_MOVE);
         ScopedLock s(mutex);
         move_to_make = max_move;

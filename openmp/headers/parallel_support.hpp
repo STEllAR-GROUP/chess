@@ -69,7 +69,6 @@ struct search_info {
     }
 
     ~search_info() {
-        this_task = 0;
     }
 };
 
@@ -104,6 +103,7 @@ struct task {
 };
 
 inline void search_info::wait_for_done() {
+	smart_ptr<task> ttask = this_task;
     pthread_mutex_lock(&mut);
     while(!par_done) {
         if(this_task.valid() && this_task->check_abort())
@@ -133,6 +133,7 @@ struct serial_task : public task {
             return;
         if(!info.valid())
             return;
+		smart_ptr<search_info> hold = info->self;
         info->self=0;
         if(pfunc == search_f)
             info->result = search(info.ptr());
@@ -146,6 +147,7 @@ struct serial_task : public task {
             abort();
         info->set_done_serial();
         if(pfunc != search_f && info->result >= info->beta) {
+			smart_ptr<task> hold_task = info->this_task;
             if (info->this_task.valid())
                 info->this_task->abort_search();
         }
@@ -254,6 +256,7 @@ struct pthread_task : public task {
     }
 
     virtual void abort_search() {
+		smart_ptr<task> hold = parent_task;
         pthread_mutex_lock(&mut);
 		if(parent_task.valid())
         	parent_task->abort_search_parent();
@@ -262,12 +265,15 @@ struct pthread_task : public task {
 
 
     virtual bool check_abort() {
-        bool ret;
         pthread_mutex_lock(&mut);
-        ret = false;
-        if (parent_task.valid() && parent_task->check_abort())
-            ret = true;
+        bool ret=abort_flag;
         pthread_mutex_unlock(&mut);
+        if(ret){
+            return true;
+        }
+		smart_ptr<task> hold = parent_task;
+        if (parent_task.valid())
+            ret=parent_task->check_abort();
         return ret;
     }
 };

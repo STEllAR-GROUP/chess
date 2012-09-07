@@ -12,12 +12,12 @@
 
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
+	smart_ptr<search_info> hold = info->self;
     //assert(info->depth == info->board.depth);
     info->result = search(info);
     if(info->self.valid()) {
         info->set_done();
         mpi_task_array[0].add(1);
-		smart_ptr<search_info> hold = info->self;
         info->self = 0;
         pthread_exit(NULL);
     }
@@ -122,8 +122,6 @@ score_t search(search_info* info)
                         max = val;
                         max_move = info->mv;
                     }
-                    tasks[n]->info->this_task = 0;
-                    //tasks[n]->info = 0;
                 }
                 tasks.clear();
             }
