@@ -265,6 +265,7 @@ struct pthread_task : public task {
 
 
     virtual bool check_abort() {
+        return false;
         pthread_mutex_lock(&mut);
         bool ret=abort_flag;
         smart_ptr<task> hold=parent_task;
