@@ -66,7 +66,7 @@ void hpx_task::start() {
 hpx::naming::id_type hpx_task::get_random_locality() {
    if (all_localities.size() == 0)
        assert(false);
-   int randNum = rand()%all_localities.size();
+   int randNum = (unsigned long)(rand_num_gen(rand_num_gen_ctr,rand_num_gen_key)[0])%all_localities.size();
    std::cout << "RandNum = " << randNum << "\n"; 
    return all_localities[randNum]; 
 }

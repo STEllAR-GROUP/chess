@@ -281,13 +281,19 @@ struct pthread_task : public task {
 
 #ifdef HPX_ENABLED
 #include "chx_hpx.hpp"
-#include <time.h>
+#include <Random123/threefry.h>
 struct hpx_task : public task {
     std::vector<hpx::naming::id_type> all_localities;
     hpx::lcos::future<score_t> result;
+
+    typedef r123::Threefry2x64 cbrng;
+    cbrng rand_num_gen;
+    cbrng::ctr_type rand_num_gen_ctr={{0,0}};
+    cbrng::key_type rand_num_gen_key;
+
     hpx_task()  {
         all_localities = hpx::find_all_localities();
-        srand(time(NULL));
+        rand_num_gen_key={{(unsigned long)(&info)}};
     }
 
     virtual void start();
