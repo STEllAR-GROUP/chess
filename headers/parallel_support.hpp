@@ -281,8 +281,8 @@ struct pthread_task : public task {
     }
 };
 
-#ifdef HPX_ENABLED
-#include "chx_hpx.hpp"
+#ifdef HPX_SUPPORT
+#include "hpx_support.hpp"
 #include <time.h>
 struct hpx_task : public task {
     std::vector<hpx::naming::id_type> all_localities;
