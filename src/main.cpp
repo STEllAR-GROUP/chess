@@ -23,6 +23,7 @@
 #include <sys/time.h>
 
 #include "mpi_support.hpp"
+#include <unistd.h>
 
 #ifdef MPI_SUPPORT
 #undef MPI_SUPPORT
