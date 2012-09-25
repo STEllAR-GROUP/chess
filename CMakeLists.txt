@@ -37,14 +37,15 @@ endif()
 
 find_package(MPI)
 
-if(MPI_FOUND)
-  message("MPI was found.")
-  set(CMAKE_CXX_COMPILER "mpicxx")
-
-  add_definitions(-DMPI_SUPPORT)
-else()
-  message("Could not find MPI. Configuring without MPI support.")
-endif()
+# Not implemented
+#if(MPI_FOUND)
+#  message("MPI was found.")
+#  set(CMAKE_CXX_COMPILER "mpicxx")
+#
+#  add_definitions(-DMPI_SUPPORT)
+#else()
+#  message("Could not find MPI. Configuring without MPI support.")
+#endif()
 
 set(EXTRA_LIBS pthread)
 
