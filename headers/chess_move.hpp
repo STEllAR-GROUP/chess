@@ -8,9 +8,6 @@
 #ifndef  CHESS_MOVE_HPP_C1BEDE43_B47B_4694_ACF4_F41143D72B97
 #define CHESS_MOVE_HPP_C1BEDE43_B47B_4694_ACF4_F41143D72B97
 
-#ifdef HPX_ENABLED
-#include <boost/serialization/base_object.hpp>
-#endif
 #include <stdint.h>
 /* This is the basic description of a chess_move. promote is what
    piece to promote the pawn to, if the chess_move is a pawn

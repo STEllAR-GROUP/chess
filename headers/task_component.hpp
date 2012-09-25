@@ -8,7 +8,7 @@
 
 
 namespace task_component { 
-class HPX_COMPONENT_EXPORT server : public hpx::components::simple_component_base<server>  {
+class HPX_COMPONENT_EXPORT server : public hpx::components::managed_component_base<server>  {
 
 public:
    server()  {}

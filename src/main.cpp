@@ -8,13 +8,13 @@
  *  main.cpp
  */
 
-#ifdef HPX_ENABLED
+#ifdef HPX_SUPPORT
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/components.hpp>
 #endif
 
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
 #include <boost/algorithm/string.hpp>
 #endif
 #include "main.hpp"
@@ -68,7 +68,7 @@ void mpi_terminate() {
 int auto_move = 0;
 int computer_side;
 
-#ifdef HPX_ENABLED
+#ifdef HPX_SUPPORT
 int hpx_main(boost::program_options::variables_map& vm)
 {
     int ret = chx_main();
@@ -163,7 +163,7 @@ int chx_main()
             continue;
 
         std::vector<std::string> input;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
         boost::split(input, s, boost::is_any_of("\t "));
 #else
         input.push_back(s);
@@ -187,7 +187,7 @@ int chx_main()
             gen(workq, board);
             continue;
         }
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
         if (input[0] == "wd") {
           try {
             depth[LIGHT] = atoi(input.at(1).c_str());
@@ -227,7 +227,7 @@ int chx_main()
             continue;
         }
         if ((input[0] == "o")||(input[0] == "output")) {
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           try {
             if (input.at(1) == "on")
               output = 1;
@@ -241,7 +241,7 @@ int chx_main()
                 std::cout << "Output is now on" << std::endl;
             else
                 std::cout << "Output is now off" << std::endl;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
 #endif
           continue;
@@ -252,7 +252,7 @@ int chx_main()
         }
         if (input[0] == "parallel") {
             std::string arg;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
             try {
                 arg = input.at(1);
             }
@@ -266,7 +266,7 @@ int chx_main()
             std::cout << "Set number of threads: ";
             std::cin >> arg;
 #endif
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
             }
 #endif
             mpi_task_array[0].set_max(atoi(arg.c_str()));
@@ -278,7 +278,7 @@ int chx_main()
           int ply_level;
           int num_runs;
           std::string filename;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           try {
             filename = input.at(1);
           }
@@ -292,7 +292,7 @@ int chx_main()
           std::cout << "Name of file: ";
           std::cin >> filename;
 #endif
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
 
           try {
@@ -302,7 +302,7 @@ int chx_main()
 #endif
             std::cout << "Search depth (ply): ";
             std::cin >> ply_level;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
           try {
             num_runs = atoi(input.at(3).c_str());
@@ -311,7 +311,7 @@ int chx_main()
 #endif
             std::cout << "Number of runs: ";
             std::cin >> num_runs;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
 #endif
           std::cout << std::endl;
@@ -320,7 +320,7 @@ int chx_main()
         }
         if (input[0] == "eval") {
           std::string eval;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           try {
             eval = input.at(1);
           }
@@ -328,7 +328,7 @@ int chx_main()
 #endif
             std::cout << "Name of evaluator (original,simple): ";
             std::cin >> eval;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
 #endif
           if (eval == "simple") {
@@ -342,7 +342,7 @@ int chx_main()
         }
         if (input[0] == "search") {
           std::string search_m;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           try {
             search_m = input.at(1);
           }
@@ -350,7 +350,7 @@ int chx_main()
 #endif
             std::cout << "Name of search method (minimax,alphabeta,mtdf,multistrike): ";
             std::cin >> search_m;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           }
 #endif
           if (search_m == "minimax") {
@@ -375,7 +375,7 @@ int chx_main()
           std::cout << "  go\n\tcomputer makes a chess_move" << std::endl;
           std::cout << "  auto\n\tcomputer will continue to make moves until game is over" << std::endl;
           std::cout << "  new\n\tstarts a new game" << std::endl;
-#ifdef HAS_BOOST
+#ifdef BOOST_SUPPORT
           std::cout << "  wd <number>\n\tsets white search depth (default 3)" << std::endl;
           std::cout << "  bd <number>\n\tsets black search depth (default 3)" << std::endl;
 #endif
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
         return 255;
     }
     mpi_terminate();
-#ifdef HPX_ENABLED
+#ifdef HPX_SUPPORT
     boost::program_options::options_description
         desc_commandline("usage: " HPX_APPLICATION_STRING " [options]");
     return hpx::init(desc_commandline, argc, argv);

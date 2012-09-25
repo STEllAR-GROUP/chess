@@ -6,7 +6,7 @@
 #include "task_component_impl.hpp"
 HPX_REGISTER_COMPONENT_MODULE();
 
-typedef hpx::components::simple_component<task_component::server> task_component_type;
+typedef hpx::components::managed_component<task_component::server> task_component_type;
 
 
 
