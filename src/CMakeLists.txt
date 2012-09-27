@@ -10,6 +10,7 @@ set(sources
     eval.cpp
     search.cpp
     minimax.cpp
+    mpi_support.cpp
     alphabeta.cpp)
 
 if(HPX_FOUND)
@@ -22,8 +23,6 @@ if(HPX_FOUND)
     DEPENDENCIES ${EXTRA_LIBS}
     SOURCES ${sources})
 elseif(MPI_FOUND)
-  set(sources ${sources}
-      mpi_support.cpp)
 
   add_executable(chx ${sources})
   target_link_libraries(chx ${EXTRA_LIBS})
