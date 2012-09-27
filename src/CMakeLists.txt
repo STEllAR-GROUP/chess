@@ -15,7 +15,7 @@ set(sources
 
 if(HPX_FOUND)
   set(sources ${sources}
-      task_component.cpp
+      #task_component.cpp Not used
       hpx_task.cpp)
  
   add_hpx_executable(chx
