@@ -64,10 +64,13 @@ void hpx_task::start() {
 }
 
 hpx::naming::id_type hpx_task::get_random_locality() {
+   return all_localities[0];
+   /*
    if (all_localities.size() == 0)
        assert(false);
    // FIXME: Do not use rand() here. It uses a pthreads mutex.
    int randNum = rand()%all_localities.size();
-   std::cout << "RandNum = " << randNum << "\n"; 
+   std::cout << "RandNum = " << randNum <<" Size: "<<all_localities.size()<< "\n"; 
    return all_localities[randNum]; 
+   */
 }

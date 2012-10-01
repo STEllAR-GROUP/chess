@@ -287,7 +287,7 @@ struct hpx_task : public task {
     hpx::lcos::future<score_t> result;
     hpx_task()  {
         all_localities = hpx::find_all_localities();
-        srand(time(NULL));
+        //srand(time(NULL)); Don't use blocking rand
     }
 
     virtual void start();
