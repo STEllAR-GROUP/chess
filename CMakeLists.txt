@@ -23,7 +23,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake;${HPX_ROOT}/share/cmake-2.8/Modules)
 
-find_package(HPX)
+#find_package(HPX)
 if(HPX_FOUND)
   message("HPX was found.")
 
