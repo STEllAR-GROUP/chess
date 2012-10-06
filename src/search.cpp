@@ -103,9 +103,6 @@ void *qeval_pt(void *vptr)
   info->self = 0;
   info->set_done();
   mpi_task_array[0].add(1);
-  if(info->result >= info->beta) {
-    info->this_task->abort_search();
-  }
   return NULL;
 }
 
@@ -140,11 +137,6 @@ void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
   info->result = search_ab(info);
   info->self = 0;
-  if(info->alpha < info->result && info->result < info->beta) {
-    //std::cout << "FOUND: " << VAR(info->result) << std::endl;
-    info->this_task->abort_search();
-    return NULL;
-  }
   info->set_done();
   mpi_task_array[0].add(1);
   return NULL;

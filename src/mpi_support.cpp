@@ -133,7 +133,6 @@ void *do_mpi_thread(void *voidp) {
             0,WORK_COMPLETED,MPI_COMM_WORLD);
     mp->free();
 #endif
-    pthread_exit(NULL);
     return NULL;
 }
 

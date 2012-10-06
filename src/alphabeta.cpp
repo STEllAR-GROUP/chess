@@ -45,11 +45,7 @@ void *search_ab_pt(void *vptr)
         info->set_done();
         mpi_task_array[0].add(1);
         smart_ptr<search_info> eg = info->self;
-        if(info->result >= info->beta) {
-            info->this_task->abort_search();
-        }
         info->self=0;
-        pthread_exit(NULL);
     }
     return NULL;
 }
@@ -86,13 +82,6 @@ score_t search_ab(search_info *info)
         return z;
     }
 
-    // Check if we should abort
-    if (this_task->check_abort()) {
-      this_task->abort_search();
-      this_task = 0;
-      return beta;
-    }
-
     score_t max_val = bad_min_score;
     score_t zlo,zhi;
     if(get_transposition_value(board,zlo,zhi)) {
@@ -108,7 +97,6 @@ score_t search_ab(search_info *info)
         beta  = min(zhi,beta);
     }
     if(alpha >= beta) {
-        this_task->abort_search();
         this_task = 0;
         return alpha;
     }
@@ -183,13 +171,6 @@ score_t search_ab(search_info *info)
     for (; j < worksq; j++) {
         chess_move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
-        
-        if (this_task->check_abort()) {
-          this_task->abort_search();
-          this_task = 0;
-          info = 0;
-          return alpha;
-        }
 
         if (makemove(info->board, g)) {
             bool parallel;
@@ -255,7 +236,6 @@ score_t search_ab(search_info *info)
         {
             pthread_mutex_lock(&(*task)->info->mut);
             (*task)->info->coord.active=false;
-            (*task)->abort_search();
             pthread_mutex_unlock(&(*task)->info->mut);
             (*task)->info = 0;
         }

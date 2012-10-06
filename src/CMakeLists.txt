@@ -9,6 +9,7 @@ set(sources
     data.cpp
     eval.cpp
     search.cpp
+    mpi_support.cpp
     minimax.cpp
     alphabeta.cpp)
 
