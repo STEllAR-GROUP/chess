@@ -31,8 +31,6 @@ struct search_info {
     // to delay cleanup
     smart_ptr<search_info> self;
     
-    smart_ptr<task> this_task;
-    
     node_t board;
     bool par_done;
     chess_move mv;
@@ -61,13 +59,33 @@ struct search_info {
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
-        this_task = 0;
     }
 
     search_info() {
     }
 
     ~search_info() {
+    }
+};
+
+struct Threader {
+    void *(*func)(void*);
+    pthread_t p;
+    Threader() : func(0) {}
+    void create(void *(*f)(void*),void *args) {
+        assert(func == 0);
+        func = f;
+        pthread_create(&p,0,func,args);
+    }
+    void join() {
+        if(func != 0) {
+            pthread_join(p,0);
+            func = 0;
+        }
+    }
+    ~Threader() {
+        if(func != 0)
+            pthread_detach(p);
     }
 };
 
@@ -80,14 +98,11 @@ enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
 struct task {
     smart_ptr<search_info> info;
 
-    smart_ptr<task> parent_task;
-    //pthread_func_t pfunc;
     pfunc_v pfunc;
     task() : pfunc(no_f) {
     }
     virtual ~task() {
         info = 0;
-        parent_task = 0;
     }
 
     virtual void start() = 0;
@@ -96,7 +111,6 @@ struct task {
 };
 
 inline void search_info::wait_for_done() {
-	smart_ptr<task> ttask = this_task;
     pthread_mutex_lock(&mut);
     while(!par_done) {
         timespec ts;
@@ -114,7 +128,6 @@ struct serial_task : public task {
     serial_task(): joined(false) {}
     ~serial_task() {
         info = 0;
-        parent_task = 0;
     }
 
     virtual void start() { }
@@ -184,7 +197,6 @@ public:
 };
 extern std::vector<pcounter> mpi_task_array;
 struct pthread_task : public task {
-    pthread_t thread;
     pthread_mutex_t mut;
     //pthread_attr_t attr;
     bool joined;
@@ -193,26 +205,21 @@ struct pthread_task : public task {
     }
     ~pthread_task() {
         info = 0;
-        parent_task = 0;
     }
     virtual void start() {
-        //pthread_mutex_lock(&mut);
         joined = false;
-        //pthread_mutex_unlock(&mut);
-        //pthread_attr_init(&attr);
-        //pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
-        //pthread_create(&thread,&attr,pfunc,info.ptr());
         info->set_parallel();
         assert(info.valid());
         info->self = info;
+        Threader th;
         if(pfunc == search_f)
-            pthread_create(&thread,&pth_attr,search_pt,info.ptr());
+            th.create(search_pt,info.ptr());
         else if(pfunc == search_ab_f)
-            pthread_create(&thread,&pth_attr,search_ab_pt,info.ptr());
+            th.create(search_ab_pt,info.ptr());
         else if(pfunc == strike_f)
-            pthread_create(&thread,&pth_attr,strike,info.ptr());
+            th.create(strike,info.ptr());
         else if(pfunc == qeval_f)
-            pthread_create(&thread,&pth_attr,qeval_pt,info.ptr());
+            th.create(qeval_pt,info.ptr());
         else
             abort();
     }

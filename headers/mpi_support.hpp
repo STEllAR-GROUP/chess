@@ -76,7 +76,6 @@ struct mpi_task : public task {
   virtual ~mpi_task() {
     join();
     info = 0;
-    parent_task = 0;
   }
   int mpi_data[mpi_ints];
   virtual void start();

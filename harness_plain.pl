@@ -81,9 +81,9 @@ $anskey->{4}->{5} = "g5f7";
 my $bad_score = -6666;
 my $tot_time = 0;
 
-for my $sm (("minimax","alphabeta","mtdf")) {
+for(my $ply=2;$ply<=5;$ply++) {
     for(my $b=1;$b<=4;$b++) {
-        for(my $ply=2;$ply<=5;$ply++) {
+        for my $sm (("minimax","alphabeta","mtdf")) {
             # It takes too long for minimax above ply 4
             # So I ran it once at 5 to verify the answer
             # and then introduced this next.
@@ -98,7 +98,6 @@ for my $sm (("minimax","alphabeta","mtdf")) {
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
             #open($fd,"CHX_THREADS_PER_PROC=8; mpiexec -np 1 src/chx -s .bench.ini 2>/dev/null|");
             open($fd,"CHX_THREADS_PER_PROC=8 src/chx -t8 < .bench 2>/dev/null|");
-
             my $ans = "";
             my $score = $bad_score;
 
@@ -131,7 +130,7 @@ for my $sm (("minimax","alphabeta","mtdf")) {
             if(defined($anskey->{$b}->{$ply})) {
                 my $v = $anskey->{$b}->{$ply};
                 if($ans ne $v) {
-                    $st .= "MOVE($v) ";
+                    $st .= "MOVE(should_be=$v) ";
                 }
             }
             if(defined($scoretab->{$b}->{$ply})) {
@@ -182,7 +181,7 @@ sub genbench {
     my $b = shift;
     my $ply = shift;
     my $fd = new FileHandle;
-    my $runs = 9;
+    my $runs = 3;
     $runs = 1 if($sm eq "minimax");
     $runs = 3 if($ply > 5);
     open($fd,">.bench");

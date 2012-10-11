@@ -55,7 +55,6 @@ score_t search_ab(search_info *info)
     int depth = info->depth;
     score_t alpha = info->alpha;
     score_t beta = info->beta;
-    smart_ptr<task> this_task = info->this_task;
     assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
     if (depth == 0)
@@ -94,7 +93,6 @@ score_t search_ab(search_info *info)
         beta  = min(zhi,beta);
     }
     if(alpha >= beta) {
-        this_task = 0;
         return alpha;
     }
 
@@ -136,7 +134,6 @@ score_t search_ab(search_info *info)
         info->board = p_board;
         info->alpha = -beta;
         info->beta = -alpha;
-        info->this_task = this_task;
         info->depth = depth-1;
         if(depth == 1 && capture(board,g)) {
             val = -qeval(info);
@@ -178,8 +175,6 @@ score_t search_ab(search_info *info)
             t->info->beta = -alpha;
             t->info->result = -beta;
             t->info->mv = g;
-            t->info->this_task = t;
-            t->parent_task = this_task;
             if(depth == 1 && capture(board,g))
                 t->pfunc = qeval_f;
             else

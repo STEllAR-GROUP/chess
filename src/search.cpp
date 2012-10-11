@@ -51,7 +51,6 @@ score_t qeval(search_info* info)
     node_t board = info->board;
     score_t lower = info->alpha;
     score_t upper = info->beta;
-    smart_ptr<task> this_task = info->this_task;
     evaluator ev;
     DECL_SCORE(s,ev.eval(board, chosen_evaluator),board.hash);
     s = max(lower,s);
@@ -83,7 +82,6 @@ score_t qeval(search_info* info)
             new_info->board = p_board;
             new_info->alpha = -upper;
             new_info->beta = -lower;
-            new_info->this_task = this_task;
             s = max(-qeval(new_info),s);
             delete new_info;
         } else {
@@ -173,7 +171,6 @@ int think(node_t& board,bool parallel)
     search_info* info = new search_info;
     info->board = board;
     info->depth = depth[board.side];
-    info->this_task = root;
     score_t f = search(info);
     delete info;
     
@@ -194,13 +191,12 @@ int think(node_t& board,bool parallel)
     info->depth = d;
     info->alpha = alpha;
     info->beta = beta;
-    info->this_task = root;
     score_t f(search_ab(info));
     delete info;
     while(d < depth[board.side]) {
         d+=stepsize;
         board.depth = d;
-        f = mtdf(board,f,d, root);
+        f = mtdf(board,f,d);
         root = new serial_task;
     }
     if (bench_mode)
@@ -228,7 +224,6 @@ int think(node_t& board,bool parallel)
     info->board = board;
     info->alpha = 0;
     info->depth = depth[board.side];
-    info->this_task = root;
     score_t f = multistrike(info);
     delete info;
     if (bench_mode)
@@ -253,7 +248,6 @@ int think(node_t& board,bool parallel)
       info->depth = i;
       info->alpha = alpha;
       info->beta = beta;
-      info->this_task = root; 
       f = search_ab(info);
       delete info;
 
@@ -271,7 +265,6 @@ int think(node_t& board,bool parallel)
       info->depth = depth[board.side];
       info->alpha = alpha;
       info->beta = beta;
-      info->this_task = root;
       f=search_ab(info);
       delete info;
     }
@@ -285,7 +278,6 @@ score_t multistrike(search_info* info)
 {
     node_t board = info->board;
     int depth = info->depth;
-    smart_ptr<task> this_task = info->this_task;
     //std::cout << VAR(num_proc) << VAR(mpi_task_array[0].add(0)) << std::endl;
     //chx_abort = false;
     score_t ret=0;
@@ -314,8 +306,6 @@ score_t multistrike(search_info* info)
         t->info->beta = beta;
         t->info->depth = depth;
         t->pfunc = strike_f;
-        t->info->this_task = t;
-        t->parent_task = this_task;
         t->start();
         tasks.push_back(t);
     }
@@ -336,7 +326,7 @@ score_t multistrike(search_info* info)
 
 
 /** MTD-f */
-score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
+score_t mtdf(const node_t& board,score_t f,int depth)
 {
     score_t g = f;
     DECL_SCORE(upper,10000,board.hash);
@@ -365,7 +355,6 @@ score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
             info->depth = depth;
             info->alpha = lower;
             info->beta = upper;
-            info->this_task = this_task;
             g = search_ab(info);
             delete info;
             break;
@@ -378,7 +367,6 @@ score_t mtdf(const node_t& board,score_t f,int depth, smart_ptr<task> this_task)
         info->depth = depth;
         info->alpha = alpha;
         info->beta = beta;
-        info->this_task = this_task;
         g = search_ab(info);
         delete info;
         if(g < beta) {

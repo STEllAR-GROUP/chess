@@ -43,8 +43,6 @@ double sum_exec_times2 = 0;
 double sum_exec_times = 0;
 int count_exec_times;
 
-pthread_t rank_0_thread;
-
 void mpi_terminate() {
     if(mpi_rank == 0) {
         for(int i=0;i<3;i++)
@@ -58,7 +56,7 @@ void mpi_terminate() {
             MPI_Send(data,n,MPI_INT,
                     i,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD);
         }
-        pthread_join(rank_0_thread,NULL);
+        th.join();
         MPI_Finalize();
 #endif
     }
@@ -418,12 +416,9 @@ int chx_threads_per_proc() {
     return thcount;
 }
 
-pthread_attr_t pth_attr;
-
 int main(int argc, char *argv[])
 {
-    pthread_attr_init(&pth_attr);
-    pthread_attr_setdetachstate(&pth_attr, PTHREAD_CREATE_DETACHED);
+    Threader th;
 #ifdef MPI_SUPPORT
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
@@ -442,7 +437,7 @@ int main(int argc, char *argv[])
             std::cout << mpi_task_array[i].add(0) << " ";
         std::cout << std::endl;
 #endif
-        pthread_create(&rank_0_thread,NULL,mpi_worker,NULL);
+        th.create(mpi_worker,NULL);
     } else {
         mpi_task_array.resize(1);
         mpi_task_array[0].add(threads_per_proc);

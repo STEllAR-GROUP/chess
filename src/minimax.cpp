@@ -27,7 +27,6 @@ score_t search(search_info* info)
 {
     node_t board = info->board;
     int depth = info->depth;
-    smart_ptr<task> this_task = info->this_task;
     assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
     if (depth == 0)
@@ -93,8 +92,6 @@ score_t search(search_info* info)
                         DECL_SCORE(lo,-10000,0);
                         t->info->beta = -max;
                         t->info->alpha = lo;
-                        t->info->this_task = t;
-                        t->parent_task = this_task;
                         t->pfunc = qeval_f;
                         tasks.push_back(t);
                         t->start();
