@@ -85,7 +85,7 @@ void *do_mpi_thread(void *);
 
 struct MPI_Thread {
     smart_ptr<search_info> info;
-    pthread_t thread;
+    Threader th;
     pthread_mutex_t mut;
     pfunc_v pfunc;
     int windex;
@@ -107,7 +107,7 @@ struct MPI_Thread {
         pthread_mutex_unlock(&mut);
     }
     void start() {
-        pthread_create(&thread,NULL,do_mpi_thread,this);
+        th.create(do_mpi_thread,this);
     }
 };
 

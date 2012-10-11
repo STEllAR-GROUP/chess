@@ -23,7 +23,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake;${HPX_ROOT}/share/cmake-2.8/Modules)
 
-find_package(HPX)
+#find_package(HPX)
 if(HPX_FOUND)
   message("HPX was found.")
 
@@ -35,21 +35,20 @@ else()
   message("Could not find HPX. Configuring without HPX support.")
 endif()
 
-find_package(MPI)
+#find_package(MPI)
 
-# Not implemented
-#if(MPI_FOUND)
-#  message("MPI was found.")
-#  set(CMAKE_CXX_COMPILER "mpicxx")
-#
-#  add_definitions(-DMPI_SUPPORT)
-#else()
-#  message("Could not find MPI. Configuring without MPI support.")
-#endif()
+if(MPI_FOUND)
+  message("MPI was found.")
+  set(CMAKE_CXX_COMPILER "mpicxx")
+
+  add_definitions(-DMPI_SUPPORT)
+else()
+  message("Could not find MPI. Configuring without MPI support.")
+endif()
 
 set(EXTRA_LIBS pthread)
 
-find_package(Readline)
+#find_package(Readline)
 
 if(READLINE_FOUND)
   message("Readline was found.")
@@ -61,7 +60,7 @@ else()
 endif()
 
 if(NOT HPX_FOUND)
-  find_package(BOOST)
+  #find_package(BOOST)
 
   if(Boost_FOUND)
     message("Boost was found.")

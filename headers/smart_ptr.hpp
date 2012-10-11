@@ -31,6 +31,9 @@ class smart_ptr_guts {
             ref_count--;
         return r==1;
     }
+    int ref_count_() {
+        return ref_count;
+    }
 };
 
 // Count references to an object in a thread-safe
@@ -92,6 +95,10 @@ class smart_ptr {
     }
     bool valid() {
         return guts != 0 && guts->ptr != 0;
+    }
+    int ref_count() {
+        assert(guts != 0);
+        return guts->ref_count_();
     }
 };
 #endif
