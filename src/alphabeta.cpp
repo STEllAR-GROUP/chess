@@ -42,11 +42,8 @@ void *search_ab_pt(void *vptr)
         info->result = search_ab(info);
         info->set_done();
         mpi_task_array[0].add(1);
-        if(info->result >= info->beta) {
-            info->this_task->abort_search();
-        }
+        smart_ptr<search_info> eg = info->self;
         info->self=0;
-        pthread_exit(NULL);
     }
     return NULL;
 }
@@ -83,11 +80,6 @@ score_t search_ab(search_info *info)
         return z;
     }
 
-    // Check if we should abort
-    if (this_task->check_abort()) {
-      this_task->abort_search();
-      return beta;
-    }
 
     score_t max_val = bad_min_score;
     score_t zlo,zhi;
@@ -102,7 +94,7 @@ score_t search_ab(search_info *info)
         beta  = min(zhi,beta);
     }
     if(alpha >= beta) {
-        this_task->abort_search();
+        this_task = 0;
         return alpha;
     }
 
@@ -172,12 +164,7 @@ score_t search_ab(search_info *info)
     for (; j < worksq; j++) {
         chess_move g = workq[j];
         smart_ptr<search_info> info = new search_info(board);
-        
-        if (this_task->check_abort()) {
-          this_task->abort_search();
-          info = 0;
-          return alpha;
-        }
+
 
         if (makemove(info->board, g)) {
             bool parallel;
@@ -230,6 +217,7 @@ score_t search_ab(search_info *info)
         }
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
+
             (*task)->info = 0;
         }
         tasks.clear();

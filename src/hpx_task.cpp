@@ -40,7 +40,7 @@ using namespace hpx;
 void hpx_task::start() {
     assert(info.valid());
     info->self = 0;
-    hpx::naming::id_type const locality_id = get_random_locality();
+    hpx::naming::id_type const locality_id = all_localities[0];
 
     if (pfunc == search_f)
     {
@@ -61,16 +61,4 @@ void hpx_task::start() {
     else
         assert(false); // should never get here
         
-}
-
-hpx::naming::id_type hpx_task::get_random_locality() {
-   return all_localities[0];
-   /*
-   if (all_localities.size() == 0)
-       assert(false);
-   // FIXME: Do not use rand() here. It uses a pthreads mutex.
-   int randNum = rand()%all_localities.size();
-   std::cout << "RandNum = " << randNum <<" Size: "<<all_localities.size()<< "\n"; 
-   return all_localities[randNum]; 
-   */
 }

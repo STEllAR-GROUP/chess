@@ -16,7 +16,6 @@
 extern bool par_enabled;
 int chx_threads_per_proc();
 extern pthread_attr_t pth_attr;
-extern bool chx_abort;
 
 struct task;
 
@@ -94,20 +93,12 @@ struct task {
     virtual void start() = 0;
 
     virtual void join() = 0;
-
-    virtual void abort_search() = 0;
-
-    virtual void abort_search_parent() {}
-
-    virtual bool check_abort() = 0;
 };
 
 inline void search_info::wait_for_done() {
 	smart_ptr<task> ttask = this_task;
     pthread_mutex_lock(&mut);
     while(!par_done) {
-        if(this_task.valid() && this_task->check_abort())
-            break;
         timespec ts;
         timeval tv;
         gettimeofday(&tv, NULL);
@@ -146,18 +137,7 @@ struct serial_task : public task {
         else
             abort();
         info->set_done_serial();
-        if(pfunc != search_f && info->result >= info->beta) {
-			smart_ptr<task> hold_task = info->this_task;
-            if (info->this_task.valid())
-                info->this_task->abort_search();
-        }
         joined = true;
-    }
-
-    virtual void abort_search() {}
-
-    virtual bool check_abort() { 
-        return false;
     }
 };
 class pcounter {
@@ -206,12 +186,10 @@ extern std::vector<pcounter> mpi_task_array;
 struct pthread_task : public task {
     pthread_t thread;
     pthread_mutex_t mut;
-    bool abort_flag;
     //pthread_attr_t attr;
     bool joined;
     pthread_task() : joined(true) {
         pthread_mutex_init(&mut,NULL);
-        abort_flag = false;
     }
     ~pthread_task() {
         info = 0;
@@ -247,36 +225,6 @@ struct pthread_task : public task {
         //mpi_task_array[0].add(1);
     }
 
-    // We need this function because we don't want to tell everyone
-    // to abort, only the immediate parent
-    virtual void abort_search_parent() {
-        pthread_mutex_lock(&mut);
-        abort_flag = true;
-        pthread_mutex_unlock(&mut);
-    }
-
-    virtual void abort_search() {
-		smart_ptr<task> hold = parent_task;
-        pthread_mutex_lock(&mut);
-		if(parent_task.valid())
-        	parent_task->abort_search_parent();
-        pthread_mutex_unlock(&mut);
-    }
-
-
-    virtual bool check_abort() {
-        return false;
-        pthread_mutex_lock(&mut);
-        bool ret=abort_flag;
-        smart_ptr<task> hold=parent_task;
-        pthread_mutex_unlock(&mut);
-        if(ret){
-            return true;
-        }
-        if (parent_task.valid())
-            ret=parent_task->check_abort();
-        return ret;
-    }
 };
 
 #ifdef HPX_SUPPORT
@@ -296,15 +244,6 @@ struct hpx_task : public task {
         info->result = result.get();
         info->set_done_serial();
     }
-
-    virtual void abort_search() {
-    }
-
-    virtual bool check_abort() {
-        return false;
-    }
-
-    virtual hpx::naming::id_type get_random_locality();
 };
 #endif
 
