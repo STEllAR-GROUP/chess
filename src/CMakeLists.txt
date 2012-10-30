@@ -12,6 +12,7 @@ set(sources
     mpi_support.cpp
     minimax.cpp
     mpi_support.cpp
+    print_board.cpp
     alphabeta.cpp)
 
 if(HPX_FOUND)
@@ -22,6 +23,7 @@ if(HPX_FOUND)
   add_hpx_executable(chx
     ESSENTIAL
     DEPENDENCIES ${EXTRA_LIBS}
+    COMPONENT_DEPENDENCIES 
     SOURCES ${sources})
 elseif(MPI_FOUND)
 

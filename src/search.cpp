@@ -17,6 +17,7 @@
 #include "mpi_support.hpp"
 #include "here.hpp"
 #include "zkey.hpp"
+#include "print_board.hpp"
 
 Mutex mutex;
 const int num_proc = chx_threads_per_proc();
@@ -48,6 +49,7 @@ bool capture(const node_t& board,chess_move& g) {
  **/
 score_t qeval(search_info* info)
 {
+    print_board(info->board);
     node_t board = info->board;
     score_t lower = info->alpha;
     score_t upper = info->beta;
