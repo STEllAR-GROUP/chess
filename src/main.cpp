@@ -9,6 +9,7 @@
  */
 
 #ifdef HPX_SUPPORT
+#include <hpx/hpx_fwd.hpp>
 #include <hpx/hpx_init.hpp>
 #include <hpx/include/actions.hpp>
 #include <hpx/include/components.hpp>
@@ -68,10 +69,22 @@ int auto_move = 0;
 int computer_side;
 
 #ifdef HPX_SUPPORT
+std::ofstream **streams;
+bool file_output_enabled = false;
+
 int hpx_main(boost::program_options::variables_map& vm)
 {
+    streams = new std::ofstream*[hpx::get_os_thread_count()];
+    for(unsigned int i=0;i<hpx::get_os_thread_count();i++) {
+        streams[i] = NULL;
+    }
     int ret = chx_main();
     hpx::finalize();
+    for(unsigned int i=0;i<hpx::get_os_thread_count();i++) {
+        if(streams[i] != NULL) {
+            streams[i]->close();
+        }
+    }
     return ret;
 }
 #endif
@@ -179,6 +192,15 @@ int chx_main()
             auto_move = print_result(workq, board);
             continue;
         }
+#ifdef HPX_SUPPORT
+        if(input[0] == "file-output") {
+            file_output_enabled ^= true;
+            std::cout << "file-output set to " << file_output_enabled << std::endl;
+            continue;
+        }
+#else
+    #error "HPX NOT SETUP"
+#endif
         if (input[0] == "new") {
             computer_side = EMPTY;
             init_board(board);

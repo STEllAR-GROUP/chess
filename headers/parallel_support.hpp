@@ -165,6 +165,7 @@ public:
         count = max_count = n;
     }
     int add(int n) {
+        #ifndef HPX_SUPPORT
         ScopedLock s(mut);
         //int old = count;
         count += n;
@@ -173,6 +174,9 @@ public:
             //pthread_cond_broadcast(&cond);
         int m = count;
         return m;
+        #else
+        return n;
+        #endif
     }
     void wait_dec() {
         /*
@@ -184,6 +188,7 @@ public:
         assert(0);
     }
     bool dec() {
+        #ifndef HPX_SUPPORT
         ScopedLock s(mut);
         bool ret;
         if(count > 0) {
@@ -193,6 +198,9 @@ public:
             ret = false;
         }
         return ret;
+        #else
+        return true;
+        #endif
     }
 };
 extern std::vector<pcounter> mpi_task_array;

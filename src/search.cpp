@@ -7,6 +7,9 @@
 /*
  *  search.cpp
  */
+#ifdef HPX_SUPPORT
+#include <hpx/hpx_fwd.hpp>
+#endif
 
 #include "parallel_support.hpp"
 #include "search.hpp"
@@ -18,6 +21,8 @@
 #include "here.hpp"
 #include "zkey.hpp"
 #include "print_board.hpp"
+#include <fstream>
+#include <sstream>
 
 Mutex mutex;
 const int num_proc = chx_threads_per_proc();
@@ -49,7 +54,19 @@ bool capture(const node_t& board,chess_move& g) {
  **/
 score_t qeval(search_info* info)
 {
-    print_board(info->board);
+#ifdef HPX_SUPPORT
+    if(file_output_enabled) {
+        int n = hpx::get_worker_thread_num();
+        if(streams[n] == NULL) {
+            std::stringstream outname;
+            streams[n] = new std::ofstream();
+            outname << "chess_out" << n << ".txt";
+            streams[n]->open(outname.str());
+            std::cout << "file: " << outname.str() << std::endl;
+        }
+        print_board(info->board,*streams[n]);
+    }
+#endif
     node_t board = info->board;
     score_t lower = info->alpha;
     score_t upper = info->beta;
@@ -110,7 +127,7 @@ void *qeval_pt(void *vptr)
 
 smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
-    if(depth >= 1) {
+    if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;

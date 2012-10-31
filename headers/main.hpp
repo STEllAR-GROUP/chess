@@ -25,5 +25,9 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
 int get_ms();
 std::string get_log_name();
 int chx_main();
+#ifdef HPX_SUPPORT
+extern std::ofstream **streams;
+extern bool file_output_enabled;
+#endif
 
 #endif
