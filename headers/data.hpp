@@ -40,7 +40,7 @@ extern int output;
 extern int chosen_evaluator;
 extern int search_method;
 extern int iter_depth;
-extern hash_t rnum[];
+extern int rnum[];
 extern bool bench_mode;
 extern bool logging_enabled;
 extern int mpi_depth;
