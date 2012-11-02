@@ -23,6 +23,7 @@
 #include <sys/time.h>
 
 #include "mpi_support.hpp"
+#include "print_board.hpp"
 #include <unistd.h>
 
 #ifdef MPI_SUPPORT
@@ -78,7 +79,7 @@ int hpx_main(boost::program_options::variables_map& vm)
 
 int chx_main()
 {
-
+    board_printer::init();
 #ifdef READLINE_SUPPORT
     char *buf;
 #else
@@ -401,6 +402,8 @@ int chx_main()
             print_result(workq, board);
         }
     }
+
+    board_printer::finalize();
 
     return 0;
 }

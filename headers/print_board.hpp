@@ -2,14 +2,29 @@
 #define PRINT_BOARD_HPP
 
 #include <ostream>
-#include "parallel.hpp"
-#include "defs.hpp"
+#include <vector>
 #include "node.hpp"
-#include "board.hpp"
 
-extern Mutex mtx;
-extern std::ostream& out;
-
-void print_board(const node_t& board);
+#ifdef HPX_SUPPORT
+class board_printer{
+    private:
+        static std::vector<std::ofstream*> streams;
+    public:
+        static void init();
+        static void finalize();
+        static void print_board(const node_t& board);
+};
+#else
+#include "parallel.hpp"
+class board_printer{
+    private:
+        static std::ofstream* stream;
+        static Mutex lock;
+    public:
+        static void init();
+        static void finalize();
+        static void print_board(const node_t& board);
+};
+#endif
 
 #endif

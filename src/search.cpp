@@ -49,7 +49,7 @@ bool capture(const node_t& board,chess_move& g) {
  **/
 score_t qeval(search_info* info)
 {
-    print_board(info->board);
+    board_printer::print_board(info->board);
     node_t board = info->board;
     score_t lower = info->alpha;
     score_t upper = info->beta;
