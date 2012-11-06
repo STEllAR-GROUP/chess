@@ -31,6 +31,7 @@ struct search_info {
     // to delay cleanup
     smart_ptr<search_info> self;
     
+    bool abort_flag;
     node_t board;
     bool par_done;
     chess_move mv;
@@ -55,7 +56,7 @@ struct search_info {
         par_done = true;
     }
     void wait_for_done();
-    search_info(const node_t& board_) : board(board_), par_done(true),
+    search_info(const node_t& board_) : abort_flag(false), board(board_), par_done(true),
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
@@ -247,11 +248,8 @@ struct pthread_task : public task {
 #include <hpx/include/iostreams.hpp>
 #include <time.h>
 struct hpx_task : public task {
-    std::vector<hpx::naming::id_type> all_localities;
     hpx::lcos::future<score_t> result;
     hpx_task()  {
-        all_localities = hpx::find_all_localities();
-        //srand(time(NULL)); Don't use blocking rand
     }
 
     virtual void start();

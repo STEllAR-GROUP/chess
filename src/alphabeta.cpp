@@ -48,13 +48,13 @@ void *search_ab_pt(void *vptr)
     return NULL;
 }
 
-score_t search_ab(search_info *info)
+score_t search_ab(search_info *proc_info)
 {
     // Unmarshall the info struct
-    node_t board = info->board;
-    int depth = info->depth;
-    score_t alpha = info->alpha;
-    score_t beta = info->beta;
+    node_t board = proc_info->board;
+    int depth = proc_info->depth;
+    score_t alpha = proc_info->alpha;
+    score_t beta = proc_info->beta;
     assert(depth >= 0);
     // if we are a leaf node, return the value from the eval() function
     if (depth == 0)
@@ -130,16 +130,16 @@ score_t search_ab(search_info *info)
         assert(depth >= 1);
         p_board.depth = depth-1;
         
-        search_info* info = new search_info;
-        info->board = p_board;
-        info->alpha = -beta;
-        info->beta = -alpha;
-        info->depth = depth-1;
+        search_info* info2 = new search_info;
+        info2->board = p_board;
+        info2->alpha = -beta;
+        info2->beta = -alpha;
+        info2->depth = depth-1;
         if(depth == 1 && capture(board,g)) {
-            val = -qeval(info);
+            val = -qeval(info2);
         } else
-            val = -search_ab(info);
-        delete info;
+            val = -search_ab(info2);
+        delete info2;
 
         if (val > max_val)
         {
@@ -157,19 +157,21 @@ score_t search_ab(search_info *info)
         break;
     }
 
+    bool aborted = false;
+    bool children_aborted = false;
     // loop through the moves
     for (; j < worksq; j++) {
         chess_move g = workq[j];
-        smart_ptr<search_info> info = new search_info(board);
 
+        smart_ptr<search_info> info2 = new search_info(board);
 
-        if (makemove(info->board, g)) {
-            bool parallel;
+        bool parallel;
+        if (!aborted && !proc_info->abort_flag && makemove(info2->board, g)) {
 
             smart_ptr<task> t = parallel_task(depth, &parallel);
 
-            t->info = info;
-            t->info->board.depth = info->depth = depth-1;
+            t->info = info2;
+            t->info->board.depth = info2->depth = depth-1;
             assert(depth >= 0);
             t->info->alpha = -beta;
             t->info->beta = -alpha;
@@ -181,32 +183,39 @@ score_t search_ab(search_info *info)
                 t->pfunc = search_ab_f;
             t->start();
             tasks.push_back(t);
-            if (parallel && (j < worksq - 1))
+
+            // Control branching
+            if (parallel && tasks.size() < 3)
                 continue;
-            if (!parallel)
-                t->join(); // Serial task
         }
         for(size_t n=0;n<tasks.size();n++) {
-            smart_ptr<search_info> info = tasks[n]->info;
-            tasks[n]->join();
-            val = -tasks[n]->info->result;
+            smart_ptr<search_info> info3 = tasks[n]->info;
 
-            if (val == bad_max_score)
+            if(!children_aborted && (aborted || info3->abort_flag)) {
+                for(unsigned int m = n;m < tasks.size();m++)
+                    tasks[m]->info->abort_flag = true;
+                children_aborted = true;
+            }
+
+            tasks[n]->join();
+            if(info3->abort_flag)
                 continue;
+            val = -tasks[n]->info->result;
 
             if (val > max_val) {
                 max_val = val;
-                max_move = info->mv;
+                max_move = info3->mv;
                 if (val > alpha)
                 {
                     alpha = val;
 #ifdef PV_ON
-                    pv[board.ply].set(info->mv);
+                    if(!info3->abort_flag)
+                        pv[board.ply].set(info3->mv);
 #endif
                     if(alpha >= beta) {
-                        break;
+                        aborted = true;
+                        continue;
                     }
-                    
                 }
             }
         }
@@ -220,7 +229,6 @@ score_t search_ab(search_info *info)
             break;
         }
     }
-    assert(tasks.size()==0);
 
     // no legal moves? then we're in checkmate or stalemate
     if (max_move == INVALID_MOVE) {
@@ -248,9 +256,10 @@ score_t search_ab(search_info *info)
         return z;
     }
 
-    set_transposition_value(board,
-        max(zlo,max_val >= beta  ? max_val : bad_min_score),
-        min(zhi,max_val < alpha ? max_val : bad_max_score));
+    if(!proc_info->abort_flag)
+        set_transposition_value(board,
+            max(zlo,max_val >= beta  ? max_val : bad_min_score),
+            min(zhi,max_val < alpha ? max_val : bad_max_score));
 
 
     assert(max_val != bad_min_score);
