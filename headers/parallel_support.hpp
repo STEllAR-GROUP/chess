@@ -62,7 +62,7 @@ struct search_info {
         pthread_cond_init(&cond,NULL);
     }
 
-    search_info() {
+    search_info() : abort_flag(false) {
     }
 
     ~search_info() {

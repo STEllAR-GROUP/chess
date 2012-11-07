@@ -50,6 +50,8 @@ void *search_ab_pt(void *vptr)
 
 score_t search_ab(search_info *proc_info)
 {
+    if(proc_info->abort_flag)
+        return bad_min_score;
     // Unmarshall the info struct
     node_t board = proc_info->board;
     int depth = proc_info->depth;
@@ -130,16 +132,16 @@ score_t search_ab(search_info *proc_info)
         assert(depth >= 1);
         p_board.depth = depth-1;
         
-        search_info* info2 = new search_info;
-        info2->board = p_board;
-        info2->alpha = -beta;
-        info2->beta = -alpha;
-        info2->depth = depth-1;
+        search_info* child_info = new search_info;
+        child_info->board = p_board;
+        child_info->alpha = -beta;
+        child_info->beta = -alpha;
+        child_info->depth = depth-1;
         if(depth == 1 && capture(board,g)) {
-            val = -qeval(info2);
+            val = -qeval(child_info);
         } else
-            val = -search_ab(info2);
-        delete info2;
+            val = -search_ab(child_info);
+        delete child_info;
 
         if (val > max_val)
         {
@@ -163,15 +165,15 @@ score_t search_ab(search_info *proc_info)
     for (; j < worksq; j++) {
         chess_move g = workq[j];
 
-        smart_ptr<search_info> info2 = new search_info(board);
+        smart_ptr<search_info> child_info = new search_info(board);
 
         bool parallel;
-        if (!aborted && !proc_info->abort_flag && makemove(info2->board, g)) {
+        if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
 
             smart_ptr<task> t = parallel_task(depth, &parallel);
 
-            t->info = info2;
-            t->info->board.depth = info2->depth = depth-1;
+            t->info = child_info;
+            t->info->board.depth = child_info->depth = depth-1;
             assert(depth >= 0);
             t->info->alpha = -beta;
             t->info->beta = -alpha;
@@ -189,28 +191,29 @@ score_t search_ab(search_info *proc_info)
                 continue;
         }
         for(size_t n=0;n<tasks.size();n++) {
-            smart_ptr<search_info> info3 = tasks[n]->info;
+            smart_ptr<search_info> child_info = tasks[n]->info;
 
-            if(!children_aborted && (aborted || info3->abort_flag)) {
-                for(unsigned int m = n;m < tasks.size();m++)
+            if(!children_aborted && (aborted || child_info->abort_flag)) {
+                for(unsigned int m = n;m < tasks.size();m++) {
                     tasks[m]->info->abort_flag = true;
+                }
                 children_aborted = true;
             }
 
             tasks[n]->join();
-            if(info3->abort_flag)
+            if(child_info->abort_flag) 
                 continue;
-            val = -tasks[n]->info->result;
+            val = -child_info->result;
 
             if (val > max_val) {
                 max_val = val;
-                max_move = info3->mv;
+                max_move = child_info->mv;
                 if (val > alpha)
                 {
                     alpha = val;
 #ifdef PV_ON
-                    if(!info3->abort_flag)
-                        pv[board.ply].set(info3->mv);
+                    if(!child_info->abort_flag)
+                        pv[board.ply].set(child_info->mv);
 #endif
                     if(alpha >= beta) {
                         aborted = true;
@@ -256,12 +259,10 @@ score_t search_ab(search_info *proc_info)
         return z;
     }
 
-    if(!proc_info->abort_flag)
-        set_transposition_value(board,
-            max(zlo,max_val >= beta  ? max_val : bad_min_score),
-            min(zhi,max_val < alpha ? max_val : bad_max_score));
+    set_transposition_value(board,
+        max(zlo,max_val >= beta  ? max_val : bad_min_score),
+        min(zhi,max_val < alpha ? max_val : bad_max_score));
 
 
-    assert(max_val != bad_min_score);
     return max_val;
 }
