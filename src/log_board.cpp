@@ -26,5 +26,5 @@ void log_board(const node_t& board,std::ostream& out)
     if ((i + 1) % 8 == 0 && i != 63)
         out<<std::endl;
   }
-  out<<std::endl<<std::endl;
+  out<<std::endl;
 }
