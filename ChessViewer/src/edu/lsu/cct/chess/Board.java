@@ -154,6 +154,7 @@ public class Board extends View {
 
 					if (INPUTS.indexOf(c)>=0) {
 						_pieces.add(new Piece(tstep,boardnum, x, y, c));
+						System.out.println("Loaded piece "+_pieces.get(_pieces.size()-1));
 						x++;
 						if(x == 8) {
 							y++;
