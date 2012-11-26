@@ -127,7 +127,11 @@ void *qeval_pt(void *vptr)
 
 smart_ptr<task> parallel_task(int depth, bool *parallel) {
 
-    if(depth >= 3) {
+    if(!*parallel) {
+        smart_ptr<task> t = new serial_task;
+        return t;
+    }
+    if(depth >= 2) {
         if(mpi_task_array[0].dec()) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;

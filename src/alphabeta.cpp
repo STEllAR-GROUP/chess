@@ -48,6 +48,56 @@ void *search_ab_pt(void *vptr)
     return NULL;
 }
 
+std::atomic<int> parallel_count(1000);
+
+struct ParallelGroups {
+    bool par;
+    ParallelGroups() {
+        parallel_count--;
+        if(parallel_count < 0) {
+            par = false;
+            parallel_count++;
+        } else {
+            par = true;
+        }
+    }
+    ~ParallelGroups() {
+        if(par)
+            ;//parallel_count++;
+    }
+    bool useParallel() { return par; }
+};
+
+//#define WHEN 1
+struct When {
+#ifdef HPX_SUPPORT
+    typedef HPX_STD_TUPLE<int, hpx::lcos::future<score_t> > result_type;
+    std::vector<hpx::lcos::future<score_t> > vec;
+    When(std::vector<smart_ptr<task> > tasks) {
+        for(unsigned int i=0;i<tasks.size();i++) {
+            hpx_task *hpx = dynamic_cast<hpx_task*>(tasks[i].ptr());
+            if(hpx != NULL) {
+                #ifdef WHEN
+                vec.push_back(hpx->result);
+                #endif
+            }
+        }
+    }
+    int any() {
+        if(vec.size()==0) {
+            return 0;
+        }
+        result_type r = hpx::wait_any(vec);
+        int i = HPX_STD_GET(0,r);
+        vec.erase(vec.begin()+i);
+        return i;
+    }
+#else
+    When(std::vector<smart_ptr<task> > tasks) {
+    int any() { return 0; }
+#endif
+};
+
 score_t search_ab(search_info *proc_info)
 {
     if(proc_info->abort_flag)
@@ -159,6 +209,8 @@ score_t search_ab(search_info *proc_info)
         break;
     }
 
+    ParallelGroups pg;
+
     bool aborted = false;
     bool children_aborted = false;
     // loop through the moves
@@ -170,6 +222,7 @@ score_t search_ab(search_info *proc_info)
         bool parallel;
         if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
 
+            parallel = pg.useParallel();
             smart_ptr<task> t = parallel_task(depth, &parallel);
 
             t->info = child_info;
@@ -190,17 +243,23 @@ score_t search_ab(search_info *proc_info)
             if (parallel && tasks.size() < 3)
                 continue;
         }
-        for(size_t n=0;n<tasks.size();n++) {
-            smart_ptr<search_info> child_info = tasks[n]->info;
+        When when(tasks);
+        size_t const count = tasks.size();
+        for(size_t n_=0;n_<count;n_++) {
+            int n = when.any();
+            smart_ptr<task> child_task = tasks[n];
+            smart_ptr<search_info> child_info = child_task->info;
+            child_info->self = NULL;
+            tasks.erase(tasks.begin()+n);
 
             if(!children_aborted && (aborted || child_info->abort_flag)) {
-                for(unsigned int m = n;m < tasks.size();m++) {
+                for(unsigned int m = 0;m < tasks.size();m++) {
                     tasks[m]->info->abort_flag = true;
                 }
                 children_aborted = true;
             }
 
-            tasks[n]->join();
+            child_task->join();
             if(child_info->abort_flag) 
                 continue;
             val = -child_info->result;
@@ -225,7 +284,7 @@ score_t search_ab(search_info *proc_info)
         for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
         {
 
-            (*task)->info = 0;
+            (*task)->info = NULL;
         }
         tasks.clear();
         if(alpha >= beta) {
