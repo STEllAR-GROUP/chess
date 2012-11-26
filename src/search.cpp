@@ -20,7 +20,7 @@
 #include "mpi_support.hpp"
 #include "here.hpp"
 #include "zkey.hpp"
-#include "print_board.hpp"
+#include "log_board.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -64,7 +64,7 @@ score_t qeval(search_info* info)
             streams[n]->open(outname.str());
             std::cout << "file: " << outname.str() << std::endl;
         }
-        print_board(info->board,*streams[n]);
+        log_board(info->board,*streams[n]);
     }
 #endif
     node_t board = info->board;

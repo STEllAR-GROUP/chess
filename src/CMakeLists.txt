@@ -12,7 +12,8 @@ set(sources
     mpi_support.cpp
     minimax.cpp
     mpi_support.cpp
-    print_board.cpp
+    log_board.cpp
+    timer.cpp
     alphabeta.cpp)
 
 if(HPX_FOUND)

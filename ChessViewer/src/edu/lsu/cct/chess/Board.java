@@ -6,6 +6,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
+import java.io.FileInputStream;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -123,8 +125,15 @@ public class Board extends View {
 			
 
 			try {
-				URL url = new URL("http://stevenrbrandt.com/board.txt");
-				InputStream in = url.openStream();
+				InputStream in;
+				try{
+					File input=new File("/sdcard/chx_log.txt");
+					in=new FileInputStream(input);
+				}
+				catch (IOException e){
+					URL url = new URL("http://stevenrbrandt.com/board.txt");
+					in = url.openStream();
+				}
 				int x = 0, y = 0, boardnum = 0;
 				_pieces.clear();
 				outer: while (true) {
@@ -145,6 +154,7 @@ public class Board extends View {
 
 					if (INPUTS.indexOf(c)>=0) {
 						_pieces.add(new Piece(tstep,boardnum, x, y, c));
+						System.out.println("Loaded piece "+_pieces.get(_pieces.size()-1));
 						x++;
 						if(x == 8) {
 							y++;

@@ -6,10 +6,13 @@ import java.util.TimerTask;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MenuItem;
 import edu.lsu.cct.chess.Board;
 import edu.lsu.cct.chess.Piece;
 
 public class ChessActivity extends Activity {
+	
+	boolean running=true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -22,7 +25,9 @@ public class ChessActivity extends Activity {
         TimerTask task = new TimerTask() {
         	public void run() {
         		System.out.println("run");
-        		runOnUiThread(animate);
+        		if(running){
+        			runOnUiThread(animate);
+        		}
         	}
         };
         t.scheduleAtFixedRate(task, 0, 50);
@@ -53,7 +58,17 @@ public class ChessActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_chess, menu);
+        getMenuInflater().inflate(R.menu.mainmenu, menu);
         return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+    	switch(item.getItemId()){
+    	case R.id.Stop:
+    		running=!running;
+    		break;
+    	}
+    	return true;
     }
 }

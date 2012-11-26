@@ -1,17 +1,15 @@
 #include <ostream>
 #include <iostream>
-#include "print_board.hpp"
+#include "log_board.hpp"
+#include "timer.hpp"
 #include "defs.hpp"
 
-Mutex mtx;
-std::ostream& out=std::cout;
-
-void print_board(const node_t& board)
+void log_board(const node_t& board,std::ostream& out)
 {
-  ScopedLock lock(mtx);
   int i;
 
-  //out << std::endl << "8 ";
+  out<<timer.elapsed()<<std::endl;
+
   for (i = 0; i < 64; ++i) {
     switch (board.color[i]) {
       case EMPTY:
@@ -26,9 +24,7 @@ void print_board(const node_t& board)
         break;
     }
     if ((i + 1) % 8 == 0 && i != 63)
-    //  out << std::endl << 7 - ROW(i) << " ";
         out<<std::endl;
   }
-  //out << std::endl << std::endl << "   a b c d e f g h" << std::endl << std::endl;
   out<<std::endl;
 }
