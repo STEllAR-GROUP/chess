@@ -6,6 +6,7 @@
 
 void log_board(const node_t& board,std::ostream& out)
 {
+#ifdef HPX_SUPPORT
   int i;
 
   out<<timer.elapsed()<<std::endl;
@@ -27,4 +28,5 @@ void log_board(const node_t& board,std::ostream& out)
         out<<std::endl;
   }
   out<<std::endl;
+#endif
 }

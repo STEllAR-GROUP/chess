@@ -198,8 +198,6 @@ int chx_main()
             std::cout << "file-output set to " << file_output_enabled << std::endl;
             continue;
         }
-#else
-    #error "HPX NOT SETUP"
 #endif
         if (input[0] == "new") {
             computer_side = EMPTY;

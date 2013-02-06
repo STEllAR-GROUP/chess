@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "parallel.hpp"
 #include "zkey.hpp"
+#include <atomic>
 
 /*
    Alpha Beta search function. Uses OpenMP parallelization by the 
@@ -42,8 +43,6 @@ void *search_ab_pt(void *vptr)
         info->result = search_ab(info);
         info->set_done();
         mpi_task_array[0].add(1);
-        smart_ptr<search_info> eg = info->self;
-        info->self=0;
     }
     return NULL;
 }
@@ -73,7 +72,7 @@ struct When {
 #ifdef HPX_SUPPORT
     typedef HPX_STD_TUPLE<int, hpx::lcos::future<score_t> > result_type;
     std::vector<hpx::lcos::future<score_t> > vec;
-    When(std::vector<smart_ptr<task> > tasks) {
+    When(std::vector<smart_ptr<task> >& tasks) {
         for(unsigned int i=0;i<tasks.size();i++) {
             hpx_task *hpx = dynamic_cast<hpx_task*>(tasks[i].ptr());
             if(hpx != NULL) {
@@ -93,7 +92,7 @@ struct When {
         return i;
     }
 #else
-    When(std::vector<smart_ptr<task> > tasks) {
+    When(std::vector<smart_ptr<task> >& tasks) {}
     int any() { return 0; }
 #endif
 };
@@ -248,6 +247,8 @@ score_t search_ab(search_info *proc_info)
         for(size_t n_=0;n_<count;n_++) {
             int n = when.any();
             smart_ptr<task> child_task = tasks[n];
+            assert(child_task.valid());
+            child_task->join();
             smart_ptr<search_info> child_info = child_task->info;
             child_info->self = NULL;
             tasks.erase(tasks.begin()+n);

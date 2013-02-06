@@ -49,7 +49,7 @@ struct search_info {
     void set_done() {
         pthread_mutex_lock(&mut);
         par_done = true;
-        pthread_cond_signal(&cond);
+        pthread_cond_broadcast(&cond);
         pthread_mutex_unlock(&mut);
     }
     void set_done_serial() {
@@ -114,12 +114,7 @@ struct task {
 inline void search_info::wait_for_done() {
     pthread_mutex_lock(&mut);
     while(!par_done) {
-        timespec ts;
-        timeval tv;
-        gettimeofday(&tv, NULL);
-        ts.tv_sec = tv.tv_sec + 0;
-        ts.tv_nsec = 10000;
-        pthread_cond_timedwait(&cond,&mut,&ts);
+        pthread_cond_wait(&cond,&mut);
     }
     pthread_mutex_unlock(&mut);
 }
@@ -139,7 +134,6 @@ struct serial_task : public task {
         if(!info.valid())
             return;
 		smart_ptr<search_info> hold = info->self;
-        info->self=0;
         if(pfunc == search_f)
             info->result = search(info.ptr());
         else if(pfunc == search_ab_f)
@@ -206,12 +200,8 @@ public:
 };
 extern std::vector<pcounter> mpi_task_array;
 struct pthread_task : public task {
-    pthread_mutex_t mut;
-    //pthread_attr_t attr;
     bool joined;
-    pthread_task() : joined(true) {
-        pthread_mutex_init(&mut,NULL);
-    }
+    pthread_task() : joined(true) {}
     ~pthread_task() {
         info = 0;
     }
