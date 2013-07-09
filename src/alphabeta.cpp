@@ -49,24 +49,6 @@ void *search_ab_pt(void *vptr)
 
 std::atomic<int> parallel_count(1000);
 
-struct ParallelGroups {
-    bool par;
-    ParallelGroups() {
-        parallel_count--;
-        if(parallel_count < 0) {
-            par = false;
-            parallel_count++;
-        } else {
-            par = true;
-        }
-    }
-    ~ParallelGroups() {
-        if(par)
-            ;//parallel_count++;
-    }
-    bool useParallel() { return par; }
-};
-
 //#define WHEN 1
 struct When {
 #ifdef HPX_SUPPORT
@@ -208,39 +190,40 @@ score_t search_ab(search_info *proc_info)
         break;
     }
 
-    ParallelGroups pg;
-
     bool aborted = false;
     bool children_aborted = false;
     // loop through the moves
-    for (; j < worksq; j++) {
-        chess_move g = workq[j];
+    //for (; j < worksq; j++) {
+    while(j < worksq) {
+        for(;j < worksq; j++) {
+            chess_move g = workq[j];
 
-        smart_ptr<search_info> child_info = new search_info(board);
+            smart_ptr<search_info> child_info = new search_info(board);
 
-        bool parallel;
-        if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
+            bool parallel;
+            if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
 
-            parallel = pg.useParallel();
-            smart_ptr<task> t = parallel_task(depth, &parallel);
+                parallel = true;
+                smart_ptr<task> t = parallel_task(depth, &parallel);
 
-            t->info = child_info;
-            t->info->board.depth = child_info->depth = depth-1;
-            assert(depth >= 0);
-            t->info->alpha = -beta;
-            t->info->beta = -alpha;
-            t->info->result = -beta;
-            t->info->mv = g;
-            if(depth == 1 && capture(board,g))
-                t->pfunc = qeval_f;
-            else
-                t->pfunc = search_ab_f;
-            t->start();
-            tasks.push_back(t);
+                t->info = child_info;
+                t->info->board.depth = child_info->depth = depth-1;
+                assert(depth >= 0);
+                t->info->alpha = -beta;
+                t->info->beta = -alpha;
+                t->info->result = -beta;
+                t->info->mv = g;
+                if(depth == 1 && capture(board,g))
+                    t->pfunc = qeval_f;
+                else
+                    t->pfunc = search_ab_f;
+                t->start();
+                tasks.push_back(t);
 
-            // Control branching
-            if (parallel && tasks.size() < 3)
-                continue;
+                // Control branching
+                if (parallel && tasks.size() < 3)
+                    continue;
+            }
         }
         When when(tasks);
         size_t const count = tasks.size();

@@ -254,7 +254,7 @@ int think(node_t& board,bool parallel)
   } else if (search_method == ALPHABETA) {
     root->pfunc = search_ab_f;
     // Initially alpha is -infinity, beta is infinity
-    score_t f;
+    score_t f=0;
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
     bool brk = false;  /* Indicates whether we broke away from iterative deepening 

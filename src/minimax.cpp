@@ -83,7 +83,7 @@ score_t search(search_info* info)
                 info->depth = depth-1;
                 info->mv = g;
                 info->result = z;
-                bool parallel;
+                bool parallel=true;
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
                         smart_ptr<task> t = 
