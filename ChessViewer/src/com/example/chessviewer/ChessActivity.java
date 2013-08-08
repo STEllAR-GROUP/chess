@@ -5,6 +5,7 @@ import java.util.TimerTask;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import edu.lsu.cct.chess.Board;
@@ -17,6 +18,7 @@ public class ChessActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.e("XYZ","abc");
         System.out.println("start");
         setContentView(R.layout.activity_chess);
         Timer t = new Timer();
@@ -24,13 +26,13 @@ public class ChessActivity extends Activity {
         final Animate animate = new Animate(board);
         TimerTask task = new TimerTask() {
         	public void run() {
-        		System.out.println("run");
+//        		System.out.println("run");
         		if(running){
         			runOnUiThread(animate);
         		}
         	}
         };
-        t.scheduleAtFixedRate(task, 0, 50);
+        t.scheduleAtFixedRate(task, 0, 80);
     }
 	
 	static class Animate implements Runnable {
@@ -42,8 +44,12 @@ public class ChessActivity extends Activity {
 		
 		//@Override
 		public void run() {
-			System.out.println("animate");
-			for(Piece p : board.pieces) {
+//			System.out.println("animate");
+//            List<Piece> copy = new ArrayList<Piece>();
+//            copy.addAll(board.pieces);
+//			for(Piece p : copy) {
+            for(int i=0;i<board.pieces.size();i++) {
+                Piece p  = board.pieces.get(i);
 				int t = ts % board.tstep;
 				if(t == p.time) {
 					board.old[p.boardnum] = board.current[p.boardnum];
