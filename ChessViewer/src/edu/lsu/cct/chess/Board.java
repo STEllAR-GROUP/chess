@@ -18,10 +18,9 @@ import android.graphics.Point;
 import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
-import com.example.chessviewer.R;
+import edu.lsu.cct.chessviewer.chessviewer.R;
 
 
 public class Board extends View {

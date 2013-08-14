@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_chessviewer" default="compile.module.chessviewer">
+  <dirname property="module.chessviewer.basedir" file="${ant.file.module_chessviewer}"/>
+  
+  <property name="module.jdk.home.chessviewer" value="${jdk.home.android_4.0.3_platform}"/>
+  <property name="module.jdk.bin.chessviewer" value="${jdk.bin.android_4.0.3_platform}"/>
+  <property name="module.jdk.classpath.chessviewer" value="jdk.classpath.android_4.0.3_platform"/>
+  
+  <property name="compiler.args.chessviewer" value="${compiler.args}"/>
+  
+  <property name="chessviewer.output.dir" value="${module.chessviewer.basedir}/out/production/ChessViewer"/>
+  <property name="chessviewer.testoutput.dir" value="${module.chessviewer.basedir}/out/test/ChessViewer"/>
+  
+  <path id="chessviewer.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="chessviewer.module.production.classpath">
+    <path refid="${module.jdk.classpath.chessviewer}"/>
+  </path>
+  
+  <path id="chessviewer.runtime.production.module.classpath">
+    <pathelement location="${chessviewer.output.dir}"/>
+  </path>
+  
+  <path id="chessviewer.module.classpath">
+    <path refid="${module.jdk.classpath.chessviewer}"/>
+    <pathelement location="${chessviewer.output.dir}"/>
+  </path>
+  
+  <path id="chessviewer.runtime.module.classpath">
+    <pathelement location="${chessviewer.testoutput.dir}"/>
+    <pathelement location="${chessviewer.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.chessviewer">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.chessviewer">
+    <patternset refid="excluded.from.module.chessviewer"/>
+  </patternset>
+  
+  <path id="chessviewer.module.sourcepath">
+    <dirset dir="${module.chessviewer.basedir}">
+      <include name="gen"/>
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.chessviewer" depends="compile.module.chessviewer.production,compile.module.chessviewer.tests" description="Compile module ChessViewer"/>
+  
+  <target name="compile.module.chessviewer.production" depends="register.custom.compilers" description="Compile module ChessViewer; production classes">
+    <mkdir dir="${chessviewer.output.dir}"/>
+    <javac2 destdir="${chessviewer.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.chessviewer}/javac">
+      <compilerarg line="${compiler.args.chessviewer}"/>
+      <bootclasspath refid="chessviewer.module.bootclasspath"/>
+      <classpath refid="chessviewer.module.production.classpath"/>
+      <src refid="chessviewer.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.chessviewer"/>
+    </javac2>
+    
+    <copy todir="${chessviewer.output.dir}">
+      <fileset dir="${module.chessviewer.basedir}/gen">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.chessviewer.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.chessviewer.tests" depends="register.custom.compilers,compile.module.chessviewer.production" description="compile module ChessViewer; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.chessviewer" description="cleanup module">
+    <delete dir="${chessviewer.output.dir}"/>
+    <delete dir="${chessviewer.testoutput.dir}"/>
+  </target>
+</project>
