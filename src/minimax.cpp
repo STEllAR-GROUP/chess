@@ -12,14 +12,10 @@
 
 void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
-	smart_ptr<search_info> hold = info->self;
-    //assert(info->depth == info->board.depth);
+	dtor<search_info> d_info(info->self);
     info->result = search(info);
-    if(info->self.valid()) {
-        info->set_done();
-        mpi_task_array[0].add(1);
-        info->self = 0;
-    }
+    info->set_done();
+    mpi_task_array[0].add(1);
     return NULL;
 }
 
@@ -79,11 +75,13 @@ score_t search(search_info* info)
             smart_ptr<search_info> info = new search_info(board);
 
             if (makemove(info->board, g)) {  
+                info.inc();
                 DECL_SCORE(z,0,board.hash);
                 info->depth = depth-1;
                 info->mv = g;
                 info->result = z;
                 bool parallel=true;
+                bool skip = true;
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
                         smart_ptr<task> t = 
@@ -95,6 +93,7 @@ score_t search(search_info* info)
                         t->pfunc = qeval_f;
                         tasks.push_back(t);
                         t->start();
+                        skip = false;
                     }
                 } else {
                     if(mm==0) {
@@ -104,14 +103,24 @@ score_t search(search_info* info)
                         t->pfunc = search_f;
                         tasks.push_back(t);
                         t->start();
+                        skip = false;
                     }
                 }
+                if(skip) {
+                    info.dec();
+                    info.dec();
+                }
+            } else {
+                info.dec();
             }
             if(tasks.size()>=(size_t)num_proc||last) {
                 for(size_t n=0;n<tasks.size();n++) {
-                    smart_ptr<search_info> info = tasks[n]->info;
-                    tasks[n]->join();
-                    val = -tasks[n]->info->result;
+                    smart_ptr<task> taskn = tasks[n];
+                    dtor<task> d_taskn(taskn);
+                    smart_ptr<search_info> info = taskn->info;
+                    dtor<search_info> d_info = info;
+                    taskn->join();
+                    val = -taskn->info->result;
 
                     if (val > max)
                     {

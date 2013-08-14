@@ -133,7 +133,7 @@ struct serial_task : public task {
             return;
         if(!info.valid())
             return;
-		smart_ptr<search_info> hold = info->self;
+	    dtor<search_info> hold = info;
         if(pfunc == search_f)
             info->result = search(info.ptr());
         else if(pfunc == search_ab_f)

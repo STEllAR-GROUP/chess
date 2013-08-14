@@ -118,7 +118,7 @@ void *qeval_pt(void *vptr)
   search_info *info = (search_info *)vptr;
   info->result = qeval(info);
   assert(info == info->self.ptr());
-  smart_ptr<search_info> hold = info->self;
+  dtor<search_info> hold = info->self;
   info->self = 0;
   info->set_done();
   mpi_task_array[0].add(1);
@@ -220,6 +220,7 @@ int think(node_t& board,bool parallel)
         d+=stepsize;
         board.depth = d;
         f = mtdf(board,f,d);
+        root.dec();
         root = new serial_task;
     }
     if (bench_mode)
@@ -279,6 +280,7 @@ int think(node_t& board,bool parallel)
         brk = true;
         break;
       }
+      root.dec();
       root = new serial_task;
     }
 
@@ -294,6 +296,7 @@ int think(node_t& board,bool parallel)
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   }
+  root.dec();
   return 1;
 }
 

@@ -41,14 +41,18 @@ class smart_ptr_guts {
 template<typename T>
 class smart_ptr {
     smart_ptr_guts<T> *guts;
-    void clean() {
+    public:
+    void inc() {
+        if(guts != 0)
+            guts->inc();
+    }
+    void dec() {
         assert(this != 0);
         if(guts != 0 && guts->dec()) {
             delete guts;
             guts = 0;
         }
     }
-    public:
     smart_ptr(T *ptr) {
         if(ptr == 0) {
             guts = 0;
@@ -57,15 +61,11 @@ class smart_ptr {
         }
     }
     smart_ptr(const smart_ptr<T> &sm) : guts(sm.guts) {
-        if(sm.guts != 0)
-            guts->inc();
     }
     smart_ptr() : guts(0) {}
     ~smart_ptr() {
-        clean();
     }
     void operator=(T *t) {
-        clean();
         if(t == 0) {
             guts = 0;
         } else {
@@ -74,10 +74,7 @@ class smart_ptr {
     }
     void operator=(const smart_ptr<T>& s) {
         assert(this != 0);
-        clean();
         guts = s.guts;
-        if(guts != 0)
-            guts->inc();
     }
     T& operator*() {
         assert(guts != 0);
@@ -99,6 +96,15 @@ class smart_ptr {
     int ref_count() {
         assert(guts != 0);
         return guts->ref_count_();
+    }
+};
+
+template<typename T>
+struct dtor {
+    smart_ptr<T> sptr;
+    dtor(smart_ptr<T>& s) : sptr(s) {}
+    ~dtor() {
+        sptr.dec();
     }
 };
 #endif

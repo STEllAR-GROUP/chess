@@ -12,6 +12,8 @@
 #include "zkey.hpp"
 #include <atomic>
 
+#undef NDEBUG
+
 /*
    Alpha Beta search function. Uses OpenMP parallelization by the 
    'Young Brothers Wait' algorithm which searches the eldest brother (i.e. chess_move)
@@ -36,14 +38,12 @@ void *search_ab_pt(void *vptr)
 {
     search_info *info = (search_info *)vptr;
     assert(info != 0);
-    smart_ptr<search_info> hold = info->self;
+    dtor<search_info> hold = info->self;
     assert(info->self.valid());
-    {
-        assert(info->depth == info->board.depth);
-        info->result = search_ab(info);
-        info->set_done();
-        mpi_task_array[0].add(1);
-    }
+    assert(info->depth == info->board.depth);
+    info->result = search_ab(info);
+    info->set_done();
+    mpi_task_array[0].add(1);
     return NULL;
 }
 
@@ -195,13 +195,14 @@ score_t search_ab(search_info *proc_info)
     // loop through the moves
     //for (; j < worksq; j++) {
     while(j < worksq) {
-        for(;j < worksq; j++) {
-            chess_move g = workq[j];
+        while(j < worksq) {
+            chess_move g = workq[j++];
 
             smart_ptr<search_info> child_info = new search_info(board);
 
             bool parallel;
             if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
+                child_info.inc();
 
                 parallel = true;
                 smart_ptr<task> t = parallel_task(depth, &parallel);
@@ -223,17 +224,25 @@ score_t search_ab(search_info *proc_info)
                 // Control branching
                 if (parallel && tasks.size() < 3)
                     continue;
+                else
+                    break;
+            } else {
+                child_info.dec();
+                assert(!child_info.valid());
             }
         }
         When when(tasks);
         size_t const count = tasks.size();
+        assert(count > 0);
         for(size_t n_=0;n_<count;n_++) {
             int n = when.any();
             smart_ptr<task> child_task = tasks[n];
             assert(child_task.valid());
             child_task->join();
             smart_ptr<search_info> child_info = child_task->info;
-            child_info->self = NULL;
+
+            dtor<task> d_child_task(child_task);
+            dtor<search_info> d_child_info(child_info);
             tasks.erase(tasks.begin()+n);
 
             if(!children_aborted && (aborted || child_info->abort_flag)) {
@@ -265,12 +274,6 @@ score_t search_ab(search_info *proc_info)
                 }
             }
         }
-        for (std::vector< smart_ptr<task> >::iterator task = tasks.begin(); task != tasks.end(); ++task)
-        {
-
-            (*task)->info = NULL;
-        }
-        tasks.clear();
         if(alpha >= beta) {
             break;
         }
