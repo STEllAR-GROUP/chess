@@ -12,7 +12,7 @@
 #include <math.h>
 #include "parallel.hpp"
 
-const int table_size = 4096;
+const int table_size = 16*4096;
 
 struct zkey_t {
   score_t lower, upper;
