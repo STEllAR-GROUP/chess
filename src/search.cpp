@@ -39,8 +39,11 @@ std::vector<safe_move> pv;  // Principle Variation, used in iterative deepening
  * enough to do en passant.
  */
 bool capture(const node_t& board,chess_move& g) {
-  return board.color[g.getTo()] != EMPTY
-      && board.color[g.getTo()] != board.color[g.getFrom()];
+  //bool b1 = board.color[g.getTo()] != EMPTY
+      //&& board.color[g.getTo()] != board.color[g.getFrom()];
+  bool b2 = g.getCapture();
+  //if(b1 != b2) abort();
+  return b2;
 }
 
 /**

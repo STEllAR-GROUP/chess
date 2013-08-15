@@ -57,6 +57,7 @@ public:
     uint8_t getTo() { return to; }
     uint8_t getPromote() { return promote; }
     uint8_t getBits() { return bits; }
+    bool getCapture() const { return (bits & 1) != 0; }
     void operator=(const uint32_t mv)
     {
         set32BitMove(mv);

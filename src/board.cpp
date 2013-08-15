@@ -12,6 +12,7 @@
 #include "board.hpp"
 #include "here.hpp"
 #include <string.h>
+#include <algorithm>
 
 // Make sure hashing works. Note
 // that the test is not thread safe.
@@ -189,6 +190,9 @@ bool attack(const node_t& board, int sq, int s)
     return false;
 }
 
+bool workq_sort(const chess_move& m1,const chess_move& m2) {
+    return m1.getCapture() > m2.getCapture();
+}
 
 /* gen() generates pseudo-legal moves for the current position.
    It scans the board to find friendly pieces and then determines
@@ -276,6 +280,7 @@ void gen(std::vector<chess_move>& workq, const node_t& board)
               gen_push(workq, board, board.ep - 7, board.ep, 21);
       }
   }
+  std::sort(workq.begin(),workq.end(),workq_sort);
 }
 
 
