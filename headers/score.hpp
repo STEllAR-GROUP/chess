@@ -103,5 +103,6 @@ typedef signed int score_t;
 
 const DECL_SCORE(bad_min_score,-11000,0);
 const DECL_SCORE(bad_max_score, 11000,0);
+const DECL_SCORE(max_score,10000,0);
 
 #endif

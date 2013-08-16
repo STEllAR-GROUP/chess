@@ -13,6 +13,7 @@
 #include "here.hpp"
 #include <string.h>
 #include <algorithm>
+#include <iostream>
 
 // Make sure hashing works. Note
 // that the test is not thread safe.
@@ -191,7 +192,7 @@ bool attack(const node_t& board, int sq, int s)
 }
 
 bool workq_sort(const chess_move& m1,const chess_move& m2) {
-    return m1.getCapture() > m2.getCapture();
+    return m1.score > m2.score;
 }
 
 /* gen() generates pseudo-legal moves for the current position.
@@ -283,6 +284,22 @@ void gen(std::vector<chess_move>& workq, const node_t& board)
   std::sort(workq.begin(),workq.end(),workq_sort);
 }
 
+uint8_t score_piece(uint8_t p) {
+    switch(p) {
+        case QUEEN:
+            return 10;
+        case ROOK:
+            return 5;
+        case KNIGHT:
+        case BISHOP:
+            return 3;
+        case PAWN:
+            return 1;
+        default:
+            abort;
+    }
+    return 1;
+}
 
 /* gen_push() puts a chess_move on the chess_move stack, unless it's a
    pawn promotion that needs to be handled by gen_promote().
@@ -296,6 +313,16 @@ void gen(std::vector<chess_move>& workq, const node_t& board)
 void gen_push(std::vector<chess_move>& workq, const node_t& board, int from, int to, int bits)
 {
     chess_move g;
+    uint8_t score;
+
+    // test for capture
+    if (bits & 1) {
+        score = 100*score_piece(board.piece[to])
+                  -10*score_piece(board.piece[from]);
+    } else {
+        score = score_piece(board.piece[from]);
+    }
+    g.score = score;
     
     if (bits & 16) {
         if (board.side == LIGHT) {

@@ -47,8 +47,6 @@ void *search_ab_pt(void *vptr)
     return NULL;
 }
 
-std::atomic<int> parallel_count(1000);
-
 //#define WHEN 1
 struct When {
 #ifdef HPX_SUPPORT
@@ -222,7 +220,9 @@ score_t search_ab(search_info *proc_info)
                 tasks.push_back(t);
 
                 // Control branching
-                if (parallel && tasks.size() < 3)
+                if (parallel && beta >= max_score*.9)
+                    continue;
+                else if (parallel && tasks.size() < 3)
                     continue;
                 else
                     break;

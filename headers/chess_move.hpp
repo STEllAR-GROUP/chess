@@ -31,8 +31,9 @@ class chess_move {
     uint8_t promote;
     uint8_t bits; // LSB
 public:
+    uint8_t score;
 
-    chess_move() : u(0), from(0), to(0), promote(0), bits(0) {}
+    chess_move() : u(0), from(0), to(0), promote(0), bits(0), score(0) {}
     uint32_t get32BitMove() {
         return u;
     }
@@ -57,7 +58,9 @@ public:
     uint8_t getTo() { return to; }
     uint8_t getPromote() { return promote; }
     uint8_t getBits() { return bits; }
-    bool getCapture() const { return (bits & 1) != 0; }
+    uint8_t getCapture() const {
+        return (bits & 1) != 0;
+    }
     void operator=(const uint32_t mv)
     {
         set32BitMove(mv);
@@ -69,6 +72,7 @@ public:
         to = mv.to;
         promote = mv.promote;
         bits = mv.bits;
+        score = mv.score;
     }
     bool operator==(const chess_move& mv)
     {
