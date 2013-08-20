@@ -78,40 +78,40 @@ score_t qeval(search_info* info)
     s = max(lower,s);
     std::vector<chess_move> workq;
     gen(workq, board); // Generate the moves
-    /*if(chx_abort)
-        return bad_min_score;*/
     for(size_t j=0;j < workq.size(); j++) {
         chess_move g = workq[j];
+        if(g.getCapture())
+            continue;
+        if(info->get_abort())
+            return s;
         node_t p_board = board;
         if(!makemove(p_board,g))
             continue;
-        if(capture(board,g)) {
-            //s = max(-qeval(p_board,-upper,-lower),s);
-        } else {
-            DECL_SCORE(v,ev.eval(p_board,chosen_evaluator),p_board.hash);
-            s = max(v,s);
-        }
-        if(s > upper)
+        DECL_SCORE(v,ev.eval(p_board,chosen_evaluator),p_board.hash);
+        s = max(v,s);
+        if(s > upper) {
             return s;
+        }
     }
     for(size_t j=0;j < workq.size(); j++) {
+        if(!workq[j].getCapture())
+            continue;
+        if(info->get_abort())
+            return s;
         chess_move g = workq[j];
         node_t p_board = board;
         if(!makemove(p_board,g))
             continue;
-        if(capture(board,g)) {
-            search_info* new_info = new search_info;
-            new_info->board = p_board;
-            new_info->alpha = -upper;
-            new_info->beta = -lower;
-            s = max(-qeval(new_info),s);
-            delete new_info;
-        } else {
-            //DECL_SCORE(v,ev.eval(p_board,chosen_evaluator),p_board.hash);
-            //s = max(v,s);
-        }
-        if(s > upper)
+        search_info* new_info = new search_info;
+        new_info->set_abort_ref(info);
+        new_info->board = p_board;
+        new_info->alpha = -upper;
+        new_info->beta = -lower;
+        s = max(-qeval(new_info),s);
+        delete new_info;
+        if(s > upper) {
             return s;
+        }
     }
     return s;
 }
@@ -134,7 +134,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
         smart_ptr<task> t = new serial_task;
         return t;
     }
-    if(depth >= 2) {
+    if(depth >= 3) {
         if(mpi_task_array[0].dec()) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;
@@ -145,17 +145,6 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
             return t;
         }
     }
-	/*
-    if(depth >= 4) {
-        for(int i=1;i<mpi_size;i++) {
-            if(mpi_task_array[i].dec()) {
-                smart_ptr<task> t = new mpi_task(i);
-                *parallel = true;
-                return t;
-            }
-        }
-    }
-	*/
     *parallel = false;
     smart_ptr<task> t = new serial_task;
     return t;

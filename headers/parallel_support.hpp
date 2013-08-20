@@ -12,6 +12,7 @@
 #include "node.hpp"
 #include "score.hpp"
 #include "chess_move.hpp"
+#include <boost/atomic.hpp>
 
 extern bool par_enabled;
 int chx_threads_per_proc();
@@ -27,11 +28,18 @@ void *strike(void *);
 void *qeval_pt(void *);
 
 struct search_info {
+private:
+    boost::atomic<bool>  abort_flag_;
+    boost::atomic<bool> *abort_flag;
+public:
+    bool get_abort() { return *abort_flag; }
+    void set_abort(bool b) { *abort_flag = b; }
+    void set_abort_ref(search_info *s) {
+        abort_flag = s->abort_flag;
+    }
     // self-reference used
     // to delay cleanup
     smart_ptr<search_info> self;
-    
-    bool abort_flag;
     node_t board;
     bool par_done;
     chess_move mv;
@@ -56,13 +64,13 @@ struct search_info {
         par_done = true;
     }
     void wait_for_done();
-    search_info(const node_t& board_) : abort_flag(false), board(board_), par_done(true),
+    search_info(const node_t& board_) : abort_flag_(false), abort_flag(&abort_flag_), board(board_), par_done(true),
             result(bad_min_score) {
         pthread_mutex_init(&mut,NULL);
         pthread_cond_init(&cond,NULL);
     }
 
-    search_info() : abort_flag(false) {
+    search_info() : abort_flag_(false), abort_flag(&abort_flag_) {
     }
 
     ~search_info() {

@@ -79,7 +79,7 @@ struct When {
 
 score_t search_ab(search_info *proc_info)
 {
-    if(proc_info->abort_flag)
+    if(proc_info->get_abort())
         return bad_min_score;
     // Unmarshall the info struct
     node_t board = proc_info->board;
@@ -167,6 +167,7 @@ score_t search_ab(search_info *proc_info)
         child_info->beta = -alpha;
         child_info->depth = depth-1;
         if(depth == 1 && capture(board,g)) {
+            child_info->set_abort_ref(proc_info);
             val = -qeval(child_info);
         } else
             val = -search_ab(child_info);
@@ -199,7 +200,7 @@ score_t search_ab(search_info *proc_info)
             smart_ptr<search_info> child_info = new search_info(board);
 
             bool parallel;
-            if (!aborted && !proc_info->abort_flag && makemove(child_info->board, g)) {
+            if (!aborted && !proc_info->get_abort() && makemove(child_info->board, g)) {
                 child_info.inc();
 
                 parallel = true;
@@ -245,15 +246,15 @@ score_t search_ab(search_info *proc_info)
             dtor<search_info> d_child_info(child_info);
             tasks.erase(tasks.begin()+n);
 
-            if(!children_aborted && (aborted || child_info->abort_flag)) {
+            if(!children_aborted && (aborted || child_info->get_abort())) {
                 for(unsigned int m = 0;m < tasks.size();m++) {
-                    tasks[m]->info->abort_flag = true;
+                    tasks[m]->info->set_abort(true);
                 }
                 children_aborted = true;
             }
 
             child_task->join();
-            if(child_info->abort_flag) 
+            if(child_info->get_abort()) 
                 continue;
             val = -child_info->result;
 
@@ -264,7 +265,7 @@ score_t search_ab(search_info *proc_info)
                 {
                     alpha = val;
 #ifdef PV_ON
-                    if(!child_info->abort_flag)
+                    if(!child_info->get_abort())
                         pv[board.ply].set(child_info->mv);
 #endif
                     if(alpha >= beta) {
