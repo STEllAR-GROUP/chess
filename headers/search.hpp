@@ -18,7 +18,6 @@
 #include "parallel.hpp"
 #include <list>
 #include <map>
-#include "smart_ptr.hpp"
 #include "hash.hpp"
 #include "score.hpp"
 #include "parallel_support.hpp"

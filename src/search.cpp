@@ -123,7 +123,6 @@ void *qeval_pt(void *vptr)
   assert(info == info->self.ptr());
   dtor<search_info> hold = info->self;
   info->self = 0;
-  info->set_done();
   mpi_task_array[0].add(1);
   return NULL;
 }
@@ -134,14 +133,21 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
         smart_ptr<task> t = new serial_task;
         return t;
     }
-    if(depth >= 3) {
-        if(mpi_task_array[0].dec()) {
+    bool use_parallel = false;
+//#ifdef HPX_SUPPORT
+//    use_parallel = depth % 3 == 2;
+//#else
+    use_parallel = depth >= 3;
+//#endif
+    if(use_parallel) {
+        int n = mpi_task_array[0].dec();
+        if(n > 0) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;
 #else
             smart_ptr<task> t = new pthread_task;
 #endif
-            *parallel = true;
+            *parallel = (n > 1);
             return t;
         }
     }
@@ -154,7 +160,6 @@ void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
   info->result = search_ab(info);
   info->self = 0;
-  info->set_done();
   mpi_task_array[0].add(1);
   return NULL;
 }
@@ -306,7 +311,7 @@ score_t multistrike(search_info* info)
     // DECL_SCORE(lower,-10000,0);
     // DECL_SCORE(upper,10000,0);
     for(int i=-max_parallel;i<=max_parallel;i++) {
-        mpi_task_array[0].wait_dec();
+        //mpi_task_array[0].wait_dec();
     }
     std::cerr << "Checkpoint #1" << std::endl;
     for(int i=-max_parallel;i<=max_parallel;i++) {
@@ -440,8 +445,6 @@ void sort_pv(std::vector<chess_move>& workq, int index)
 }
 
 #define TRANSPOSE_ON 1
-
-// TODO: fix use of pthread mutex here
 
 zkey_t transposition_table[table_size];
 

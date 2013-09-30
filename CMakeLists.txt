@@ -24,9 +24,9 @@ endif()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake;${HPX_ROOT}/share/cmake-2.8/Modules)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-inline")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pg")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pg -fPIC")
 
-#find_package(HPX)
+find_package(HPX)
 if(HPX_FOUND)
   message("HPX was found.")
 

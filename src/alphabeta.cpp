@@ -42,14 +42,14 @@ void *search_ab_pt(void *vptr)
     assert(info->self.valid());
     assert(info->depth == info->board.depth);
     info->result = search_ab(info);
-    info->set_done();
     mpi_task_array[0].add(1);
     return NULL;
 }
 
-//#define WHEN 1
+#define WHEN 1
 struct When {
-#ifdef HPX_SUPPORT
+//#ifdef HPX_SUPPORT
+#if 0
     typedef HPX_STD_TUPLE<int, hpx::lcos::future<score_t> > result_type;
     std::vector<hpx::lcos::future<score_t> > vec;
     When(std::vector<smart_ptr<task> >& tasks) {
@@ -143,52 +143,6 @@ score_t search_ab(search_info *proc_info)
     int j=0;
     score_t val;
 
-    /**
-     * This loop will execute once and it will do it
-     * sequentially. This should produce good cut-offs.
-     * It is a 'Younger Brothers Wait' strategy.
-     **/
-    for(;j < worksq;j++) {
-        if(alpha >= beta)
-            continue;
-        chess_move g = workq[j];
-        node_t p_board = board;
-
-        if (!makemove(p_board, g)) { // Make the chess_move, if it isn't 
-            continue;                    // legal, then go to the next one
-        }
-
-        assert(depth >= 1);
-        p_board.depth = depth-1;
-        
-        search_info* child_info = new search_info;
-        child_info->board = p_board;
-        child_info->alpha = -beta;
-        child_info->beta = -alpha;
-        child_info->depth = depth-1;
-        if(depth == 1 && capture(board,g)) {
-            child_info->set_abort_ref(proc_info);
-            val = -qeval(child_info);
-        } else
-            val = -search_ab(child_info);
-        delete child_info;
-
-        if (val > max_val)
-        {
-            max_val = val;
-            max_move = g;
-            if (val > alpha)
-            {
-                alpha = val;
-#ifdef PV_ON
-                pv[board.ply].set(g);
-#endif
-            }
-        }
-        j++;
-        break;
-    }
-
     bool aborted = false;
     bool children_aborted = false;
     // loop through the moves
@@ -203,7 +157,7 @@ score_t search_ab(search_info *proc_info)
             if (!aborted && !proc_info->get_abort() && makemove(child_info->board, g)) {
                 child_info.inc();
 
-                parallel = true;
+                parallel = j > 0 && !capture(board,g);
                 smart_ptr<task> t = parallel_task(depth, &parallel);
 
                 t->info = child_info;
@@ -221,9 +175,11 @@ score_t search_ab(search_info *proc_info)
                 tasks.push_back(t);
 
                 // Control branching
-                if (parallel && beta >= max_score*.9)
+                if (!parallel)
+                    break;
+                else if (beta >= max_score*.9)
                     continue;
-                else if (parallel && tasks.size() < 3)
+                else if (tasks.size() < 5)
                     continue;
                 else
                     break;

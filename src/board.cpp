@@ -293,10 +293,15 @@ uint8_t score_piece(uint8_t p) {
         case KNIGHT:
         case BISHOP:
             return 3;
+        case KING:
+            return 50;
         case PAWN:
             return 1;
+        case EMPTY:
+            return 0;
         default:
-            abort;
+            std::cout << "p=(" << int(p) << ")" << std::endl;
+            abort();
     }
     return 1;
 }

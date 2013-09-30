@@ -5,6 +5,8 @@ score_t search(search_info*);
 score_t search_ab(search_info*);
 score_t qeval(search_info*);
 score_t multistrike(search_info*);
+
+#ifdef HPX_SUPPORT
     
 typedef hpx::actions::plain_result_action1<
     score_t,           // return type
@@ -63,3 +65,4 @@ void hpx_task::start() {
         assert(false); // should never get here
         
 }
+#endif

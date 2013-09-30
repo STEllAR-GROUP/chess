@@ -8,11 +8,11 @@
 #define SMART_PTR_HPP
 #include <assert.h>
 #include "parallel.hpp"
+#include <boost/atomic.hpp>
 
 template<typename T>
 class smart_ptr_guts {
-    Mutex mut;
-    int ref_count;
+    boost::atomic<int> ref_count;
     public:
     T *ptr;
     smart_ptr_guts(int rc,T *p) : ref_count(rc), ptr(p) {
@@ -21,15 +21,12 @@ class smart_ptr_guts {
         delete ptr;
     }
     void inc() {
-        ScopedLock s(mut);
         ref_count++;
     }
     bool dec() {
-        ScopedLock s(mut);
-        int r = ref_count;
-        if(ref_count>0)
-            ref_count--;
-        return r==1;
+        int r = --ref_count;
+        if(r < 0) abort();
+        return r==0;
     }
     int ref_count_() {
         return ref_count;
