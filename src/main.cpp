@@ -78,11 +78,13 @@ int hpx_main(boost::program_options::variables_map& vm)
     }
     int ret = chx_main();
     hpx::finalize();
+    /*
     for(unsigned int i=0;i<hpx::get_os_thread_count();i++) {
         if(streams[i] != NULL) {
             streams[i]->close();
         }
     }
+    */
     return ret;
 }
 #endif
@@ -404,7 +406,10 @@ int chx_threads_per_proc() {
 
 int main(int argc, char *argv[])
 {
+#ifdef HPX_SUPPORT
+#else
     Threader th;
+#endif
 #ifdef MPI_SUPPORT
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
@@ -423,7 +428,13 @@ int main(int argc, char *argv[])
             std::cout << mpi_task_array[i].add(0) << " ";
         std::cout << std::endl;
 #endif
+#ifdef HPX_SUPPORT
+        boost::program_options::options_description desc_commandline(
+            "usage: " HPX_APPLICATION_STRING " [options]");
+        return hpx::init(desc_commandline, argc, argv);
+#else
         th.create(mpi_worker,NULL);
+#endif
     } else {
         mpi_task_array.resize(1);
         mpi_task_array[0].add(threads_per_proc);
