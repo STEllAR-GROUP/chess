@@ -25,7 +25,6 @@ typedef void *(*pthread_func_t)(void*);
 
 void *search_pt(void *);
 void *search_ab_pt(void *);
-void *strike(void *);
 void *qeval_pt(void *);
 
 struct search_info {
@@ -86,7 +85,7 @@ score_t search(search_info*);
 score_t search_ab(search_info*);
 score_t qeval(search_info*);
 
-enum pfunc_v { no_f, search_f, search_ab_f, strike_f, qeval_f };
+enum pfunc_v { no_f, search_f, search_ab_f, qeval_f };
 
 struct task {
     smart_ptr<search_info> info;
@@ -121,8 +120,6 @@ struct serial_task : public task {
         if(pfunc == search_f)
             info->result = search(info.ptr());
         else if(pfunc == search_ab_f)
-            info->result = search_ab(info.ptr());
-        else if(pfunc == strike_f)
             info->result = search_ab(info.ptr());
         else if(pfunc == qeval_f)
             info->result = qeval(info.ptr());
@@ -175,8 +172,6 @@ struct pthread_task : public task {
             th.create(search_pt,info.ptr());
         else if(pfunc == search_ab_f)
             th.create(search_ab_pt,info.ptr());
-        else if(pfunc == strike_f)
-            th.create(strike,info.ptr());
         else if(pfunc == qeval_f)
             th.create(qeval_pt,info.ptr());
         else

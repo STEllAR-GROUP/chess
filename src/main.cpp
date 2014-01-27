@@ -326,7 +326,7 @@ int chx_main()
             search_m = input.at(1);
           }
           catch (out_of_range&) {
-            std::cout << "Name of search method (minimax,alphabeta,mtdf,multistrike): ";
+            std::cout << "Name of search method (minimax,alphabeta,mtdf): ";
             std::cin >> search_m;
           }
           if (search_m == "minimax") {
@@ -335,8 +335,6 @@ int chx_main()
               search_method = ALPHABETA;
           } else if (search_m == "mtdf") {
               search_method = MTDF;
-          } else if (search_m == "multistrike") {
-              search_method = MULTISTRIKE;
           } else {
             std::cout << "Invalid method specified." << std::endl;
           }
@@ -463,9 +461,6 @@ void start_benchmark(std::string filename, int ply_level, int num_runs,bool para
   } else if (search_method == MTDF) {
     std::cout << "  search method: MTD-f" << std::endl;
     logfile << "  search method: MTD-f" << std::endl;
-  } else if (search_method == MULTISTRIKE) {
-    std::cout << "  search method: Multistrike" << std::endl;
-    logfile << "  search method: Multistrike" << std::endl;
   }
 
   // reading board configuration

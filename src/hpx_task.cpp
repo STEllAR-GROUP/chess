@@ -4,7 +4,6 @@
 score_t search(search_info*);
 score_t search_ab(search_info*);
 score_t qeval(search_info*);
-score_t multistrike(search_info*);
 
 #ifdef HPX_SUPPORT
     
@@ -23,18 +22,11 @@ typedef hpx::actions::plain_result_action1<
 typedef hpx::actions::plain_result_action1<
     score_t,           // return type
     search_info*,      // arguments
-    multistrike             // function name
-> strike_action;
-
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
-    search_info*,      // arguments
     qeval             // function name
 > qeval_action;
 
 HPX_REGISTER_PLAIN_ACTION(alphabeta_action);    
 HPX_REGISTER_PLAIN_ACTION(minimax_action);    
-HPX_REGISTER_PLAIN_ACTION(strike_action);    
 HPX_REGISTER_PLAIN_ACTION(qeval_action);    
 
 using namespace hpx;
@@ -52,10 +44,6 @@ void hpx_task::start() {
     else if (pfunc == search_ab_f)
     {
         result = async<alphabeta_action>(locality_id, info.ptr());
-    }
-    else if (pfunc == strike_f)
-    {
-        result = async<strike_action>(locality_id, info.ptr());
     }
     else if (pfunc == qeval_f)
     {

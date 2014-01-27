@@ -28,7 +28,6 @@ score_t search(search_info*);
 score_t search_ab(search_info*);
 score_t mtdf(const node_t& board,score_t f,int depth);
 score_t qeval(search_info*);
-score_t multistrike(search_info*);
 int reps(const node_t& board);
 bool compare_moves(chess_move a, chess_move b);
 void sort_pv(std::vector<chess_move>& workq, int ply);
