@@ -196,7 +196,7 @@ struct pthread_task : public task {
 #include <hpx/include/iostreams.hpp>
 #include <time.h>
 struct hpx_task : public task {
-    hpx::lcos::future<score_t> result;
+    hpx::lcos::shared_future<score_t> result;
     hpx_task()  {
     }
 

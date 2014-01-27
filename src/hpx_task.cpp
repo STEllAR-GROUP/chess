@@ -43,7 +43,7 @@ void hpx_task::start() {
     assert(info.valid());
     info->self = NULL;
     static std::vector<hpx::naming::id_type> all_localities = hpx::find_all_localities();
-    hpx::naming::id_type const locality_id = all_localities[0];
+    static hpx::naming::id_type const locality_id = all_localities[0];
 
     if (pfunc == search_f)
     {
