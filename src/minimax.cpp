@@ -14,7 +14,7 @@ void *search_pt(void *vptr) {
     search_info *info = (search_info *)vptr;
 	dtor<search_info> d_info(info->self);
     info->result = search(info);
-    mpi_task_array[0].add(1);
+    task_counter.add(1);
     return NULL;
 }
 

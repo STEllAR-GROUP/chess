@@ -9,9 +9,7 @@ set(sources
     data.cpp
     eval.cpp
     search.cpp
-    mpi_support.cpp
     minimax.cpp
-    mpi_support.cpp
     log_board.cpp
     timer.cpp
     alphabeta.cpp)

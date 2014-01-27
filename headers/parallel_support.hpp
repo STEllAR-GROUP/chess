@@ -159,7 +159,7 @@ public:
         }
     }
 };
-extern std::vector<pcounter> mpi_task_array;
+extern pcounter task_counter;
 struct pthread_task : public task {
     bool joined;
     Threader th;

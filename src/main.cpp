@@ -15,18 +15,14 @@
 #include <hpx/include/components.hpp>
 #endif
 
+#include "parallel_support.hpp"
 #include <boost/algorithm/string.hpp>
 #include "main.hpp"
 #include <signal.h>
 #include <fstream>
 #include <sys/time.h>
 
-#include "mpi_support.hpp"
 #include <unistd.h>
-
-#ifdef MPI_SUPPORT
-#undef MPI_SUPPORT
-#endif
 
 
 #ifdef READLINE_SUPPORT
@@ -41,24 +37,15 @@ using namespace std;
 double sum_exec_times2 = 0;
 double sum_exec_times = 0;
 int count_exec_times;
+pcounter task_counter;
 
-void mpi_terminate() {
-    if(mpi_rank == 0) {
-        for(int i=0;i<3;i++)
-            std::cout << std::endl;
-        const int n = 2*16+10;
-        int data[n];
-        data[32] = -1;
-        data[33] = -1;
-#ifdef MPI_SUPPORT
-        for(int i=1;i<mpi_size;i++) {
-            MPI_Send(data,n,MPI_INT,
-                    i,WORK_ASSIGN_MESSAGE,MPI_COMM_WORLD);
-        }
-        th.join();
-        MPI_Finalize();
-#endif
-    }
+void chx_terminate() {
+    for(int i=0;i<3;i++)
+        std::cout << std::endl;
+    const int n = 2*16+10;
+    int data[n];
+    data[32] = -1;
+    data[33] = -1;
 }
 
 /* chx_main() processes input from stdin */
@@ -274,7 +261,7 @@ int chx_main()
             std::cin >> arg;
 #endif
             }
-            mpi_task_array[0].set_max(atoi(arg.c_str()));
+            task_counter.set_max(atoi(arg.c_str()));
             std::cout << "Set the number of threads to " << arg << std::endl;
             continue; 
         }
@@ -410,38 +397,9 @@ int main(int argc, char *argv[])
 #else
     Threader th;
 #endif
-#ifdef MPI_SUPPORT
-    MPI_Init(&argc,&argv);
-    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
-    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
-#endif
     int threads_per_proc = chx_threads_per_proc();
-    if(mpi_rank==0) {
-        mpi_task_array.resize(mpi_size);
-        for(int i=1;i<mpi_size;i++)
-            mpi_task_array[i].add(1);
-        mpi_task_array[0].set_max(threads_per_proc);
-#ifdef MPI_SUPPORT
-        // Just a diagnostic message announcing MPI is on
-        std::cout << "MPI enabled" << std::endl;
-        for(int i=0;i<mpi_size;i++)
-            std::cout << mpi_task_array[i].add(0) << " ";
-        std::cout << std::endl;
-#endif
-#ifdef HPX_SUPPORT
-        boost::program_options::options_description desc_commandline(
-            "usage: " HPX_APPLICATION_STRING " [options]");
-        return hpx::init(desc_commandline, argc, argv);
-#else
-        th.create(mpi_worker,NULL);
-#endif
-    } else {
-        mpi_task_array.resize(1);
-        mpi_task_array[0].add(threads_per_proc);
-        mpi_worker(NULL);
-        return 255;
-    }
-    mpi_terminate();
+    task_counter.add(threads_per_proc);
+    chx_terminate();
 #ifdef HPX_SUPPORT
     boost::program_options::options_description
         desc_commandline("usage: " HPX_APPLICATION_STRING " [options]");

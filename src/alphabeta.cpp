@@ -42,7 +42,7 @@ void *search_ab_pt(void *vptr)
     assert(info->self.valid());
     assert(info->depth == info->board.depth);
     info->result = search_ab(info);
-    mpi_task_array[0].add(1);
+    task_counter.add(1);
     return NULL;
 }
 

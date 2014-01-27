@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
-#include "mpi_support.hpp"
 #include "here.hpp"
 #include "zkey.hpp"
 #include "log_board.hpp"
@@ -123,7 +122,7 @@ void *qeval_pt(void *vptr)
   assert(info == info->self.ptr());
   dtor<search_info> hold = info->self;
   info->self = 0;
-  mpi_task_array[0].add(1);
+  task_counter.add(1);
   return NULL;
 }
 
@@ -140,7 +139,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
     use_parallel = depth >= 3;
 //#endif
     if(use_parallel) {
-        int n = mpi_task_array[0].dec();
+        int n = task_counter.dec();
         if(n > 0) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;
@@ -160,7 +159,7 @@ void *strike(void *vptr) {
   search_info *info = (search_info *)vptr;
   info->result = search_ab(info);
   info->self = 0;
-  mpi_task_array[0].add(1);
+  task_counter.add(1);
   return NULL;
 }
 
@@ -301,8 +300,6 @@ score_t multistrike(search_info* info)
 {
     node_t board = info->board;
     int depth = info->depth;
-    //std::cout << VAR(num_proc) << VAR(mpi_task_array[0].add(0)) << std::endl;
-    //chx_abort = false;
     score_t ret=0;
     const int max_parallel = (num_proc-1)/2 ? (num_proc-1)/2 : 1 ;
     assert(max_parallel > 0);
