@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 2.8.4 FATAL_ERROR)
 
-project(octopus CXX)
+project(chess CXX)
 
 # Project version.
 set(CHX_MAJOR_VERSION 0)

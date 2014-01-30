@@ -146,14 +146,10 @@ public:
         return m;
     }
     int dec() {
-        while(true) {
-            int expected = count.load();
-            if(expected == 0)
-                return 0;
-            int desired = expected - 1;
-            if(count.compare_exchange_strong(expected,desired))
-                return desired+1;
-        }
+        int n = count--;
+        if(n < 0)
+            count++;
+        return n;
     }
 };
 extern pcounter task_counter;

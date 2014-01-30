@@ -5,14 +5,14 @@
 //  file BOOST_LICENSE_1_0.rst or copy at http://www.boost.org/LICENSE_1_0.txt)
 ////////////////////////////////////////////////////////////////////////////////
 
+//#undef NDEBUG
+
 #include "parallel_support.hpp"
 #include "search.hpp"
 #include <assert.h>
 #include "parallel.hpp"
 #include "zkey.hpp"
 #include <atomic>
-
-#undef NDEBUG
 
 /*
    Alpha Beta search function. Uses OpenMP parallelization by the 
@@ -190,7 +190,6 @@ score_t search_ab(search_info *proc_info)
         }
         When when(tasks);
         size_t const count = tasks.size();
-        assert(count > 0);
         for(size_t n_=0;n_<count;n_++) {
             int n = when.any();
             smart_ptr<task> child_task = tasks[n];
