@@ -14,7 +14,7 @@
 #include <boost/atomic.hpp>
 #include "parallel.hpp"
 #include "smart_ptr.hpp"
-#include <thread>
+#include <future>
 
 extern bool par_enabled;
 int chx_threads_per_proc();
@@ -128,9 +128,10 @@ public:
 };
 
 extern pcounter task_counter;
+
 struct thread_task : public task {
     bool joined;
-    std::thread th;
+    std::shared_future<void> th;
     thread_task() : joined(true) {}
     ~thread_task() {
         info = 0;
@@ -139,14 +140,11 @@ struct thread_task : public task {
         joined = false;
         assert(info.valid());
         if(pfunc == search_f) {
-            std::thread t(search_pt,info.ptr());
-            t.swap(th);
+            th = std::async(std::launch::async,search_pt,info.ptr());
         } else if(pfunc == search_ab_f) {
-            std::thread t(search_ab_pt,info.ptr());
-            t.swap(th);
+            th = std::async(std::launch::async,search_ab_pt,info.ptr());
         } else if(pfunc == qeval_f) {
-            std::thread t(qeval_pt,info.ptr());
-            t.swap(th);
+            th = std::async(std::launch::async,qeval_pt,info.ptr());
         } else {
             abort();
         }
@@ -154,10 +152,9 @@ struct thread_task : public task {
     virtual void join() {
         if(joined)
             return;
-        th.join();
+        th.get();
         joined = true;
     }
-
 };
 
 #ifdef HPX_SUPPORT
@@ -165,14 +162,14 @@ struct thread_task : public task {
 #include <hpx/include/iostreams.hpp>
 #include <time.h>
 struct hpx_task : public task {
-    hpx::lcos::shared_future<score_t> result;
+    hpx::lcos::shared_future<void> result;
     hpx_task()  {
     }
 
     virtual void start();
 
     virtual void join() {
-        info->result = result.get();
+        result.get();
     }
 };
 #endif

@@ -31,6 +31,9 @@ HPX_REGISTER_PLAIN_ACTION(qeval_action);
 
 using namespace hpx;
 
+// Figure out why actions perform badly
+#define USE_ACTIONS 0
+#if USE_ACTIONS
 void hpx_task::start() {
     assert(info.valid());
     info->self = NULL;
@@ -53,4 +56,23 @@ void hpx_task::start() {
         assert(false); // should never get here
         
 }
+#else
+void hpx_task::start() {
+    if (pfunc == search_f)
+    {
+        result = async(search_pt, info.ptr());
+    }
+    else if (pfunc == search_ab_f)
+    {
+        result = async(search_ab_pt, info.ptr());
+    }
+    else if (pfunc == qeval_f)
+    {
+        result = async(qeval_pt, info.ptr());
+    }
+    else
+        assert(false); // should never get here
+        
+}
+#endif
 #endif
