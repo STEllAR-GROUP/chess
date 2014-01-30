@@ -147,7 +147,7 @@ public:
     }
     int dec() {
         int n = count--;
-        if(n < 0)
+        if(n <= 0)
             count++;
         return n;
     }
