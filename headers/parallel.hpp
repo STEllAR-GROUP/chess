@@ -2,7 +2,7 @@
 #define PARALLEL_HPP
 
 /*
- * By wrapping the HPX mutex and the pthread mutex in the Mutex and
+ * By wrapping the HPX mutex and the thread mutex in the Mutex and
  * ScopedLock classes we make it possible to support both without a
  * lot of ifdefs.
  */
@@ -11,9 +11,6 @@
 
 #ifdef HPX_SUPPORT
 #include <hpx/include/lcos.hpp>
-#define pthread_mutex_lock(X) {std::cout<<"No pthread mutex locks allowed"<<std::endl; abort();}
-#define pthread_cond_wait(X,Y) {std::cout<<"No pthread cond waits allowed"<<std::endl; abort();}
-#define pthread_cond_broadcast(X) {std::cout<<"No pthread cond waits allowed"<<std::endl; abort();}
 struct Mutex {
     hpx::lcos::local::mutex mut;
     Mutex() : mut() {}
@@ -25,21 +22,19 @@ struct ScopedLock {
     ~ScopedLock() {}
 };
 #else
-#include <pthread.h>
+#include <mutex>
 struct Mutex {
-    pthread_mutex_t mut;
-    Mutex() {
-        pthread_mutex_init(&mut,NULL);
-    }
+    std::mutex mut;
+    Mutex() {}
 };
 struct ScopedLock {
     Mutex *m;
     ScopedLock(Mutex& m_) {
         m = &m_;
-        pthread_mutex_lock(&m->mut);
+        m->mut.lock();
     }
     ~ScopedLock() {
-        pthread_mutex_unlock(&m->mut);
+        m->mut.unlock();
     }
 };
 #endif

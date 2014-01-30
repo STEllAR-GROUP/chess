@@ -10,12 +10,9 @@
 #include <assert.h>
 #include "parallel.hpp"
 
-void *search_pt(void *vptr) {
-    search_info *info = (search_info *)vptr;
-	dtor<search_info> d_info(info->self);
+void search_pt(search_info *info) {
     info->result = search(info);
     task_counter.add(1);
-    return NULL;
 }
 
 score_t search(search_info* info)

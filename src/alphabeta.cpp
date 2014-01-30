@@ -34,16 +34,10 @@
    be the result of best play by both players and hence need not be explored further.
  */
  
-void *search_ab_pt(void *vptr)
+void search_ab_pt(search_info *info)
 {
-    search_info *info = (search_info *)vptr;
-    assert(info != 0);
-    dtor<search_info> hold = info->self;
-    assert(info->self.valid());
-    assert(info->depth == info->board.depth);
     info->result = search_ab(info);
     task_counter.add(1);
-    return NULL;
 }
 
 #define WHEN 1

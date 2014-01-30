@@ -14,18 +14,12 @@
 #include <boost/atomic.hpp>
 #include "parallel.hpp"
 #include "smart_ptr.hpp"
+#include <thread>
 
 extern bool par_enabled;
 int chx_threads_per_proc();
-extern pthread_attr_t pth_attr;
 
 struct task;
-
-typedef void *(*pthread_func_t)(void*);
-
-void *search_pt(void *);
-void *search_ab_pt(void *);
-void *qeval_pt(void *);
 
 struct search_info {
 private:
@@ -37,9 +31,6 @@ public:
     void set_abort_ref(search_info *s) {
         abort_flag = s->abort_flag;
     }
-    // self-reference used
-    // to delay cleanup
-    smart_ptr<search_info> self;
     node_t board;
     bool par_done;
     chess_move mv;
@@ -60,30 +51,13 @@ public:
     }
 };
 
-struct Threader {
-    void *(*func)(void*);
-    pthread_t p;
-    Threader() : func(0) {}
-    void create(void *(*f)(void*),void *args) {
-        assert(func == 0);
-        func = f;
-        pthread_create(&p,0,func,args);
-    }
-    void join() {
-        if(func != 0) {
-            pthread_join(p,0);
-            func = 0;
-        }
-    }
-    ~Threader() {
-        if(func != 0)
-            pthread_detach(p);
-    }
-};
+void search_pt(search_info *);
+void search_ab_pt(search_info *);
+void qeval_pt(search_info *);
 
-score_t search(search_info*);
-score_t search_ab(search_info*);
-score_t qeval(search_info*);
+score_t search(search_info *);
+score_t search_ab(search_info *);
+score_t qeval(search_info *);
 
 enum pfunc_v { no_f, search_f, search_ab_f, qeval_f };
 
@@ -152,26 +126,30 @@ public:
         return n;
     }
 };
+
 extern pcounter task_counter;
-struct pthread_task : public task {
+struct thread_task : public task {
     bool joined;
-    Threader th;
-    pthread_task() : joined(true) {}
-    ~pthread_task() {
+    std::thread th;
+    thread_task() : joined(true) {}
+    ~thread_task() {
         info = 0;
     }
     virtual void start() {
         joined = false;
         assert(info.valid());
-        info->self = info;
-        if(pfunc == search_f)
-            th.create(search_pt,info.ptr());
-        else if(pfunc == search_ab_f)
-            th.create(search_ab_pt,info.ptr());
-        else if(pfunc == qeval_f)
-            th.create(qeval_pt,info.ptr());
-        else
+        if(pfunc == search_f) {
+            std::thread t(search_pt,info.ptr());
+            t.swap(th);
+        } else if(pfunc == search_ab_f) {
+            std::thread t(search_ab_pt,info.ptr());
+            t.swap(th);
+        } else if(pfunc == qeval_f) {
+            std::thread t(qeval_pt,info.ptr());
+            t.swap(th);
+        } else {
             abort();
+        }
     }
     virtual void join() {
         if(joined)

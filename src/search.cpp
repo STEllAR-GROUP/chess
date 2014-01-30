@@ -113,15 +113,10 @@ score_t qeval(search_info* info)
     return s;
 }
 
-void *qeval_pt(void *vptr)
+void qeval_pt(search_info *info)
 {
-  search_info *info = (search_info *)vptr;
   info->result = qeval(info);
-  assert(info == info->self.ptr());
-  dtor<search_info> hold = info->self;
-  info->self = 0;
   task_counter.add(1);
-  return NULL;
 }
 
 smart_ptr<task> parallel_task(int depth, bool *parallel) {
@@ -142,7 +137,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
 #ifdef HPX_SUPPORT
             smart_ptr<task> t = new hpx_task;
 #else
-            smart_ptr<task> t = new pthread_task;
+            smart_ptr<task> t = new thread_task;
 #endif
             *parallel = (n > 1);
             return t;

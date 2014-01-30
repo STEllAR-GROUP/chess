@@ -34,7 +34,7 @@ class smart_ptr_guts {
 };
 
 // Count references to an object in a thread-safe
-// way using pthreads and do automatic clean up.
+// way using threads and do automatic clean up.
 template<typename T>
 class smart_ptr {
     smart_ptr_guts<T> *guts;

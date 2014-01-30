@@ -391,10 +391,6 @@ int chx_threads_per_proc() {
 
 int main(int argc, char *argv[])
 {
-#ifdef HPX_SUPPORT
-#else
-    Threader th;
-#endif
     int threads_per_proc = chx_threads_per_proc();
     task_counter.add(threads_per_proc);
     chx_terminate();
