@@ -7,22 +7,19 @@ score_t qeval(search_info*);
 
 #ifdef HPX_SUPPORT
     
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
+typedef hpx::actions::plain_action1<
     search_info*,      // arguments
-    search_ab             // function name
+    search_ab_pt       // function name
 > alphabeta_action;
 
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
+typedef hpx::actions::plain_action1<
     search_info*,      // arguments
-    search             // function name
+    search_pt          // function name
 > minimax_action;
 
-typedef hpx::actions::plain_result_action1<
-    score_t,           // return type
+typedef hpx::actions::plain_action1<
     search_info*,      // arguments
-    qeval             // function name
+    qeval_pt           // function name
 > qeval_action;
 
 HPX_REGISTER_PLAIN_ACTION(alphabeta_action);    
@@ -32,11 +29,10 @@ HPX_REGISTER_PLAIN_ACTION(qeval_action);
 using namespace hpx;
 
 // Figure out why actions perform badly
-#define USE_ACTIONS 0
+#define USE_ACTIONS 1
 #if USE_ACTIONS
 void hpx_task::start() {
     assert(info.valid());
-    info->self = NULL;
     static std::vector<hpx::naming::id_type> all_localities = hpx::find_all_localities();
     static hpx::naming::id_type const locality_id = all_localities[0];
 
