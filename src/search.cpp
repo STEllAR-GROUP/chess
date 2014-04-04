@@ -126,11 +126,7 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
         return t;
     }
     bool use_parallel = false;
-//#ifdef HPX_SUPPORT
-//    use_parallel = depth % 3 == 2;
-//#else
     use_parallel = depth >= 3;
-//#endif
     if(use_parallel) {
         int n = task_counter.dec();
         if(n > 0) {

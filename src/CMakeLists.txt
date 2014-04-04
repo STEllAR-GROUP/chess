@@ -21,7 +21,7 @@ if(HPX_FOUND)
  
   add_hpx_executable(chx
     ESSENTIAL
-    DEPENDENCIES ${EXTRA_LIBS}
+    DEPENDENCIES ${EXTRA_LIBS} iostreams
     COMPONENT_DEPENDENCIES 
     SOURCES ${sources})
 elseif(MPI_FOUND)
