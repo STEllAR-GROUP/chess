@@ -10,12 +10,12 @@
 #include <assert.h>
 #include "parallel.hpp"
 
-void search_pt(search_info *info) {
+void search_pt(boost::shared_ptr<search_info> info) {
     info->result = search(info);
     task_counter.add(1);
 }
 
-score_t search(search_info* info)
+score_t search(boost::shared_ptr<search_info> info)
 {
     node_t board = info->board;
     int depth = info->depth;
@@ -54,7 +54,7 @@ score_t search(search_info* info)
     max = bad_min_score; // Set the max score to -infinity
 
     // const int worksq = workq.size();
-    std::vector<smart_ptr<task> > tasks;
+    std::vector<boost::shared_ptr<task> > tasks;
 
     // loop through the moves
     // We do this twice. The first time we skip
@@ -68,10 +68,9 @@ score_t search(search_info* info)
         for(size_t j=0;j < workq.size(); j++) {
             bool last = (j+1)==workq.size();
             chess_move g = workq[j];
-            smart_ptr<search_info> info = new search_info(board);
+            boost::shared_ptr<search_info> info{new search_info(board)};
 
             if (makemove(info->board, g)) {  
-                info.inc();
                 DECL_SCORE(z,0,board.hash);
                 info->depth = depth-1;
                 info->mv = g;
@@ -80,7 +79,7 @@ score_t search(search_info* info)
                 bool skip = true;
                 if(depth == 1 && capture(board,g)) {
                     if(mm==1) {
-                        smart_ptr<task> t = 
+                        boost::shared_ptr<task> t = 
                             parallel_task(depth, &parallel);
                         t->info = info;
                         DECL_SCORE(lo,-10000,0);
@@ -93,7 +92,7 @@ score_t search(search_info* info)
                     }
                 } else {
                     if(mm==0) {
-                        smart_ptr<task> t = 
+                        boost::shared_ptr<task> t = 
                             parallel_task(depth, &parallel);
                         t->info = info;
                         t->pfunc = search_f;
@@ -102,19 +101,11 @@ score_t search(search_info* info)
                         skip = false;
                     }
                 }
-                if(skip) {
-                    info.dec();
-                    info.dec();
-                }
-            } else {
-                info.dec();
             }
             if(tasks.size()>=(size_t)num_proc||last) {
                 for(size_t n=0;n<tasks.size();n++) {
-                    smart_ptr<task> taskn = tasks[n];
-                    dtor<task> d_taskn(taskn);
-                    smart_ptr<search_info> info = taskn->info;
-                    dtor<search_info> d_info = info;
+                    boost::shared_ptr<task> taskn = tasks[n];
+                    boost::shared_ptr<search_info> info = taskn->info;
                     taskn->join();
                     val = -taskn->info->result;
 

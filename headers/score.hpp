@@ -83,6 +83,12 @@ inline const score_t& max(const score_t& a,const score_t& b) {
     else
         return b;
 }
+inline const score_t& min(const score_t& a,const score_t& b) {
+    if(a < b)
+        return a;
+    else
+        return b;
+}
 #define DECL_SCORE(name,val,hcode) score_t name(val,hcode);
 #define ADD_SCORE(var,val) var+val
 #endif

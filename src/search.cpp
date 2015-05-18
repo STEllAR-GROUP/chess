@@ -52,7 +52,7 @@ bool capture(const node_t& board,chess_move& g) {
  * itself along, and evaluates non-captures first to get the greatest
  * cutoff.
  **/
-score_t qeval(search_info* info)
+score_t qeval(boost::shared_ptr<search_info> info)
 {
 #ifdef HPX_SUPPORT
     if(file_output_enabled) {
@@ -99,13 +99,12 @@ score_t qeval(search_info* info)
         node_t p_board = board;
         if(!makemove(p_board,g))
             continue;
-        search_info* new_info = new search_info;
-        new_info->set_abort_ref(info);
+        boost::shared_ptr<search_info> new_info{new search_info};
+        new_info->set_abort_ref(info.get());
         new_info->board = p_board;
         new_info->alpha = -upper;
         new_info->beta = -lower;
         s = max(-qeval(new_info),s);
-        delete new_info;
         if(s > upper) {
             return s;
         }
@@ -113,16 +112,16 @@ score_t qeval(search_info* info)
     return s;
 }
 
-void qeval_pt(search_info *info)
+void qeval_pt(boost::shared_ptr<search_info> info)
 {
   info->result = qeval(info);
   task_counter.add(1);
 }
 
-smart_ptr<task> parallel_task(int depth, bool *parallel) {
+boost::shared_ptr<task> parallel_task(int depth, bool *parallel) {
 
     if(!*parallel) {
-        smart_ptr<task> t = new serial_task;
+        boost::shared_ptr<task> t{new serial_task};
         return t;
     }
     bool use_parallel = false;
@@ -131,23 +130,23 @@ smart_ptr<task> parallel_task(int depth, bool *parallel) {
         int n = task_counter.dec();
         if(n > 0) {
 #ifdef HPX_SUPPORT
-            smart_ptr<task> t = new hpx_task;
+            boost::shared_ptr<task> t{new hpx_task};
 #else
-            smart_ptr<task> t = new thread_task;
+            boost::shared_ptr<task> t{new thread_task};
 #endif
             *parallel = (n > 1);
             return t;
         }
     }
     *parallel = false;
-    smart_ptr<task> t = new serial_task;
+    boost::shared_ptr<task> t{new serial_task};
     return t;
 }
 
 // think() calls a search function 
 int think(node_t& board,bool parallel)
 {
-  smart_ptr<task> root = new serial_task;
+  boost::shared_ptr<task> root{new serial_task};
 #ifdef PV_ON
   pv.clear();
   pv.resize(depth[board.side]);
@@ -167,11 +166,10 @@ int think(node_t& board,bool parallel)
   if (search_method == MINIMAX) {
     root->pfunc = search_f;
     
-    search_info* info = new search_info;
+    boost::shared_ptr<search_info> info{new search_info};
     info->board = board;
     info->depth = depth[board.side];
     score_t f = search(info);
-    delete info;
     
     assert(move_to_make != INVALID_MOVE);
     if (bench_mode)
@@ -185,26 +183,25 @@ int think(node_t& board,bool parallel)
     if(d == 0)
         d = stepsize;
     board.depth = d;
-    search_info* info = new search_info;
+    boost::shared_ptr<search_info> info{new search_info};
     info->board = board;
     info->depth = d;
     info->alpha = alpha;
     info->beta = beta;
     score_t f(search_ab(info));
-    delete info;
     while(d < depth[board.side]) {
         d+=stepsize;
         board.depth = d;
         f = mtdf(board,f,d);
-        root.dec();
-        root = new serial_task;
+        boost::shared_ptr<task> new_root{new serial_task};
+        root = new_root;
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   } else if (search_method == ALPHABETA) {
     root->pfunc = search_ab_f;
     // Initially alpha is -infinity, beta is infinity
-    score_t f=0;
+    DECL_SCORE(f,0,0);
     DECL_SCORE(alpha,-10000,board.hash);
     DECL_SCORE(beta,10000,board.hash);
     bool brk = false;  /* Indicates whether we broke away from iterative deepening 
@@ -216,36 +213,33 @@ int think(node_t& board,bool parallel)
     for (int i = low; i <= depth[board.side]; i++) // Iterative deepening
     {
       board.depth = i;
-      search_info* info = new search_info;
+      boost::shared_ptr<search_info> info{new search_info};
       info->board = board;
       info->depth = i;
       info->alpha = alpha;
       info->beta = beta;
       f = search_ab(info);
-      delete info;
 
       if (i >= iter_depth)  // if our ply is greater than the iter_depth, then break
       {
         brk = true;
         break;
       }
-      root.dec();
-      root = new serial_task;
+      boost::shared_ptr<task> new_root{new serial_task};
+      root = new_root;
     }
 
     if (brk) {
-      search_info* info = new search_info;
+      boost::shared_ptr<search_info> info{new search_info};
       info->board = board;
       info->depth = depth[board.side];
       info->alpha = alpha;
       info->beta = beta;
       f=search_ab(info);
-      delete info;
     }
     if (bench_mode)
       std::cout << "SCORE=" << f << std::endl;
   }
-  root.dec();
   return 1;
 }
 
@@ -274,25 +268,23 @@ score_t mtdf(const node_t& board,score_t f,int depth)
     score_t alpha = lower, beta = upper;
     while(lower < upper) {
         if(width >= max_width) {
-            search_info* info = new search_info;
+            boost::shared_ptr<search_info> info{new search_info};
             info->board = board;
             info->depth = depth;
             info->alpha = lower;
             info->beta = upper;
             g = search_ab(info);
-            delete info;
             break;
         } else {
             alpha = max(g == lower ? lower+1 : lower,ADD_SCORE(g,    -(1+width/2)));
             beta  = min(g == upper ? upper-1 : upper,ADD_SCORE(alpha, (1+width)));
         }
-        search_info* info = new search_info;
+        boost::shared_ptr<search_info> info{new search_info};
         info->board = board;
         info->depth = depth;
         info->alpha = alpha;
         info->beta = beta;
         g = search_ab(info);
-        delete info;
         if(g < beta) {
             if(g > alpha)
                 break;

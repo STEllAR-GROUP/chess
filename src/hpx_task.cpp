@@ -1,30 +1,12 @@
 #include "parallel_support.hpp"
 #include <hpx/include/iostreams.hpp>
-
-score_t search(search_info*);
-score_t search_ab(search_info*);
-score_t qeval(search_info*);
+#include "search.hpp"
 
 #ifdef HPX_SUPPORT
     
-typedef hpx::actions::plain_action1<
-    search_info*,      // arguments
-    search_ab_pt       // function name
-> alphabeta_action;
-
-typedef hpx::actions::plain_action1<
-    search_info*,      // arguments
-    search_pt          // function name
-> minimax_action;
-
-typedef hpx::actions::plain_action1<
-    search_info*,      // arguments
-    qeval_pt           // function name
-> qeval_action;
-
-HPX_REGISTER_PLAIN_ACTION(alphabeta_action);    
-HPX_REGISTER_PLAIN_ACTION(minimax_action);    
-HPX_REGISTER_PLAIN_ACTION(qeval_action);    
+HPX_PLAIN_ACTION(search_ab_pt,alphabeta_action);
+HPX_PLAIN_ACTION(search_pt,minimax_action);
+HPX_PLAIN_ACTION(qeval_pt,qeval_action);
 
 using namespace hpx;
 
@@ -38,15 +20,15 @@ void hpx_task::start() {
 
     if (pfunc == search_f)
     {
-        result = async<minimax_action>(locality_id, info.ptr());
+        result = async<minimax_action>(locality_id, info);
     }
     else if (pfunc == search_ab_f)
     {
-        result = async<alphabeta_action>(locality_id, info.ptr());
+        result = async<alphabeta_action>(locality_id, info);
     }
     else if (pfunc == qeval_f)
     {
-        result = async<qeval_action>(locality_id, info.ptr());
+        result = async<qeval_action>(locality_id, info);
     }
     else
         assert(false); // should never get here

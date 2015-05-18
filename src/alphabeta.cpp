@@ -14,27 +14,7 @@
 #include "zkey.hpp"
 #include <atomic>
 
-/*
-   Alpha Beta search function. Uses OpenMP parallelization by the 
-   'Young Brothers Wait' algorithm which searches the eldest brother (i.e. chess_move)
-   serially to determine alpha-beta bounds and then searches the rest of the
-   brothers in parallel.
-
-   In order for this to be effective, chess_move ordering is crucial. In theory,
-   if the best chess_move is ordered first, then it will produce a cutoff which leads
-   to smaller search spaces which can be searched faster than standard minimax.
-   However we don't know what a "good chess_move" is until we have searched it, which
-   is what iterative deepening is for.
-
-   The algorithm maintains two values, alpha and beta, which represent the minimum 
-   score that the maximizing player is assured of and the maximum score that the minimizing 
-   player is assured of, respectively. Initially alpha is negative infinity and beta is 
-   positive infinity. As the recursion progresses the "window" becomes smaller. 
-   When beta becomes less than alpha, it means that the current position cannot 
-   be the result of best play by both players and hence need not be explored further.
- */
- 
-void search_ab_pt(search_info *info)
+void search_ab_pt(boost::shared_ptr<search_info> info)
 {
     info->result = search_ab(info);
     task_counter.add(1);
@@ -46,7 +26,7 @@ struct When {
 #if 0
     typedef HPX_STD_TUPLE<int, hpx::lcos::future<score_t> > result_type;
     std::vector<hpx::lcos::future<score_t> > vec;
-    When(std::vector<smart_ptr<task> >& tasks) {
+    When(std::vector<boost::shared_ptr<task> >& tasks) {
         for(unsigned int i=0;i<tasks.size();i++) {
             hpx_task *hpx = dynamic_cast<hpx_task*>(tasks[i].ptr());
             if(hpx != NULL) {
@@ -66,12 +46,12 @@ struct When {
         return i;
     }
 #else
-    When(std::vector<smart_ptr<task> >& tasks) {}
+    When(std::vector<boost::shared_ptr<task> >& tasks) {}
     int any() { return 0; }
 #endif
 };
 
-score_t search_ab(search_info *proc_info)
+score_t search_ab(boost::shared_ptr<search_info> proc_info)
 {
     if(proc_info->get_abort())
         return bad_min_score;
@@ -132,7 +112,7 @@ score_t search_ab(search_info *proc_info)
 #endif
 
     const int worksq = workq.size();
-    std::vector<smart_ptr<task> > tasks;
+    std::vector<boost::shared_ptr<task> > tasks;
 
     int j=0;
     score_t val;
@@ -145,14 +125,13 @@ score_t search_ab(search_info *proc_info)
         while(j < worksq) {
             chess_move g = workq[j++];
 
-            smart_ptr<search_info> child_info = new search_info(board);
+            boost::shared_ptr<search_info> child_info{new search_info(board)};
 
             bool parallel;
             if (!aborted && !proc_info->get_abort() && makemove(child_info->board, g)) {
-                child_info.inc();
 
                 parallel = j > 0 && !capture(board,g);
-                smart_ptr<task> t = parallel_task(depth, &parallel);
+                boost::shared_ptr<task> t = parallel_task(depth, &parallel);
 
                 t->info = child_info;
                 t->info->board.depth = child_info->depth = depth-1;
@@ -171,28 +150,25 @@ score_t search_ab(search_info *proc_info)
                 // Control branching
                 if (!parallel)
                     break;
+                /*
                 else if (beta >= max_score*.9)
                     continue;
+                    */
                 else if (tasks.size() < 5)
                     continue;
                 else
                     break;
-            } else {
-                child_info.dec();
-                assert(!child_info.valid());
             }
         }
         When when(tasks);
         size_t const count = tasks.size();
         for(size_t n_=0;n_<count;n_++) {
             int n = when.any();
-            smart_ptr<task> child_task = tasks[n];
+            boost::shared_ptr<task> child_task = tasks[n];
             assert(child_task.valid());
             child_task->join();
-            smart_ptr<search_info> child_info = child_task->info;
+            boost::shared_ptr<search_info> child_info = child_task->info;
 
-            dtor<task> d_child_task(child_task);
-            dtor<search_info> d_child_info(child_info);
             tasks.erase(tasks.begin()+n);
 
             if(!children_aborted && (aborted || child_info->get_abort())) {

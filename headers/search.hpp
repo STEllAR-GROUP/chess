@@ -22,17 +22,18 @@
 #include "score.hpp"
 #include "parallel_support.hpp"
 #include "chess_move.hpp"
+#include <boost/shared_ptr.hpp>
 
 int think(node_t& board,bool parallel);
-score_t search(search_info*);
-score_t search_ab(search_info*);
+score_t search(boost::shared_ptr<search_info>);
+score_t search_ab(boost::shared_ptr<search_info>);
 score_t mtdf(const node_t& board,score_t f,int depth);
-score_t qeval(search_info*);
+score_t qeval(boost::shared_ptr<search_info>);
 int reps(const node_t& board);
 bool compare_moves(chess_move a, chess_move b);
 void sort_pv(std::vector<chess_move>& workq, int ply);
 bool capture(const node_t& board,chess_move& g);
-smart_ptr<task> parallel_task(int depth, bool *parallel);
+boost::shared_ptr<task> parallel_task(int depth, bool *parallel);
 int min(int a,int b);
 int max(int a,int b);
 void xboard();

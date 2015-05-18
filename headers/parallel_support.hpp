@@ -13,7 +13,7 @@
 #include "chess_move.hpp"
 #include <boost/atomic.hpp>
 #include "parallel.hpp"
-#include "smart_ptr.hpp"
+#include <boost/shared_ptr.hpp>
 #include <future>
 
 extern bool par_enabled;
@@ -25,6 +25,11 @@ struct search_info {
 private:
     boost::atomic<bool>  abort_flag_;
     boost::atomic<bool> *abort_flag;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+      // TODO: Write a real serializer
+      abort();
+    }
 public:
     bool get_abort() { return *abort_flag; }
     void set_abort(bool b) { *abort_flag = b; }
@@ -49,20 +54,22 @@ public:
 
     ~search_info() {
     }
+
+    friend hpx::serialization::access;
 };
 
-void search_pt(search_info *);
-void search_ab_pt(search_info *);
-void qeval_pt(search_info *);
+void search_pt(boost::shared_ptr<search_info>);
+void search_ab_pt(boost::shared_ptr<search_info>);
+void qeval_pt(boost::shared_ptr<search_info>);
 
-score_t search(search_info *);
-score_t search_ab(search_info *);
-score_t qeval(search_info *);
+score_t search(boost::shared_ptr<search_info>);
+score_t search_ab(boost::shared_ptr<search_info>);
+score_t qeval(boost::shared_ptr<search_info>);
 
 enum pfunc_v { no_f, search_f, search_ab_f, qeval_f };
 
 struct task {
-    smart_ptr<search_info> info;
+    boost::shared_ptr<search_info> info;
 
     pfunc_v pfunc;
     task() : pfunc(no_f) {
@@ -88,15 +95,14 @@ struct serial_task : public task {
     virtual void join() {
         if (joined)
             return;
-        if(!info.valid())
+        if(info.get() == nullptr)
             return;
-	    dtor<search_info> hold = info;
         if(pfunc == search_f)
-            info->result = search(info.ptr());
+            info->result = search(info);
         else if(pfunc == search_ab_f)
-            info->result = search_ab(info.ptr());
+            info->result = search_ab(info);
         else if(pfunc == qeval_f)
-            info->result = qeval(info.ptr());
+            info->result = qeval(info);
         else
             abort();
         joined = true;
@@ -140,11 +146,11 @@ struct thread_task : public task {
         joined = false;
         assert(info.valid());
         if(pfunc == search_f) {
-            th = std::async(std::launch::async,search_pt,info.ptr());
+            th = std::async(std::launch::async,search_pt,info);
         } else if(pfunc == search_ab_f) {
-            th = std::async(std::launch::async,search_ab_pt,info.ptr());
+            th = std::async(std::launch::async,search_ab_pt,info);
         } else if(pfunc == qeval_f) {
-            th = std::async(std::launch::async,qeval_pt,info.ptr());
+            th = std::async(std::launch::async,qeval_pt,info);
         } else {
             abort();
         }
