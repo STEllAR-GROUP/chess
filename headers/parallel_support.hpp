@@ -55,7 +55,9 @@ public:
     ~search_info() {
     }
 
+#ifdef HPX_SUPPORT
     friend hpx::serialization::access;
+#endif
 };
 
 void search_pt(boost::shared_ptr<search_info>);
