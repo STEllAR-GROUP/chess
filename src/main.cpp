@@ -145,6 +145,10 @@ int chx_main()
         // get user input
         std::string s;
 
+        if(!std::cin.good()) {
+          s = "exit";
+        }
+
 #ifdef READLINE_SUPPORT
         buf = readline("chx> ");
         if (buf == NULL)
@@ -155,7 +159,7 @@ int chx_main()
             add_history(s.c_str());
 #else
         std::cout << "chx> ";
-        std::cin >> s;
+        std::getline(std::cin,s);
 #endif
 
         if (s.empty())
@@ -194,8 +198,7 @@ int chx_main()
             depth[LIGHT] = atoi(input.at(1).c_str());
           }
           catch (out_of_range&) {
-            std::cout << "Set depth of white player: ";
-            std::cin >> depth[LIGHT];
+            std::cout << "Set depth of white player: " << depth[LIGHT] << std::endl;
           }
             
           if (depth[LIGHT] <= 0)
@@ -211,8 +214,7 @@ int chx_main()
             depth[DARK] = atoi(input.at(1).c_str());
           }
           catch (out_of_range&) {
-            std::cout << "Set depth of black player: ";
-            std::cin >> depth[DARK];
+            std::cout << "Set depth of black player: " << depth[DARK] << std::endl;
           }
           if (depth[DARK] <= 0)
           {
