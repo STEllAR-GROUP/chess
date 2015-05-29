@@ -12,7 +12,7 @@
 #include "defs.hpp"
 #include "data.hpp"
 
-int depth[2] = {3,3};
+int depth[2] = {5,5};
 
 chess_move move_to_make; // Global variable keeping track of the next chess_move to
                    // make at the root level

@@ -121,6 +121,7 @@ public:
     void set_max(int n) {
         count = max_count = n;
     }
+    int get() { return max_count; }
     int add(int n) {
         count += n;
         assert(count <= max_count);

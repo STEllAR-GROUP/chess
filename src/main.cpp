@@ -31,6 +31,7 @@
 #include <readline/history.h>
 #endif
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -109,14 +110,16 @@ int chx_main()
         if (board.side == computer_side) {  // computer's turn
 
             // think about the chess_move and make it
+            int start = get_ms();
             think(board,false);
+            int end = get_ms();
             if (move_to_make.get32BitMove() == 0) {
                 std::cout << "(no legal moves)" << std::endl;
                 computer_side = EMPTY;
                 continue;
             }
             if (output)
-                std::cout << "Computer's chess_move: " << move_str(move_to_make)
+                std::cout << "Computer's chess_move: " << move_str(move_to_make) << " time=" << std::setprecision(3) << 1e-3*(end-start) << " sec"
                     << std::endl;
             makemove(board, move_to_make); // Make the chess_move for our master board
             board.ply = 0; // Reset the board ply to 0
@@ -345,14 +348,17 @@ int chx_main()
         if (input[0] == "help") {
           std::cout << std::endl;
           std::cout << "  bench <name of file> <search depth> <number of runs>\n\tstarts the benchmark" << std::endl;
-          std::cout << "  parallel <number of threads> \n\tSets the max number of parallel threads (default 0)" << std::endl;
-          std::cout << "  eval <evaluator>\n\tswitches the current chess_move evaluator in use (default original)" << std::endl;
-          std::cout << "  search <function>\n\tswitches the current search method in use (default minimax)" << std::endl;
+          std::cout << "  parallel <number of threads> \n\tSets the max number of parallel threads (threads=" << task_counter.get() << ")" << std::endl;
+          std::cout << "  eval <evaluator>\n\tswitches the current chess_move evaluator in use ("
+            << "original" << ((chosen_evaluator == ORIGINAL) ? "=current" : "") << ","
+            << "simple" << ((chosen_evaluator == SIMPLE) ? "=current" : "") << ")"
+            << std::endl;
+          std::cout << "  search <function>\n\tswitches the current search method in use" << std::endl;
           std::cout << "  go\n\tcomputer makes a chess_move" << std::endl;
           std::cout << "  auto\n\tcomputer will continue to make moves until game is over" << std::endl;
           std::cout << "  new\n\tstarts a new game" << std::endl;
-          std::cout << "  wd <number>\n\tsets white search depth (default 3)" << std::endl;
-          std::cout << "  bd <number>\n\tsets black search depth (default 3)" << std::endl;
+          std::cout << "  wd <number>\n\tsets white search depth (currently " << depth[LIGHT] << ")" << std::endl;
+          std::cout << "  bd <number>\n\tsets black search depth (currently " << depth[DARK] << ")" << std::endl;
           std::cout << "  d\n\tdisplay the board" << std::endl;
           std::cout << "  o <on/off>\n\ttoggles engine output on or off (default on)" << std::endl;
           std::cout << "  exit\n\texit the program" << std::endl;
