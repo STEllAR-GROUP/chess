@@ -81,7 +81,19 @@ $anskey->{4}->{5} = "g5f7";
 my $bad_score = -6666;
 my $tot_time = 0;
 
-for(my $ply=2;$ply<=5;$ply++) {
+my $threads = 1;
+my $mem = "";
+
+for my $a (@ARGV) {
+    if($a =~ /^-t=(\d+)$/) {
+        $threads = $1;
+    }
+    if($a =~ /^-m$/) {
+        $mem = " valgrind --log-file=val.out ";
+    }
+}
+
+for(my $ply=4;$ply<=6;$ply++) {
     for(my $b=1;$b<=4;$b++) {
         for my $sm (("minimax","alphabeta","mtdf")) {
             # It takes too long for minimax above ply 4
@@ -97,7 +109,29 @@ for(my $ply=2;$ply<=5;$ply++) {
             }
             #open($fd,"mpiexec -np 2 -env CHX_THREADS_PER_PROC 2 $ENV{PWD}/src/chx -s .bench.ini 2>/dev/null|");
             #open($fd,"CHX_THREADS_PER_PROC=8; mpiexec -np 1 src/chx -s .bench.ini 2>/dev/null|");
-            open($fd,"CHX_THREADS_PER_PROC=8 src/chx -t8 < .bench 2>/dev/null|");
+            my @chx =  (
+                "/home/sbrandt/chess-build/src/chx",
+                "/home/sbrandt/chess-build/bin/chx",
+                #"/home/sbrandt/chess-buildd/src/chx",
+                #"/home/sbrandt/chess-buildd/bin/chx"
+                );
+            my $chx = undef;
+            for my $c (@chx) {
+                if(-e $c) {
+                    die "$c vs. $chx" if(defined($chx));
+                    $chx = $c;
+                }
+            }
+            my $hpx = 0;
+            $hpx = 1 if($chx =~ /bin/);
+            my $cmd;
+            if($hpx) {
+                $cmd="CHX_THREADS_PER_PROC=100 $mem $chx --hpx:t=$threads < .bench|";
+            } else {
+                $cmd="CHX_THREADS_PER_PROC=$threads $mem $chx < .bench|";
+            }
+            print "cmd=$cmd\n";
+            open($fd,$cmd);
             my $ans = "";
             my $score = $bad_score;
 
@@ -130,13 +164,13 @@ for(my $ply=2;$ply<=5;$ply++) {
             if(defined($anskey->{$b}->{$ply})) {
                 my $v = $anskey->{$b}->{$ply};
                 if($ans ne $v) {
-                    $st .= "MOVE(should_be=$v) ";
+                    $st .= "MOVE($ans != $v) ";
                 }
             }
             if(defined($scoretab->{$b}->{$ply})) {
                 my $s = $scoretab->{$b}->{$ply};
                 if($s != $score) {
-                    $st .= "SCORE($s) ";
+                    $st .= "SCORE($score != $s) ";
                 }
             }
             if($st eq "OK ") {
@@ -160,7 +194,7 @@ for(my $ply=2;$ply<=5;$ply++) {
                 print $doc;
                 die "error code returned r=($ret)";
             }
-			open($fd,"log.out");
+			open($fd,"val.out");
 			while(<$fd>) {
 				if(/ERROR SUMMARY: (\d+) errors/) {
 					if($1 > 0) {
