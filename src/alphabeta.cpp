@@ -165,7 +165,7 @@ score_t search_ab(boost::shared_ptr<search_info> proc_info)
         for(size_t n_=0;n_<count;n_++) {
             int n = when.any();
             boost::shared_ptr<task> child_task = tasks[n];
-            assert(child_task.valid());
+            //assert(child_task.valid());
             child_task->join();
             boost::shared_ptr<search_info> child_info = child_task->info;
 
