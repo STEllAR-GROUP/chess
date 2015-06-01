@@ -147,7 +147,7 @@ struct thread_task : public task {
     }
     virtual void start() {
         joined = false;
-        assert(info.valid());
+        //assert(info.valid());
         if(pfunc == search_f) {
             th = std::async(std::launch::async,search_pt,info);
         } else if(pfunc == search_ab_f) {
