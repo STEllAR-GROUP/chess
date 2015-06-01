@@ -112,6 +112,7 @@ for(my $ply=4;$ply<=6;$ply++) {
             my @chx =  (
                 "/home/sbrandt/chess-build/src/chx",
                 "/home/sbrandt/chess-build/bin/chx",
+                "./src/chx",
                 #"/home/sbrandt/chess-buildd/src/chx",
                 #"/home/sbrandt/chess-buildd/bin/chx"
                 );

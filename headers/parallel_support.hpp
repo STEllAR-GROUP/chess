@@ -114,7 +114,7 @@ class pcounter {
     boost::atomic<int> count;
     int max_count;
 public:
-    pcounter() : count(0), max_count(0) {
+    pcounter() : count(0), max_count(1) {
     }
     pcounter(const pcounter& pc) : count(pc.count.load()), max_count(pc.max_count) {
     }
